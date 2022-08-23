@@ -81,7 +81,7 @@ async function configAction() {
       configJson.git
         ? [
             dir(define.PACKAGE_DIR_NAME),
-            dir(define.PLATFORM_DIR_NAME),
+            dir(define.platformDirName()),
             res.gitignore(),
             res.prettierrc(),
             file(define.CONFIG_FILE_NAME, configJson).write(),
@@ -89,7 +89,7 @@ async function configAction() {
           ]
         : [
             dir(define.PACKAGE_DIR_NAME),
-            dir(define.PLATFORM_DIR_NAME),
+            dir(define.platformDirName()),
             res.prettierrc(),
             write(file('package.json', json))
           ]
@@ -103,9 +103,7 @@ async function configAction() {
       return;
     }
     const packageLock = path.join(rootPath, 'package-lock.json');
-    const packageReadme = path.join(path.packagesPath, 'README.md');
-    const platformReadme = path.join(path.platformsPath, 'README.md');
-    const additions = [packageLock, packageReadme, platformReadme];
+    const additions = [packageLock];
     const valids = additions.map(p => file.isFile(p));
     const flags = await Promise.all(valids);
     const additionPaths = additions.filter((p, i) => flags[i]);

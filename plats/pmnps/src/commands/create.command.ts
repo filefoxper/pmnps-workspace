@@ -41,14 +41,6 @@ async function createScope(name: string) {
     r.write([dir(define.PACKAGE_DIR_NAME, [dir(scope)])]);
   });
   await structure.flush();
-  if (createWithReadme) {
-    await executeContext(({ exec }) => {
-      return exec('git', [
-        'add',
-        path.join(path.packagesPath, scope, 'README.md')
-      ]);
-    });
-  }
   message.success(`create scope ${scope} success.`);
 }
 
@@ -62,7 +54,7 @@ async function selectTemplates(
   }
   const { git, publishable } = config.readConfig() || {};
   const projectRoot =
-    type === 'package' ? path.packagesPath : path.platformsPath;
+    type === 'package' ? path.packagesPath() : path.platformsPath();
   const folderPath = path.join(projectRoot, ...name);
   await file.copyFolder(path.join(templatePath, 'resource'), folderPath);
   await structure.flush();
@@ -427,7 +419,7 @@ async function createTemplate(n: string) {
         'prettier',
         '--write',
         path.join(
-          path.packagesPath,
+          path.packagesPath(),
           scopeOrName,
           scopePackageName || null,
           'index.js'
@@ -443,7 +435,7 @@ async function createPlatform(platformName: string) {
   const { createWithReadme, publishable } = config.readConfig() || {};
   const root = structure.root();
   const packRoot = (root.children || []).find(
-    ({ name }) => name === define.PLATFORM_DIR_NAME
+    ({ name }) => name === define.platformDirName()
   );
   if (
     packRoot &&
@@ -465,7 +457,7 @@ async function createPlatform(platformName: string) {
 
   structure.rebuild((r, { dir, file, res }) => {
     r.write([
-      dir(define.PLATFORM_DIR_NAME, [
+      dir(define.platformDirName(), [
         dir(platformName, [
           dir('src', [file('index.js')]),
           createWithReadme ? res.readme(`# ${platformName}`) : undefined,
