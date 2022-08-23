@@ -35,8 +35,6 @@
     "regenerator-runtime": "0.13.5",
     "rewire": "5.0.0",
     "ts-node": "^10.8.2",
-    "@pmnps/ts-plugin": "3.0.0",
-    "@pmnps/template": "3.0.0",
     "pmnps": "2.1.8"
   },
   "workspaces": [
