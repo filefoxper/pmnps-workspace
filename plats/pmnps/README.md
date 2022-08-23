@@ -574,3 +574,7 @@ All the plugins and templates can be kept in `packages` dir or publish to `npm s
 * add template as a package
 * combine scope\package\platform\template creation command to one `create` command.
 * modify plugin interfaces
+
+### v3.0.1
+
+* fix the bug about repetitive building and publishing.

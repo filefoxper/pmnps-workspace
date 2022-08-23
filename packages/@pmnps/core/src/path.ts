@@ -1,7 +1,7 @@
 import fs from 'fs';
 import pathBuilder from 'path';
 import { IS_DEV } from './process';
-import {PACKAGE_DIR_NAME, PLATFORM_DIR_NAME} from "./define";
+import {PACKAGE_DIR_NAME, platformDirName} from "./define";
 
 function findRootPath(startPath: string, count: number = 0): string | null {
   if (!fs.existsSync(startPath)) {
@@ -41,9 +41,9 @@ function root() {
 
 const rootPath = root();
 
-const packagesPath = join(rootPath, PACKAGE_DIR_NAME);
+const packagesPath = ()=>join(rootPath, PACKAGE_DIR_NAME);
 
-const platformsPath = join(rootPath, PLATFORM_DIR_NAME);
+const platformsPath = ()=>join(rootPath, platformDirName());
 
 export { join };
 

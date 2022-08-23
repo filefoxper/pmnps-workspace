@@ -167,12 +167,13 @@ export declare const define: {
   PRETTIER_RC_FILE_NAME: string;
   GIT_IGNORE_FILE_NAME: string;
   NPM_RC_FILE_NAME: string;
+  platformDirName():string;
 };
 
 export declare const path: {
   rootPath: string;
-  packagesPath: string;
-  platformsPath: string;
+  packagesPath(): string;
+  platformsPath(): string;
   join(...params: (string | null | undefined)[]): string;
 };
 

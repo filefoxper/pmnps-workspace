@@ -83,7 +83,8 @@ function computeTaskGroups(packages: PackageJson[]) {
   const tasks = groupTasks(packages);
   let packageSet = new Set<PackageJson>();
   return tasks.map(task => {
-    const group = task.filter(p => !packageSet.has(p));
+    const ts = new Set(task);
+    const group = [...ts].filter(p => !packageSet.has(p));
     packageSet = new Set([...packageSet, ...group]);
     return group;
   });
@@ -95,7 +96,7 @@ function logBuffer(buffer: execa.ExecaSyncReturnValue | undefined) {
   }
   const { stdout, stderr } = buffer;
   if (stderr) {
-    message.warn(stderr);
+    console.log(stderr);
   } else {
     console.log(stdout);
   }

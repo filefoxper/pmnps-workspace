@@ -19,12 +19,11 @@ import {
   StructureNode,
   StructureRoot
 } from './type';
-import produce from 'immer';
 import {
   GIT_IGNORE_FILE_NAME,
   NPM_RC_FILE_NAME,
   PACKAGE_DIR_NAME,
-  PLATFORM_DIR_NAME,
+  platformDirName,
   PRETTIER_RC_FILE_NAME,
   README_FILE_NAME
 } from './define';
@@ -67,10 +66,10 @@ function ensureNodesParent(parent: StructureNode | StructureRoot) {
     node.parent = parent;
     node.alterParent = parent;
     node.path = pathBuilder.join(parent.path, node.name);
-    if (parent.path === pathBuilder.platformsPath) {
+    if (parent.path === pathBuilder.platformsPath()) {
       node.projectType = 'platform';
     } else if (
-      parent.path === pathBuilder.packagesPath &&
+      parent.path === pathBuilder.packagesPath() &&
       !node.name.startsWith('@')
     ) {
       node.projectType = 'package';
@@ -78,7 +77,7 @@ function ensureNodesParent(parent: StructureNode | StructureRoot) {
       parent.type !== 'root' &&
       parent.name.startsWith('@') &&
       parent.parent &&
-      parent.parent.path === pathBuilder.packagesPath
+      parent.parent.path === pathBuilder.packagesPath()
     ) {
       node.projectType = 'package';
     }
@@ -272,14 +271,14 @@ function markProjects(
 ) {
   const pt =
     projectType ||
-    (!level && dir.name === PLATFORM_DIR_NAME ? 'platform' : 'package');
+    (!level && dir.name === platformDirName() ? 'platform' : 'package');
   const packageJson = (dir.children || []).find(
     d => d.name === 'package.json' && d.type === 'file'
   );
   if (
     packageJson &&
     !dir.name.startsWith('@') &&
-    ((!level && ![PLATFORM_DIR_NAME, PACKAGE_DIR_NAME].includes(dir.name)) ||
+    ((!level && ![platformDirName(), PACKAGE_DIR_NAME].includes(dir.name)) ||
       level)
   ) {
     dir.projectType = pt;

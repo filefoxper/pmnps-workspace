@@ -10,7 +10,7 @@ function parseRequireName(name: string) {
     if (structure.find(root, { path: absolutePath, type: 'dir' })) {
         return absolutePath;
     }
-    const relativePath = path.join(path.packagesPath, ...localParts);
+    const relativePath = path.join(path.packagesPath(), ...localParts);
     if (structure.find(root, { path: relativePath, type: 'dir' })) {
         return relativePath;
     }

@@ -330,15 +330,15 @@ You can use the data to analyze the relationShip of packages and platforms.
 ```typescript
 export declare const path: {
   rootPath: string;
-  packagesPath: string;
-  platformsPath: string;
+  packagesPath(): string;
+  platformsPath(): string;
   join(...params: (string | null | undefined)[]): string;
 };
 ```
 
 1. `path.rootPath` is the root dir path.
-2. `path.packagesPath` is the path of `packages` dir in root.
-3. `path.platformsPath` is the path of `platforms` dir in root.
+2. `path.packagesPath()` returns the path of `packages` dir in root.
+3. `path.platformsPath()` returns the path of `platforms` dir in root.
 4. `path.join` is a method like the nodejs `path.join`, but it can filter the undefined and null param out.
 
 ## Plugin

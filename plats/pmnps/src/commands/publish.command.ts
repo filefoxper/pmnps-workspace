@@ -65,7 +65,8 @@ function computeTaskGroups(packages: PackageJson[]) {
   const tasks = groupTasks(packages);
   let packageSet = new Set<PackageJson>();
   return tasks.map(task => {
-    const group = task.filter(p => !packageSet.has(p));
+    const ts = new Set(task);
+    const group = [...ts].filter(p => !packageSet.has(p));
     packageSet = new Set([...packageSet, ...group]);
     return group;
   });
@@ -104,13 +105,15 @@ async function publishPack(
 async function publishPackageTask(
   projectType: ProjectType,
   tasks: PackageJson[][],
+  packSet:Set<string>,
   option: { otp?: string }
 ) {
   if (!tasks.length) {
     return;
   }
-  const [task, ...rest] = tasks;
+  const [current, ...rest] = tasks;
   await executeContext(async execution => {
+    const task = current.filter((v)=>packSet.has(v.name));
     const builds = task.map(packageJson =>
       publishPack(projectType, packageJson, execution, option)
     );
@@ -125,7 +128,7 @@ async function publishPackageTask(
   if (!rest.length) {
     return;
   }
-  await publishPackageTask(projectType, rest, option);
+  await publishPackageTask(projectType, rest,packSet, option);
 }
 
 async function batchPublishPackages(
@@ -138,7 +141,8 @@ async function batchPublishPackages(
   }
   const marked = markPackages(range, range);
   const tasks = computeTaskGroups(marked);
-  return publishPackageTask('package', tasks, option);
+  const packSet = new Set(packs.map(({name})=>name));
+  return publishPackageTask('package', tasks,packSet, option);
 }
 
 async function publishAction(option: { otp?: string }) {
@@ -151,6 +155,7 @@ async function publishAction(option: { otp?: string }) {
     message.warn('Please use command `config` to enable publish action first.');
     return;
   }
+  message.log('start to analyze publish packages and platforms');
   const { packages, platforms } = structure.packageJsons();
   const packagesFetcher = executeContext(execution => {
     return Promise.all(packages.map(p => fetchVersion(p, execution)));
@@ -159,9 +164,10 @@ async function publishAction(option: { otp?: string }) {
     return Promise.all(platforms.map(p => fetchVersion(p, execution)));
   });
   const packs = await packagesFetcher;
+  const plats = await platformsFetcher;
+  message.log('start to publish packages and platforms');
   const validPacks = packs.filter((d): d is PackageJson => !!d);
   await batchPublishPackages(packages, validPacks, option);
-  const plats = await platformsFetcher;
   const validPlats = plats.filter((d): d is PackageJson => !!d);
   const publishResults = await executeContext(execution => {
     const publishes = validPlats.map(packageJson =>

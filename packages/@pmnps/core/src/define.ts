@@ -1,4 +1,4 @@
-function platformDirName() {
+function platformDirName():string {
   if (
     global.pmnps &&
     global.pmnps.config &&
@@ -31,6 +31,7 @@ export {
   PRETTIER_RC_FILE_NAME,
   GIT_IGNORE_FILE_NAME,
   NPM_RC_FILE_NAME,
+  platformDirName
 };
 
 export default {
@@ -40,5 +41,6 @@ export default {
   README_FILE_NAME,
   PRETTIER_RC_FILE_NAME,
   GIT_IGNORE_FILE_NAME,
-  NPM_RC_FILE_NAME
+  NPM_RC_FILE_NAME,
+  platformDirName
 };

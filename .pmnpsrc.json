@@ -1,8 +1,9 @@
 {
   "workspace": "pmnps-workspace",
-  "strictPackage": true,
   "private": false,
   "publishable": true,
   "git": true,
-  "lock": true
+  "buildByDependencies": false,
+  "createWithReadme": true,
+  "useOldDefineName": true
 }

@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "project of monorepo platforms",
+  "devDependencies": {
+    "prettier": "2.7.1"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {}
+}

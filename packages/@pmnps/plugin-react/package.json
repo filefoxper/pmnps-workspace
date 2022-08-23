@@ -1,6 +1,6 @@
 {
   "description": "This is a pmnps plugin to complete react project creation",
-  "version": "3.0.0",
+  "version": "3.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/filefoxper/pmnps-workspace/packages/@pmnps/plugin-react"
@@ -9,7 +9,7 @@
   "author": "Jimmy.Harding",
   "dependencies": {
     "inquirer": "^6.5.2",
-    "@pmnps/core": "3.0.0"
+    "@pmnps/core": "^3.0.0"
   },
   "devDependencies": {
     "prettier": "^2.7.0",
