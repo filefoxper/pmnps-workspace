@@ -1,0 +1,32 @@
+{
+  "description": "This is the core logic of pmnps",
+  "version": "3.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/filefoxper/pmnps-workspace/packages/@pmnps/core"
+  },
+  "homepage": "https://github.com/filefoxper/pmnps-workspace/packages/@pmnps/core",
+  "author": "Jimmy.Harding",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^9.3.0",
+    "execa": "^5.1.1",
+    "inquirer": "^6.5.2"
+  },
+  "devDependencies": {
+    "prettier": "^2.7.0",
+    "typescript": "4.5.5",
+    "esbuild": "^0.15.0"
+  },
+  "main": "dist/index.js",
+  "typings": "index.d.ts",
+  "files": [
+    "index.d.ts",
+    "dist"
+  ],
+  "name": "@pmnps/core",
+  "private": false,
+  "scripts": {
+    "build": "esbuild ./src/index.ts --outfile=./dist/index.js --bundle --target=node17 --platform=node --format=cjs"
+  }
+}
