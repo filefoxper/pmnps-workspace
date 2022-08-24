@@ -1,13 +1,13 @@
 import { Command } from 'commander';
 import {
   config,
+  ExecaSyncReturnValue,
   PackageJson,
   plugin,
   ProjectType,
   structure
 } from '@pmnps/core';
 import { executeContext, Execution, message } from '@pmnps/tools';
-import execa from 'execa';
 import { installAction } from './refresh.command';
 
 function markPackages(
@@ -90,7 +90,7 @@ function computeTaskGroups(packages: PackageJson[]) {
   });
 }
 
-function logBuffer(buffer: execa.ExecaSyncReturnValue | undefined) {
+function logBuffer(buffer: ExecaSyncReturnValue | undefined) {
   if (!buffer) {
     return;
   }
@@ -271,7 +271,7 @@ async function buildAction({
   install,
   param
 }: { name?: string; install?: boolean; param?: string } | undefined = {}) {
-  if(!config.readConfig()){
+  if (!config.readConfig()) {
     message.warn('Please run `pmnps` to initial your workspace first.');
     return;
   }

@@ -1,3 +1,6 @@
+import { Answers, QuestionCollection, ui } from 'inquirer';
+import execa from 'execa';
+
 /* * types * */
 export declare type Pmnps = {
   platDependencies?: string[];
@@ -26,7 +29,7 @@ export declare type PackageJson = {
   level?: number;
   used?: boolean;
   pmnps?: Pmnps;
-  getDirPath?: ()=>string;
+  getDirPath?: () => string;
 };
 
 export declare type PackageJsons = {
@@ -105,6 +108,12 @@ export declare type Diff = {
   modifies: Array<[string, StructureNode]>;
 };
 
+export declare type ExecaChildProcess = execa.ExecaChildProcess;
+
+export declare type ExecaSyncReturnValue = execa.ExecaSyncReturnValue;
+
+export declare type ExecaOptions = execa.Options;
+
 declare type RebuildTools = {
   file(
     name: string,
@@ -136,7 +145,7 @@ declare type RebuildCallback = (
   tools: RebuildTools
 ) => void;
 
-export declare type PluginType = 'refresh' | 'create' | 'build'|'start';
+export declare type PluginType = 'refresh' | 'create' | 'build' | 'start';
 
 export declare type PluginRender = (requires: string[]) => Promise<boolean>;
 
@@ -158,6 +167,12 @@ export declare type PluginComponent = (
   query?: Record<string | number, any>
 ) => PluginPack;
 
+export declare type InAnswers = Answers;
+
+export declare type Prompt<T> = ui.Prompt<T>;
+
+export declare type InQuestions<T> = QuestionCollection<T>;
+
 /* * methods and constants * */
 export declare const define: {
   PACKAGE_DIR_NAME: string;
@@ -167,7 +182,7 @@ export declare const define: {
   PRETTIER_RC_FILE_NAME: string;
   GIT_IGNORE_FILE_NAME: string;
   NPM_RC_FILE_NAME: string;
-  platformDirName():string;
+  platformDirName(): string;
 };
 
 export declare const path: {
@@ -257,4 +272,21 @@ export declare const requires: {
 
 export declare const template: {
   selectTemplate(projectType: ProjectType): Promise<null | string>;
+};
+
+export declare const inquirer: {
+  prompt<T extends InAnswers = InAnswers>(
+    questions: InQuestions<T>,
+    initialAnswers?: Partial<T>
+  ): Promise<T> & { ui: Prompt<T> };
+};
+
+export declare const execution: {
+  exec(
+    file: string,
+    params?: string[] | execa.Options,
+    options?: execa.Options
+  ): execa.ExecaChildProcess;
+  command(params: string, options?: execa.Options): execa.ExecaChildProcess;
+  killChildProcess([pid, process]: [number, execa.ExecaChildProcess]): void;
 };

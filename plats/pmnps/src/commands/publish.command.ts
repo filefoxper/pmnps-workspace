@@ -1,7 +1,13 @@
 import { Command } from 'commander';
-import { config, env, PackageJson, ProjectType, structure } from '@pmnps/core';
+import {
+  config,
+  env,
+  ExecaSyncReturnValue,
+  PackageJson,
+  ProjectType,
+  structure
+} from '@pmnps/core';
 import { executeContext, Execution, message } from '@pmnps/tools';
-import execa from 'execa';
 
 async function fetchVersion(
   pack: PackageJson,
@@ -72,7 +78,7 @@ function computeTaskGroups(packages: PackageJson[]) {
   });
 }
 
-function logBuffer(buffer: execa.ExecaSyncReturnValue | undefined) {
+function logBuffer(buffer: ExecaSyncReturnValue | undefined) {
   if (!buffer) {
     return;
   }
@@ -105,7 +111,7 @@ async function publishPack(
 async function publishPackageTask(
   projectType: ProjectType,
   tasks: PackageJson[][],
-  packSet:Set<string>,
+  packSet: Set<string>,
   option: { otp?: string }
 ) {
   if (!tasks.length) {
@@ -113,7 +119,7 @@ async function publishPackageTask(
   }
   const [current, ...rest] = tasks;
   await executeContext(async execution => {
-    const task = current.filter((v)=>packSet.has(v.name));
+    const task = current.filter(v => packSet.has(v.name));
     const builds = task.map(packageJson =>
       publishPack(projectType, packageJson, execution, option)
     );
@@ -128,7 +134,7 @@ async function publishPackageTask(
   if (!rest.length) {
     return;
   }
-  await publishPackageTask(projectType, rest,packSet, option);
+  await publishPackageTask(projectType, rest, packSet, option);
 }
 
 async function batchPublishPackages(
@@ -141,12 +147,12 @@ async function batchPublishPackages(
   }
   const marked = markPackages(range, range);
   const tasks = computeTaskGroups(marked);
-  const packSet = new Set(packs.map(({name})=>name));
-  return publishPackageTask('package', tasks,packSet, option);
+  const packSet = new Set(packs.map(({ name }) => name));
+  return publishPackageTask('package', tasks, packSet, option);
 }
 
 async function publishAction(option: { otp?: string }) {
-  if(!config.readConfig()){
+  if (!config.readConfig()) {
     message.warn('Please run `pmnps` to initial your workspace first.');
     return;
   }

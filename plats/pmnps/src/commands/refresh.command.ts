@@ -1,10 +1,11 @@
 import {
   structure,
   pkgJson,
-  file,
   PackageJson,
   path,
-  resource, plugin, config
+  resource,
+  plugin,
+  config
 } from '@pmnps/core';
 import { executeContext, message, Execution } from '@pmnps/tools';
 import { Command } from 'commander';
@@ -71,12 +72,12 @@ async function installAction(packageJsons: PackageJson[], refresh?: boolean) {
 }
 
 async function refreshAction() {
-  if(!config.readConfig()){
+  if (!config.readConfig()) {
     message.warn('Please run `pmnps` to initial your workspace first.');
     return;
   }
   const res = await plugin.runPlugin('refresh');
-  if(!res){
+  if (!res) {
     return;
   }
   message.info('refresh project ...');

@@ -1,7 +1,6 @@
 import { Command } from 'commander';
-import {config, PackageJson, plugin, structure} from '@pmnps/core';
+import { config, inquirer, PackageJson, plugin, structure } from '@pmnps/core';
 import { executeContext, message } from '@pmnps/tools';
-import inquirer from 'inquirer';
 
 function markPackage(
   range: Array<PackageJson>,
@@ -68,7 +67,9 @@ async function startPlatforms(
   const packagesStarter = startPackages(platforms, packages);
   const starter = executeContext(({ exec }) => {
     const runners = platforms.map(platform => {
-      const subprocess = exec('npm', ['start'], { cwd: platform.getDirPath?.() });
+      const subprocess = exec('npm', ['start'], {
+        cwd: platform.getDirPath?.()
+      });
       subprocess.stderr?.pipe(process.stderr);
       subprocess.stdout?.pipe(process.stdout);
       subprocess.stdin?.pipe(process.stdin);
@@ -80,12 +81,12 @@ async function startPlatforms(
 }
 
 async function startAction({ all }: { all?: boolean }) {
-  if(!config.readConfig()){
+  if (!config.readConfig()) {
     message.warn('Please run `pmnps` to initial your workspace first.');
     return;
   }
   const res = await plugin.runPlugin('start');
-  if(!res){
+  if (!res) {
     return;
   }
   const { packages, platforms } = structure.packageJsons();

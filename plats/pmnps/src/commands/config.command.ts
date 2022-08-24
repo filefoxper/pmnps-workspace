@@ -5,9 +5,9 @@ import {
   file,
   path,
   pkgJson,
-  structure
+  structure,
+  inquirer
 } from '@pmnps/core';
-import inquirer from 'inquirer';
 import { executeContext, message } from '@pmnps/tools';
 import { refreshAction } from './refresh.command';
 import { Command } from 'commander';

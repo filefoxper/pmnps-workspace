@@ -1,9 +1,0 @@
-{
-  "workspace": "workspace",
-  "publishable": true,
-  "buildByDependencies": false,
-  "private": false,
-  "createWithReadme": true,
-  "git": true,
-  "useOldDefineName": false
-}

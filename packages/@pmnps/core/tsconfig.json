@@ -11,7 +11,7 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "paths": { "@pmnps/core/src/*": ["src/*"], "@test/*": ["test/*"] },
+    "paths": {},
     "noImplicitAny": false,
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
