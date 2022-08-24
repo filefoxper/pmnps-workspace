@@ -40,7 +40,7 @@ async function writeRootPackageJson(
     workspaces: workspaces || source.workspaces || ['packages/*'],
     dependencies: {
       ...dependencies,
-      ...source.devDependencies
+      ...source.dependencies
     },
     devDependencies: {
       ...devDependencies,
