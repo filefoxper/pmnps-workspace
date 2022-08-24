@@ -1,8 +1,8 @@
 {
-  "version": "3.1.1",
+  "version": "3.1.2",
   "dependencies": {
-    "@pmnps/core": "^3.0.1",
-    "@pmnps/tools": "^3.0.1",
+    "@pmnps/core": "^3.0.0",
+    "@pmnps/tools": "^3.0.0",
     "commander": "^9.3.0"
   },
   "devDependencies": {
@@ -44,9 +44,9 @@
   "private": false,
   "repository": {
     "type": "git",
-    "url": "https://github.com/filefoxper/pmnps-workspace/plats/pmnps"
+    "url": "https://github.com/filefoxper/pmnps-workspace"
   },
-  "homepage": "https://github.com/filefoxper/pmnps-workspace/plats/pmnps",
+  "homepage": "https://github.com/filefoxper/pmnps-workspace",
   "author": "Jimmy.Harding",
   "description": "This is a monorepo manage tool using `npm:workspaces` tech",
   "keywords": [
