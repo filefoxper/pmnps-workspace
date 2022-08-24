@@ -578,3 +578,7 @@ All the plugins and templates can be kept in `packages` dir or publish to `npm s
 ### v3.0.1
 
 * fix the bug about repetitive building and publishing.
+
+### v3.1.0
+
+* optimize the dependecies.

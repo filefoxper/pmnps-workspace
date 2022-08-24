@@ -1,11 +1,9 @@
 import execa from 'execa';
 import { IS_DEV, IS_WINDOWS } from './process';
-import { mkdirIfNotExist } from './file';
-import path from './path';
 import { loadConfig } from './config';
 import { build } from './structure';
 import { loadPlugins } from './plugin';
-import { loadTemplates } from '@pmnps/core/src/template';
+import { loadTemplates } from './template';
 
 function versionStringToNums(version: string) {
   return version.split('.').slice(0, 3).map(Number);

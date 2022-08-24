@@ -1,6 +1,6 @@
 {
   "description": "These are tools for pmnps",
-  "version": "3.0.2",
+  "version": "3.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/filefoxper/pmnps-workspace/packages/@pmnps/tools"
@@ -8,12 +8,8 @@
   "homepage": "https://github.com/filefoxper/pmnps-workspace/packages/@pmnps/tools",
   "author": "Jimmy.Harding",
   "dependencies": {
-    "chalk": "4.1.2",
-    "commander": "^9.3.0",
-    "execa": "5.1.1",
-    "inquirer": "6.5.2",
-    "@pmnps/core": "^3.0.0",
-    "immer": "^9.0.15"
+    "chalk": "^4.1.0",
+    "@pmnps/core": "^3.1.0"
   },
   "devDependencies": {
     "prettier": "^2.7.0",

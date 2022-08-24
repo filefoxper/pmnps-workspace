@@ -9,6 +9,8 @@ import pkgJson from './packageJson';
 import plugin from './plugin';
 import requires from './require';
 import template from './template';
+import inquirer from "./inquirer";
+import execution from "./exec";
 import {
   Config,
   PackageJsons,
@@ -41,5 +43,7 @@ export {
   pkgJson,
   plugin,
   requires,
-  template
+  template,
+  inquirer,
+  execution
 };

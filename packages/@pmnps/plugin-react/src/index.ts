@@ -1,5 +1,10 @@
-import { PackageJson, PluginPack, structure, StructureNode } from '@pmnps/core';
-import inquirer from 'inquirer';
+import {
+  PackageJson,
+  PluginPack,
+  structure,
+  StructureNode,
+  inquirer
+} from '@pmnps/core';
 
 function renameIndexNode(indexNode: StructureNode | undefined) {
   if (!indexNode) {

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from './path';
-import { Config, PackageJson } from './type';
-import { readFile, readJson, writeJson } from '@pmnps/core/src/file';
+import { Config } from './type';
+import { readJson, writeJson } from './file';
 
 const rootConfigName = '.pmnpsrc.json';
 

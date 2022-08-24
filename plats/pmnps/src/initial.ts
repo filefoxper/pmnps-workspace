@@ -1,6 +1,5 @@
 import { program } from 'commander';
-import inquirer from 'inquirer';
-import { env, config } from '@pmnps/core';
+import {env, config, inquirer} from '@pmnps/core';
 import { message } from '@pmnps/tools';
 import { commandRefresh, refreshAction } from './commands/refresh.command';
 import { commandConfig, configAction } from './commands/config.command';

@@ -1,19 +1,19 @@
-import execa from 'execa';
+import { ExecaChildProcess, ExecaOptions } from '@pmnps/core';
 
 declare type Execution = {
   exec(
     file: string,
-    params: string[],
-    options?: execa.Options
-  ): execa.ExecaChildProcess;
-  command(params: string, options?: execa.Options): execa.ExecaChildProcess;
-  npx(params: string | string[],options?: execa.Options): execa.ExecaChildProcess;
+    params?: string[] | ExecaOptions,
+    options?: ExecaOptions
+  ): ExecaChildProcess;
+  command(params: string, options?: ExecaOptions): ExecaChildProcess;
+  npx(params: string | string[], options?: ExecaOptions): ExecaChildProcess;
 };
 
 declare type Executor<T> = (execution: Execution) => Promise<T>;
 
 export declare function executeContext<T = void>(
-  executor: Executor<T>,
+  executor: Executor<T>
 ): Promise<T>;
 
 declare type Message = {

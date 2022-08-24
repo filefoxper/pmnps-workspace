@@ -1,5 +1,4 @@
 import { Command } from 'commander';
-import inquirer from 'inquirer';
 import { Creation } from '@/type';
 import { executeContext, message } from '@pmnps/tools';
 import {
@@ -13,14 +12,14 @@ import {
   resource,
   structure,
   StructureNode,
-  template
+  template,
+  inquirer
 } from '@pmnps/core';
 import { refreshAction } from './refresh.command';
 
 const range = ['package', 'platform', 'scope', 'template'];
 
 async function createScope(name: string) {
-  const { createWithReadme } = config.readConfig() || {};
   const scopeName = name.startsWith('@') ? name.slice(1) : name;
   const scope = `@${scopeName}`;
   message.info(`creating scope ${scope} ...`);

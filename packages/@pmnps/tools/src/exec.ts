@@ -1,23 +1,16 @@
-import execa from 'execa';
 import { Executor } from './type';
-import { env } from '@pmnps/core';
+import { env, ExecaChildProcess, ExecaOptions, execution } from '@pmnps/core';
 
-function killChildProcess([pid, process]: [number, execa.ExecaChildProcess]) {
-  if (env.IS_WINDOWS) {
-    execa.commandSync(`taskkill /f /t /pid ${pid}`);
-  } else {
-    process.kill('SIGKILL');
-  }
-}
+const { killChildProcess } = execution;
 
-function killChildProcesses(pidStats: Map<number, execa.ExecaChildProcess>) {
+function killChildProcesses(pidStats: Map<number, ExecaChildProcess>) {
   [...pidStats].forEach(killChildProcess);
   process.exit();
 }
 
 function executeContext<T = void>(executor: Executor<T>): Promise<T> {
-  const pidStats = new Map<number, execa.ExecaChildProcess>();
-  function record(process: execa.ExecaChildProcess) {
+  const pidStats = new Map<number, ExecaChildProcess>();
+  function record(process: ExecaChildProcess) {
     const { pid } = process;
     if (pid != null) {
       pidStats.set(pid, process);
@@ -32,23 +25,23 @@ function executeContext<T = void>(executor: Executor<T>): Promise<T> {
 
   function exec(
     file: string,
-    params: string[],
-    options?: execa.Options
-  ): execa.ExecaChildProcess {
-    return record(execa(file, params, options));
+    params?: string[] | ExecaOptions,
+    options?: ExecaOptions
+  ): ExecaChildProcess {
+    if (Array.isArray(params)) {
+      return record(execution.exec(file, params, options));
+    }
+    return record(execution.exec(file, params));
   }
 
-  function command(
-    params: string,
-    options?: execa.Options
-  ): execa.ExecaChildProcess {
-    return record(execa.command(params, options));
+  function command(params: string, options?: ExecaOptions): ExecaChildProcess {
+    return record(execution.command(params, options));
   }
 
   function npx(
     params: string | string[],
-    options?: execa.Options
-  ): execa.ExecaChildProcess {
+    options?: ExecaOptions
+  ): ExecaChildProcess {
     if (Array.isArray(params)) {
       return exec('npx', params, options);
     }
