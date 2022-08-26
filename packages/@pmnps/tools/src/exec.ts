@@ -1,24 +1,33 @@
 import { Executor } from './type';
 import { env, ExecaChildProcess, ExecaOptions, execution } from '@pmnps/core';
+import message from "./message";
 
 const { killChildProcess } = execution;
 
-function killChildProcesses(pidStats: Map<number, ExecaChildProcess>) {
-  [...pidStats].forEach(killChildProcess);
+declare global {
+  var pmnps: {
+    pidStats?: Map<number, ExecaChildProcess>;
+  };
+}
+
+function killChildProcesses() {
+  [...(global.pmnps!.pidStats||[])].forEach((d)=>{
+    try {
+      killChildProcess(d)
+    }catch (e){
+      message.warn('This process may has been stopped yet.');
+    }
+  });
   process.exit();
 }
 
 function executeContext<T = void>(executor: Executor<T>): Promise<T> {
-  const pidStats = new Map<number, ExecaChildProcess>();
+  global.pmnps=global.pmnps||{};
+  global.pmnps.pidStats = global.pmnps.pidStats||new Map<number, ExecaChildProcess>();
   function record(process: ExecaChildProcess) {
     const { pid } = process;
     if (pid != null) {
-      pidStats.set(pid, process);
-      process.on('exit',()=>{
-        if (pidStats.has(pid)) {
-          pidStats.delete(pid);
-        }
-      });
+      global.pmnps.pidStats!.set(pid, process);
     }
     return process;
   }
@@ -48,30 +57,30 @@ function executeContext<T = void>(executor: Executor<T>): Promise<T> {
     return command(`npx ${params}`, options);
   }
 
-  if (env.IS_WINDOWS) {
-    const rl = require('readline').createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-
-    rl.on('SIGINT', function () {
-      process.emit('SIGINT');
-    });
-
-    rl.on('SIGTERM', function () {
-      process.emit('SIGTERM');
-    });
-  }
-
-  process.on('SIGINT', () => {
-    killChildProcesses(pidStats);
-  });
-
-  process.on('SIGTERM', () => {
-    killChildProcesses(pidStats);
-  });
-
   return executor({ exec, command, npx });
 }
+
+if (env.IS_WINDOWS) {
+  const rl = require('readline').createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  rl.on('SIGINT', function () {
+    process.emit('SIGINT');
+  });
+
+  rl.on('SIGTERM', function () {
+    process.emit('SIGTERM');
+  });
+}
+
+process.on('SIGINT', () => {
+  killChildProcesses();
+});
+
+process.on('SIGTERM', () => {
+  killChildProcesses();
+});
 
 export { executeContext };
