@@ -139,6 +139,10 @@ function parseParam(
   if (map[aliasKey]) {
     return map[aliasKey];
   }
+  const globalKey = fix?`<global>.${fix}`:'<global>';
+  if (map[globalKey]) {
+    return map[globalKey];
+  }
   return undefined;
 }
 

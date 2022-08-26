@@ -14,7 +14,7 @@ function executeContext<T = void>(executor: Executor<T>): Promise<T> {
     const { pid } = process;
     if (pid != null) {
       pidStats.set(pid, process);
-      Promise.resolve(process).finally(() => {
+      process.on('exit',()=>{
         if (pidStats.has(pid)) {
           pidStats.delete(pid);
         }
@@ -49,13 +49,17 @@ function executeContext<T = void>(executor: Executor<T>): Promise<T> {
   }
 
   if (env.IS_WINDOWS) {
-    var rl = require('readline').createInterface({
+    const rl = require('readline').createInterface({
       input: process.stdin,
       output: process.stdout
     });
 
     rl.on('SIGINT', function () {
       process.emit('SIGINT');
+    });
+
+    rl.on('SIGTERM', function () {
+      process.emit('SIGTERM');
     });
   }
 

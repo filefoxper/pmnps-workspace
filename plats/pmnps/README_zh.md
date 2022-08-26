@@ -525,7 +525,13 @@ $ pmnps build -p "?pb= -i -e <word>"
 可配合 `build -p` 命令进行传参操作。
 
 ```
-$ pmnps build -p "?platB.before= -i -e <word>"
+$ pmnps build -p "?platB.before=<params>"
+```
+
+如果希望给所有平台或包的 buildHook 传参，可使用 `<global>.before` 或 `<global>.after`：
+
+```
+$ pmnps build -p "?<global>.before=<params>"
 ```
 
 ## .pmnpsrc.json

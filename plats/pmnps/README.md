@@ -528,7 +528,13 @@ $ pmnps build -p "?pb= -i"
 Use `build -p`, we can provide params for `before` or `after` scripts.
 
 ```
-$ pmnps build -p "?platB.before= -i -e <word>"
+$ pmnps build -p "?platB.before=<params>"
+```
+
+If you want to pass params to all hooks, you can use `<global>.before` or `<global>.after`.
+
+```
+$ pmnps build -p "?<global>.before=<params>"
 ```
 
 ## .pmnpsrc.json
@@ -582,3 +588,7 @@ All the plugins and templates can be kept in `packages` dir or publish to `npm s
 ### v3.1.0
 
 * optimize the dependecies.
+
+### v3.1.3
+
+* provide `<global>` for build global params.
