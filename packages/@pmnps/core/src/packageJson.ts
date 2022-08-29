@@ -28,7 +28,7 @@ async function writeRootPackageJson(
       devDependencies: {
         ...devDependencies,
         ...defaultPackageJson.devDependencies,
-        prettier: pVersion,
+        prettier: pVersion
       }
     };
   }
@@ -95,7 +95,9 @@ function refreshRootPackageJson(): PackageJson {
     },
     root as PackageJson
   );
-  const list: string[] = packages.map(({ name }) => name);
+  const list: string[] = packages
+    .map(({ name }) => name)
+    .filter((name): name is string => !!name);
   const finalPackageJson = platforms.reduce((data, pack) => {
     const current = pack;
     if (isOwnRootPlat(current)) {
