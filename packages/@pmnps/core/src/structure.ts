@@ -331,8 +331,8 @@ async function fetchPackageJsons(root: StructureRoot) {
   ]);
   return {
     root: rootJson,
-    packages: packages.filter((d): d is PackageJson => !!d),
-    platforms: platforms.filter((d): d is PackageJson => !!d)
+    packages: packages.filter((d): d is PackageJson => !!d&&!!d.name&&!!d.version),
+    platforms: platforms.filter((d): d is PackageJson => !!d&&!!d.name&&!!d.version)
   };
 }
 
