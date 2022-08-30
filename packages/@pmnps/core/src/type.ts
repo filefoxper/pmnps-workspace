@@ -71,6 +71,7 @@ export type StructureRoot = {
   type: 'root';
   children: StructureNode[];
   alter?: boolean;
+  modified?:boolean;
   write(
     children:
       | string
