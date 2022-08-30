@@ -15,12 +15,8 @@ async function installGlobal({ exec }: Execution) {
     '==================== install project root dependencies ===================='
   );
   const subprocess = exec('npm', ['install'], {
-    cwd: path.rootPath
+    cwd: path.rootPath,stdio:'inherit'
   });
-  // @ts-ignore
-  subprocess.stderr.pipe(process.stderr);
-  // @ts-ignore
-  subprocess.stdout.pipe(process.stdout);
   await subprocess;
 }
 
@@ -40,12 +36,9 @@ async function installOwnRootPlats(
     } dependencies ====================`
   );
   const subprocess = tool.exec('npm', ['install'], {
-    cwd: dirPath
+    cwd: dirPath,
+    stdio:'inherit'
   });
-  // @ts-ignore
-  subprocess.stderr.pipe(process.stderr);
-  // @ts-ignore
-  subprocess.stdout.pipe(process.stdout);
   await subprocess;
   if (!rest.length) {
     return;
@@ -104,7 +97,7 @@ async function refreshAction() {
       path.join(path.rootPath, 'package.json'),
       path.join(path.rootPath, '.pmnpsrc.json'),
       path.join(path.rootPath, '.prettierrc.json')
-    ]);
+    ],{cwd:path.rootPath});
   });
 }
 
