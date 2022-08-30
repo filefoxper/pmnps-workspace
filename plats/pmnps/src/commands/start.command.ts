@@ -51,9 +51,9 @@ function startPackages(platforms: PackageJson[], packages: PackageJson[]) {
         if (!dirPath) {
           return;
         }
-        const subprocess = exec('npm', ['start'], { cwd: dirPath });
-        subprocess.stderr?.pipe(process.stderr);
-        subprocess.stdout?.pipe(process.stdout);
+        const subprocess = exec('npm', ['start'], { cwd: dirPath,stdio:'inherit' });
+        // subprocess.stderr?.pipe(process.stderr);
+        // subprocess.stdout?.pipe(process.stdout);
         return subprocess;
       })
     );
@@ -68,11 +68,11 @@ async function startPlatforms(
   const starter = executeContext(({ exec }) => {
     const runners = platforms.map(platform => {
       const subprocess = exec('npm', ['start'], {
-        cwd: platform.getDirPath?.()
+        cwd: platform.getDirPath?.(),stdio:'inherit'
       });
-      subprocess.stderr?.pipe(process.stderr);
-      subprocess.stdout?.pipe(process.stdout);
-      subprocess.stdin?.pipe(process.stdin);
+      // subprocess.stderr?.pipe(process.stderr);
+      // subprocess.stdout?.pipe(process.stdout);
+      // subprocess.stdin?.pipe(process.stdin);
       return subprocess;
     });
     return Promise.all(runners);

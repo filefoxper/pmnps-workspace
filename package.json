@@ -2,8 +2,8 @@
   "version": "3.0.0",
   "description": "project of monorepo platforms",
   "dependencies": {
-    "chalk": "^4.1.0",
     "commander": "^9.3.0",
+    "chalk": "^4.1.0",
     "execa": "^5.1.0",
     "inquirer": "^6.5.0"
   },
