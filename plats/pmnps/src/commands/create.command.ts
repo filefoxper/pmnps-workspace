@@ -58,11 +58,11 @@ async function selectTemplates(
   await file.copyFolder(path.join(templatePath, 'resource'), folderPath);
   await structure.flush();
   const actualName = name.filter((n): n is string => !!n).join('/');
-  const { packages } = structure.packageJsons();
+  const { packages, platforms } = structure.packageJsons();
   const basic = buildBasicPackageJson(actualName);
-  const current = packages.find(
-    ({ getDirPath }) => getDirPath?.() === folderPath
-  );
+  const current = packages
+    .concat(platforms || [])
+    .find(({ getDirPath }) => getDirPath?.() === folderPath);
   structure.rebuild((r, tools) => {
     const currentNode = r.find({ path: folderPath });
     if (!currentNode) {

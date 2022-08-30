@@ -41,6 +41,7 @@ function createStructRoot(): StructureRoot {
           'It can only be called in `structure.rebuild` callback'
         );
       }
+      alterRoot().modified=true;
       writeNodes(self, payload);
       return self;
     },
@@ -169,6 +170,7 @@ function createStructureNode(
           'It can only be called in `structure.rebuild` callback'
         );
       }
+      alterRoot().modified=true;
       self.alterName = name;
       if (self.parent) {
         self.parent.write([self]);
@@ -188,6 +190,7 @@ function createStructureNode(
           'It can only be called in `structure.rebuild` callback'
         );
       }
+      alterRoot().modified=true;
       if (payload == null) {
         self.action = 'write';
         return self;
@@ -593,7 +596,7 @@ async function batchTask(taskGroups: Array<StructureNode[]>): Promise<void> {
 async function flush(): Promise<void> {
   const r = root();
   const ar = alterRoot();
-  if (r === ar) {
+  if (r === ar||!ar.modified) {
     await build();
     return;
   }

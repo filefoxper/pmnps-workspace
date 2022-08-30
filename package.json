@@ -3,9 +3,9 @@
   "description": "project of monorepo platforms",
   "dependencies": {
     "commander": "^9.3.0",
-    "chalk": "^4.1.0",
     "execa": "^5.1.0",
-    "inquirer": "^6.5.0"
+    "inquirer": "^6.5.0",
+    "chalk": "^4.1.0"
   },
   "devDependencies": {
     "@types/inquirer": "^8.2.1",
