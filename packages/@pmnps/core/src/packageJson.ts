@@ -87,6 +87,9 @@ function refreshRootPackageJson(): PackageJson {
   const packageJson = packages.reduce(
     (data: PackageJson, pack: PackageJson) => {
       const { dependencies, devDependencies } = pack;
+      if (isOwnRootPlat(pack)) {
+        return data;
+      }
       return {
         ...data,
         dependencies: { ...dependencies, ...data.dependencies },

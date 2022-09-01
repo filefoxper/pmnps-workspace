@@ -8,8 +8,8 @@
   "homepage": "https://github.com/filefoxper/pmnps-workspace/packages/@pmnps/plugin-dependencies",
   "author": "Jimmy.Harding",
   "dependencies": {
-    "@pmnps/core": "^3.1.0",
-    "@pmnps/tools": "^3.1.0"
+    "@pmnps/core": "^3.1.6",
+    "@pmnps/tools": "^3.1.9"
   },
   "devDependencies": {
     "prettier": "^2.7.0",

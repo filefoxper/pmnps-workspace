@@ -389,6 +389,26 @@ $ pmnps publish
 $ pmnps publish -o 123456
 ```
 
+### 使用 update 命令
+
+该命令用于更新包和平台中 package.json 的 version 字段。
+
+```
+$ pmnps update
+```
+
+使用者可以选择希望的版本更新方式。
+
+版本更新方式:
+
+```
+*.*.v
+*.v.*
+v.*.*
+```
+
+命令会根据选择的方式以及选择需要更新的包和平台，对它们的 package.json 中的 version 字段进行 `v` 相应位置的 `+1` 操作。
+
 ## 配置 package.json
 
 我们可以通过添加 "pmnps" 属性来使用 pmnps 的增强功能。
