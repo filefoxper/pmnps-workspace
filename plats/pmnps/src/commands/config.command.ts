@@ -70,6 +70,7 @@ async function writeConfig(): Promise<Config> {
 }
 
 async function configAction() {
+  message.desc('This command can modify the pmnps config, ex: `use git`, `build by dependencies`');
   message.info('start config pmnps ...');
   const rootPath = path.rootPath;
   const configJson = await writeConfig();

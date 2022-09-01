@@ -1,4 +1,4 @@
-import { Answers, QuestionCollection, ui } from 'inquirer';
+import { Answers, QuestionCollection, ui,Separator } from 'inquirer';
 import execa from 'execa';
 
 /* * types * */
@@ -279,6 +279,7 @@ export declare const inquirer: {
     questions: InQuestions<T>,
     initialAnswers?: Partial<T>
   ): Promise<T> & { ui: Prompt<T> };
+  Separator:typeof Separator
 };
 
 export declare const execution: {

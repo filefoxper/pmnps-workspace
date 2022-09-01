@@ -139,7 +139,7 @@ function parseParam(
   if (map[aliasKey]) {
     return map[aliasKey];
   }
-  const globalKey = fix?`<global>.${fix}`:'<global>';
+  const globalKey = fix ? `<global>.${fix}` : '<global>';
   if (map[globalKey]) {
     return map[globalKey];
   }
@@ -279,6 +279,21 @@ async function buildAction({
     message.warn('Please run `pmnps` to initial your workspace first.');
     return;
   }
+  const { buildByDependencies } = config.readConfig() || {};
+  message.desc('This command can help for building packages and platforms.');
+  message.desc('If you want to build a specific platform, use `-n` optional.');
+  message.desc(
+    'If you want to install dependencies before building, use `-i` optional.'
+  );
+  message.desc(
+    'If you want to pass params into building projects, use `-p` optional.'
+  );
+  if (!buildByDependencies) {
+    message.desc(
+      'If you only want to build the packages which are dependent by building platforms, use command `config`, and pick the `build by dependencies` option.'
+    );
+  }
+
   const { packages, platforms } = structure.packageJsons();
   const buildablePackages = packages.filter(d => d.scripts && d.scripts.build);
   const buildablePlatforms = platforms.filter(

@@ -7,6 +7,9 @@ function prompt<T extends Answers = Answers>(
   return inquirer.prompt(questions, initialAnswers);
 }
 
+const Separator = inquirer.Separator;
+
 export default {
-  prompt
+  prompt,
+  Separator
 };

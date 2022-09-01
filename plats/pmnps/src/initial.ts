@@ -1,5 +1,5 @@
 import { program } from 'commander';
-import {env, config, inquirer} from '@pmnps/core';
+import { env, config, inquirer } from '@pmnps/core';
 import { message } from '@pmnps/tools';
 import { commandRefresh, refreshAction } from './commands/refresh.command';
 import { commandConfig, configAction } from './commands/config.command';
@@ -7,6 +7,7 @@ import { commandCreate, emptyCreateAction } from './commands/create.command';
 import { commandStart, startAction } from './commands/start.command';
 import { commandBuild, buildAction } from './commands/build.command';
 import { commandPublish, publishAction } from './commands/publish.command';
+import { commandUpdate, updateAction } from './commands/update.command';
 
 const commands: Array<[string, (...args: any[]) => Promise<any>]> = [
   ['start', startAction],
@@ -14,6 +15,7 @@ const commands: Array<[string, (...args: any[]) => Promise<any>]> = [
   ['refresh', refreshAction],
   ['create', emptyCreateAction],
   ['config', configAction],
+  ['update', updateAction],
   ['publish', publishAction]
 ];
 
@@ -59,6 +61,7 @@ async function initial() {
   commandCreate(program);
   commandStart(program);
   commandBuild(program);
+  commandUpdate(program);
   commandPublish(program);
   program.parse();
 }

@@ -20,6 +20,12 @@ import { refreshAction } from './refresh.command';
 const range = ['package', 'platform', 'scope', 'template'];
 
 async function createScope(name: string) {
+  message.desc(
+    'This command can create a npm scope for your team, ex: `@babel`, `@pmnps`.'
+  );
+  message.desc(
+    'You can create packages into a scope, ex: `@pmnps/core`, `@pmnps/tools`'
+  );
   const scopeName = name.startsWith('@') ? name.slice(1) : name;
   const scope = `@${scopeName}`;
   message.info(`creating scope ${scope} ...`);
@@ -220,6 +226,9 @@ const packageConfigRange: Array<[string, string]> = [
 ];
 
 async function createPackage(name: string) {
+  message.desc(
+    'This command can create a package, and if you want you can create this package into an exist scope.'
+  );
   const configMap = new Map(packageConfigRange);
   const { createWithReadme, publishable } = config.readConfig() || {};
   const isScopePackage = name.startsWith('@');
@@ -346,6 +355,7 @@ var src_default = {
 }
 
 async function createTemplate(n: string) {
+  message.desc('This command can create a template for your package and platform creating.');
   const name = n;
   const isScopePackage = name.startsWith('@');
   const [scopeOrName, scopePackageName = ''] = name.split('/');
@@ -431,6 +441,7 @@ async function createTemplate(n: string) {
 }
 
 async function createPlatform(platformName: string) {
+  message.desc('This command can create a platform project.');
   const { createWithReadme, publishable } = config.readConfig() || {};
   const root = structure.root();
   const packRoot = (root.children || []).find(

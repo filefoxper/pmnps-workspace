@@ -9,13 +9,15 @@ import {
 } from '@pmnps/core';
 import { executeContext, message, Execution } from '@pmnps/tools';
 import { Command } from 'commander';
+import {readConfig} from "@pmnps/core/src/config";
 
 async function installGlobal({ exec }: Execution) {
   message.log(
     '==================== install project root dependencies ===================='
   );
   const subprocess = exec('npm', ['install'], {
-    cwd: path.rootPath,stdio:'inherit'
+    cwd: path.rootPath,
+    stdio: 'inherit'
   });
   await subprocess;
 }
@@ -37,7 +39,7 @@ async function installOwnRootPlats(
   );
   const subprocess = tool.exec('npm', ['install'], {
     cwd: dirPath,
-    stdio:'inherit'
+    stdio: 'inherit'
   });
   await subprocess;
   if (!rest.length) {
@@ -64,6 +66,88 @@ async function installAction(packageJsons: PackageJson[], refresh?: boolean) {
   return ownRoots;
 }
 
+function mergeDeps(
+  deps: Record<string, any> | undefined,
+  packageMap: Map<string, PackageJson>
+): Record<string, any> | undefined {
+  function rebuildVersion(version: string, target: string): string {
+    if (version.startsWith('>=') || version.startsWith('<=')) {
+      return version.slice(0, 2) + target;
+    }
+    if (
+      version.startsWith('~') ||
+      version.startsWith('^') ||
+      version.startsWith('>') ||
+      version.startsWith('<')
+    ) {
+      return version.slice(0, 1) + target;
+    }
+    return target;
+  }
+
+  if (!deps) {
+    return deps;
+  }
+  const es = Object.entries(deps || {})
+    .map(([n, v]) => {
+      const workspacePackage = packageMap.get(n);
+      if (!workspacePackage || !workspacePackage.version) {
+        return undefined;
+      }
+      if (v.includes(workspacePackage.version)) {
+        return undefined;
+      }
+      return [n, rebuildVersion(v, workspacePackage.version)];
+    })
+    .filter((d): d is [string, string] => !!d);
+  if (!es.length) {
+    return deps;
+  }
+  return { ...deps, ...Object.fromEntries(es) };
+}
+
+function refreshWorkspaceDependencies() {
+  const { platforms, packages } = structure.packageJsons();
+  const packageMap = new Map<string, PackageJson>(
+    packages.map(p => [p.name, p])
+  );
+  const needUpdates = packages
+    .concat(platforms)
+    .map(p => {
+      const { dependencies, devDependencies } = p;
+      const newDependencies = mergeDeps(dependencies, packageMap);
+      const newDevDependencies = mergeDeps(devDependencies, packageMap);
+      if (
+        dependencies === newDependencies &&
+        devDependencies === newDevDependencies
+      ) {
+        return undefined;
+      }
+      return {
+        ...p,
+        dependencies: newDependencies,
+        devDependencies: newDevDependencies
+      } as PackageJson;
+    })
+    .filter((d): d is PackageJson => !!d);
+  const updates = new Map(
+    needUpdates.map(p => [path.join(p.getDirPath?.(), 'package.json'), p])
+  );
+  structure.rebuild(r => {
+    const updateNodes = r.filter(node => {
+      return updates.has(node.path);
+    });
+    updateNodes.forEach(node => {
+      const json = updates.get(node.path);
+      if (!json) {
+        return;
+      }
+      node.write(JSON.stringify(json));
+    });
+  });
+  return updates;
+}
+
 async function refreshAction() {
   if (!config.readConfig()) {
     message.warn('Please run `pmnps` to initial your workspace first.');
@@ -77,6 +161,7 @@ async function refreshAction() {
   const { platforms, packages } = structure.packageJsons();
   const rootPackageJson = pkgJson.refreshRootPackageJson();
   const allPackageJsons = [...packages, ...platforms];
+  const updatePackageJsons = refreshWorkspaceDependencies();
   structure.rebuild((r, { file }) => {
     const ownRoots = allPackageJsons.filter(d => d.pmnps && d.pmnps.ownRoot);
     const ownRootNpmrcPaths = new Set(
@@ -91,13 +176,18 @@ async function refreshAction() {
   await structure.flush();
   await installAction(allPackageJsons);
   await executeContext(async ({ npx }) => {
-    return npx([
-      'prettier',
-      '--write',
-      path.join(path.rootPath, 'package.json'),
-      path.join(path.rootPath, '.pmnpsrc.json'),
-      path.join(path.rootPath, '.prettierrc.json')
-    ],{cwd:path.rootPath});
+    const paths = updatePackageJsons.keys();
+    return npx(
+      [
+        'prettier',
+        '--write',
+        path.join(path.rootPath, 'package.json'),
+        path.join(path.rootPath, '.pmnpsrc.json'),
+        path.join(path.rootPath, '.prettierrc.json'),
+        ...paths
+      ],
+      { cwd: path.rootPath }
+    );
   });
 }
 
@@ -105,7 +195,12 @@ function commandRefresh(program: Command) {
   program
     .command('refresh')
     .description('Refresh `packages & plats` to link the unlink packages.')
-    .action(refreshAction);
+    .action(async () => {
+      message.desc(
+        'This command can refresh packages and platforms, update package versions, and install dependencies.'
+      );
+      return refreshAction();
+    });
 }
 
 export { commandRefresh, refreshAction, installAction };

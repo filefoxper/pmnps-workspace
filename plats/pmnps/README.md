@@ -14,7 +14,7 @@
 
 ## Other language
 
-[中文](https://github.com/filefoxper/pmnps/blob/master/README_zh.md)
+[中文](https://github.com/filefoxper/pmnps-workspace/blob/master/plats/pmnps/README_zh.md)
 
 ## Install
 
@@ -394,6 +394,26 @@ If you have set one password, please use `-o` to pass it in.
 ```
 $ pmnps publish -o 123456
 ```
+
+### use update command
+
+The `update` command can help you updating the verions of your packages and platforms.
+
+```
+$ pmnps update
+```
+
+You can pick the updating mode, and choose the packages and platforms for updating.
+
+updating modes:
+
+```
+*.*.v
+*.v.*
+v.*.*
+```
+
+The mode will update the `v` position of your package.json `version` by `+1`.
 
 ## Package.json config
 

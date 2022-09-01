@@ -152,6 +152,8 @@ async function batchPublishPackages(
 }
 
 async function publishAction(option: { otp?: string }) {
+  message.desc('This command can publish packages and platforms to npm server');
+  message.desc('If you want to use one passwd, try `pmnps publish -o xxxxxx`');
   if (!config.readConfig()) {
     message.warn('Please run `pmnps` to initial your workspace first.');
     return;

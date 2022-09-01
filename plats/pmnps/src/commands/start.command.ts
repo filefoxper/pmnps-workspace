@@ -81,6 +81,8 @@ async function startPlatforms(
 }
 
 async function startAction({ all }: { all?: boolean }) {
+  message.desc('You can choose the platforms for developing by running the `npm start` script in package.jsons');
+  message.desc('The packages will be started too, if there are `start script` in the package.jsons');
   if (!config.readConfig()) {
     message.warn('Please run `pmnps` to initial your workspace first.');
     return;
