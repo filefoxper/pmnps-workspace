@@ -1,5 +1,5 @@
 {
-  "version": "3.2.0",
+  "version": "3.2.1",
   "dependencies": {
     "@pmnps/core": ">=3.1.6",
     "@pmnps/tools": ">=3.1.9",
