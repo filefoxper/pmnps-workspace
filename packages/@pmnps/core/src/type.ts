@@ -51,6 +51,7 @@ export type StructureNode = {
   projectType?: ProjectType;
   isPackageJson?: boolean;
   children?: StructureNode[];
+  commands?:('prettier'|'git')[];
   write(
     children?:
       | string
@@ -64,6 +65,7 @@ export type StructureNode = {
   filter(
     nodeLike: Partial<StructureNode> | ((node: StructureNode) => boolean)
   ): StructureNode[];
+  order(commands:('prettier'|'git')[]):StructureNode;
 };
 
 export type StructureRoot = {
@@ -95,6 +97,7 @@ export type PackageJsons = {
 export type Diff = {
   additions: Array<[string, StructureNode]>;
   modifies: Array<[string, StructureNode]>;
+  commands:Array<[string,StructureNode]>
 };
 
 export type Plugin = string | [string] | [string, Record<string | number, any>];

@@ -83,6 +83,7 @@ export declare type StructureNode = {
   filter(
     nodeLike: Partial<StructureNode> | ((node: StructureNode) => boolean)
   ): StructureNode[];
+  order(commands:('prettier'|'git')[]):StructureNode;
 };
 
 export declare type StructureRoot = {

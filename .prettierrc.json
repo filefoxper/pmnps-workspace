@@ -3,5 +3,8 @@
   "singleQuote": true,
   "tabWidth": 2,
   "trailingComma": "none",
-  "arrowParens": "avoid"
+  "arrowParens": "avoid",
+  "overrides": [
+    { "files": "*.code-workspace", "options": { "parser": "json" } }
+  ]
 }

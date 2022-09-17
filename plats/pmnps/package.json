@@ -1,7 +1,7 @@
 {
   "version": "3.2.1",
   "dependencies": {
-    "@pmnps/core": ">=3.1.6",
+    "@pmnps/core": ">=3.1.7",
     "@pmnps/tools": ">=3.1.9",
     "commander": "^9.3.0"
   },

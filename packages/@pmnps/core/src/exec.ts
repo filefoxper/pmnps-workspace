@@ -30,6 +30,10 @@ function killChildProcess([pid, process]: [
   }
 }
 
+export {
+  exec
+}
+
 export default {
   exec,
   command,
