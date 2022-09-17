@@ -614,3 +614,7 @@ All the plugins and templates can be kept in `packages` dir or publish to `npm s
 ### v3.1.3
 
 * provide `<global>` for build global params.
+
+### v3.2.1
+
+* when create a module package or platform, pmnps do not provide a "type":"module" config in `package.json`.

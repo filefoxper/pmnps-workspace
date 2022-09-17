@@ -28,6 +28,8 @@ import {
   README_FILE_NAME
 } from './define';
 import resource from './resource';
+import { exec } from './exec';
+import { readConfig } from './config';
 
 function createStructRoot(): StructureRoot {
   return {
@@ -41,7 +43,7 @@ function createStructRoot(): StructureRoot {
           'It can only be called in `structure.rebuild` callback'
         );
       }
-      alterRoot().modified=true;
+      alterRoot().modified = true;
       writeNodes(self, payload);
       return self;
     },
@@ -170,7 +172,7 @@ function createStructureNode(
           'It can only be called in `structure.rebuild` callback'
         );
       }
-      alterRoot().modified=true;
+      alterRoot().modified = true;
       self.alterName = name;
       if (self.parent) {
         self.parent.write([self]);
@@ -190,7 +192,7 @@ function createStructureNode(
           'It can only be called in `structure.rebuild` callback'
         );
       }
-      alterRoot().modified=true;
+      alterRoot().modified = true;
       if (payload == null) {
         self.action = 'write';
         return self;
@@ -230,6 +232,18 @@ function createStructureNode(
       nodeLike: Partial<StructureNode> | ((node: StructureNode) => boolean)
     ): StructureNode[] {
       return filter(this, nodeLike);
+    },
+    order(commands: ('prettier' | 'git')[]) {
+      const self = this;
+      if (!self.alter) {
+        throw new Error(
+          'It can only be called in `structure.rebuild` callback'
+        );
+      }
+      self.commands = self.commands
+        ? [...self.commands, ...commands]
+        : commands;
+      return self;
     }
   };
 }
@@ -334,8 +348,12 @@ async function fetchPackageJsons(root: StructureRoot) {
   ]);
   return {
     root: rootJson,
-    packages: packages.filter((d): d is PackageJson => !!d&&!!d.name&&!!d.version),
-    platforms: platforms.filter((d): d is PackageJson => !!d&&!!d.name&&!!d.version)
+    packages: packages.filter(
+      (d): d is PackageJson => !!d && !!d.name && !!d.version
+    ),
+    platforms: platforms.filter(
+      (d): d is PackageJson => !!d && !!d.name && !!d.version
+    )
   };
 }
 
@@ -522,7 +540,8 @@ function diff(source: StructureRoot, target: StructureRoot): Diff {
       ([path]) =>
         [path, targetMap.get(path) as StructureNode] as [string, StructureNode]
     );
-  return { additions, modifies };
+  const commands = targetArray.filter(([k, d]) => d.commands);
+  return { additions, modifies, commands };
 }
 
 function analyzeAdditions(
@@ -571,6 +590,9 @@ async function writeFileWithCallback(
     data = await readFile(path);
   }
   const result = content(data);
+  if (result === data) {
+    return;
+  }
   await writeFile(path, result);
 }
 
@@ -593,15 +615,40 @@ async function batchTask(taskGroups: Array<StructureNode[]>): Promise<void> {
   await batchTask(rest);
 }
 
+async function execute(commandNodes: StructureNode[]) {
+  const config = readConfig();
+  if (!config) {
+    return;
+  }
+  const { git } = config;
+  const prettierSet = new Set<string>();
+  const gitSet = new Set<string>();
+  commandNodes.forEach(node => {
+    const { commands = [] } = node;
+    if (commands.includes('prettier')) {
+      prettierSet.add(node.path);
+    }
+    if (commands.includes('git')) {
+      gitSet.add(node.path);
+    }
+  });
+  if (prettierSet.size) {
+    await exec('npx', ['prettier', '--write', ...prettierSet]);
+  }
+  if (gitSet.size && git) {
+    await exec('git', ['add', ...gitSet]);
+  }
+}
+
 async function flush(): Promise<void> {
   const r = root();
   const ar = alterRoot();
-  if (r === ar||!ar.modified) {
+  if (r === ar || !ar.modified) {
     await build();
     return;
   }
   const differ = diff(r, ar);
-  const { additions, modifies } = differ;
+  const { additions, modifies, commands } = differ;
   const taskGroups = analyzeAdditions(additions.map(([, s]) => s));
   const creates = batchTask(taskGroups);
   const verifies = modifies.map(async ([, s]): Promise<unknown> => {
@@ -623,6 +670,7 @@ async function flush(): Promise<void> {
   });
   await creates;
   await Promise.all(verifies);
+  await execute(commands.map(([k, d]) => d));
   await build();
 }
 

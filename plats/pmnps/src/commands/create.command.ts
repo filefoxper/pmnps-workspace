@@ -135,13 +135,11 @@ async function selectAccess(
     return strict
       ? {
           ...packageJson,
-          module: './src/index.js',
-          type: 'module'
+          module: './src/index.js'
         }
       : {
           ...packageJson,
-          module: 'index.js',
-          type: 'module'
+          module: 'index.js'
         };
   }
   const { access: ac } = await inquirer.prompt([
@@ -168,7 +166,6 @@ async function selectAccess(
     },
     module: {
       module: 'esm/index.js',
-      type: 'module',
       files: ['esm']
     }
   };
@@ -355,7 +352,9 @@ var src_default = {
 }
 
 async function createTemplate(n: string) {
-  message.desc('This command can create a template for your package and platform creating.');
+  message.desc(
+    'This command can create a template for your package and platform creating.'
+  );
   const name = n;
   const isScopePackage = name.startsWith('@');
   const [scopeOrName, scopePackageName = ''] = name.split('/');
