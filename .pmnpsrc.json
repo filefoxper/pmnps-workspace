@@ -6,5 +6,8 @@
   "buildByDependencies": false,
   "createWithReadme": true,
   "useOldDefineName": true,
-  "plugins": ["@pmnps/plugin-typescript", "@pmnps/plugin-vscode-workspace"]
+  "plugins": [
+    "@pmnps/plugin-typescript",
+    ["@pmnps/plugin-vscode-workspace", { "excludes": ["root"] }]
+  ]
 }
