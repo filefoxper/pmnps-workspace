@@ -1,11 +1,9 @@
-import {
-  PluginPack,
-  structure,
-  config,
-  file,
-  StructureNode
-} from '@pmnps/core';
+import { PluginPack, structure, config, StructureNode } from '@pmnps/core';
 import { message } from '@pmnps/tools';
+
+type Query = {
+  excludes: Array<string>;
+};
 
 function extractName(
   project: StructureNode,
@@ -18,7 +16,7 @@ function extractName(
   return extractName(project.parent, [name, ...childNames]);
 }
 
-export default function (): PluginPack {
+export default function (query?: Query): PluginPack {
   return {
     renders: {
       async refresh(): Promise<boolean> {
@@ -28,6 +26,7 @@ export default function (): PluginPack {
           return false;
         }
         const { workspace } = data;
+        const { excludes = [] } = query || {};
         const vscodeWorkspaceName = `${workspace}.code-workspace`;
         structure.rebuild((root, { file }) => {
           const projects = root.filter(
@@ -38,7 +37,9 @@ export default function (): PluginPack {
             const name = names.join('/');
             return { name, path: name };
           });
-          const folders = [{ name: 'root', path: '.' }, ...data];
+          const folders = [{ name: 'root', path: '.' }, ...data].filter(
+            ({ name }) => !excludes.some(e => name.startsWith(e))
+          );
           root.write([
             file('.prettierrc.json')
               .write(content => {
@@ -57,10 +58,12 @@ export default function (): PluginPack {
                 return JSON.stringify(newConfig);
               })
               .order(['prettier']),
-            file(vscodeWorkspaceName, { folders, settings: {} }).order([
-              'prettier',
-              'git'
-            ])
+            file(vscodeWorkspaceName, { folders, settings: {} })
+              .write(d => {
+                const data = JSON.parse(d);
+                return JSON.stringify({ ...data, folders });
+              })
+              .order(['prettier', 'git'])
           ]);
         });
         return true;
