@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import {
-  config,
+  config, env,
   ExecaSyncReturnValue,
   PackageJson,
   plugin,
@@ -327,6 +327,8 @@ async function buildAction({
     await buildTaskGroups('package', packageGroups, execution, param);
     await buildTaskGroups('platform', platformGroups, execution, param);
   });
+  message.success('build success');
+  process.exit(0);
 }
 
 function commandBuild(program: Command) {

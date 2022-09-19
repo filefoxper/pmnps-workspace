@@ -5,11 +5,10 @@ import {
   path,
   resource,
   plugin,
-  config
+  config, env
 } from '@pmnps/core';
 import { executeContext, message, Execution } from '@pmnps/tools';
 import { Command } from 'commander';
-import { readConfig } from '@pmnps/core/src/config';
 
 async function installGlobal({ exec }: Execution) {
   message.log(
@@ -18,13 +17,10 @@ async function installGlobal({ exec }: Execution) {
   const subprocess = exec('npm', ['install'], {
     cwd: path.rootPath
   });
-  const { stdout, stderr } = await subprocess;
-  if (stderr) {
-    message.warn(stderr);
-  }
-  if (stdout) {
-    message.log(stdout);
-  }
+  subprocess.stderr?.pipe(process.stderr);
+  subprocess.stdout?.pipe(process.stdout);
+  subprocess.stdin?.pipe(process.stdin);
+  await subprocess;
 }
 
 async function installOwnRootPlats(
@@ -45,13 +41,10 @@ async function installOwnRootPlats(
   const subprocess = tool.exec('npm', ['install'], {
     cwd: dirPath
   });
-  const { stdout, stderr } = await subprocess;
-  if (stderr) {
-    message.warn(stderr);
-  }
-  if (stdout) {
-    message.log(stdout);
-  }
+  subprocess.stderr?.pipe(process.stderr);
+  subprocess.stdout?.pipe(process.stdout);
+  subprocess.stdin?.pipe(process.stdin);
+  await subprocess;
   if (!rest.length) {
     return;
   }
@@ -209,7 +202,9 @@ function commandRefresh(program: Command) {
       message.desc(
         'This command can refresh packages and platforms, update package versions, and install dependencies.'
       );
-      return refreshAction();
+      await refreshAction();
+      message.success('refresh success');
+      process.exit(0);
     });
 }
 

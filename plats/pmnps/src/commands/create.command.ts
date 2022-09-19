@@ -540,7 +540,8 @@ async function createAction(
       choices: range
     }
   ]);
-  return create(creation, name);
+  await create(creation, name);
+  process.exit(0);
 }
 
 async function emptyCreateAction() {

@@ -192,6 +192,7 @@ async function publishAction(option: { otp?: string }) {
       logBuffer(d);
     });
   }
+  process.exit(0);
 }
 
 function commandPublish(program: Command) {

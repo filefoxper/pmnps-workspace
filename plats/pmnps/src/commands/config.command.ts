@@ -123,6 +123,7 @@ async function configAction() {
       }
     );
   });
+  process.exit(0);
 }
 
 function commandConfig(program: Command) {
