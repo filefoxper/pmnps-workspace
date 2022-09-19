@@ -9,17 +9,22 @@ import {
 } from '@pmnps/core';
 import { executeContext, message, Execution } from '@pmnps/tools';
 import { Command } from 'commander';
-import {readConfig} from "@pmnps/core/src/config";
+import { readConfig } from '@pmnps/core/src/config';
 
 async function installGlobal({ exec }: Execution) {
   message.log(
     '==================== install project root dependencies ===================='
   );
   const subprocess = exec('npm', ['install'], {
-    cwd: path.rootPath,
-    stdio: 'inherit'
+    cwd: path.rootPath
   });
-  await subprocess;
+  const { stdout, stderr } = await subprocess;
+  if (stderr) {
+    message.warn(stderr);
+  }
+  if (stdout) {
+    message.log(stdout);
+  }
 }
 
 async function installOwnRootPlats(
@@ -38,10 +43,15 @@ async function installOwnRootPlats(
     } dependencies ====================`
   );
   const subprocess = tool.exec('npm', ['install'], {
-    cwd: dirPath,
-    stdio: 'inherit'
+    cwd: dirPath
   });
-  await subprocess;
+  const { stdout, stderr } = await subprocess;
+  if (stderr) {
+    message.warn(stderr);
+  }
+  if (stdout) {
+    message.log(stdout);
+  }
   if (!rest.length) {
     return;
   }
