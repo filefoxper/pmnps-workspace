@@ -96,6 +96,7 @@ async function updateAction() {
     }),
     refreshAction()
   ]);
+  process.exit(0);
 }
 
 function commandUpdate(program: Command) {

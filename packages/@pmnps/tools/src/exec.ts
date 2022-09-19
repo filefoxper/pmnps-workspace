@@ -22,13 +22,13 @@ function killChildProcesses() {
 }
 
 function executeContext<T = void>(executor: Executor<T>): Promise<T> {
-  global.pmnps=global.pmnps||{};
-  global.pmnps.pidStats = global.pmnps.pidStats||new Map<number, ExecaChildProcess>();
+  // global.pmnps=global.pmnps||{};
+  // global.pmnps.pidStats = global.pmnps.pidStats||new Map<number, ExecaChildProcess>();
   function record(process: ExecaChildProcess) {
-    const { pid } = process;
-    if (pid != null) {
-      global.pmnps.pidStats!.set(pid, process);
-    }
+    // const { pid } = process;
+    // if (pid != null) {
+    //   global.pmnps.pidStats!.set(pid, process);
+    // }
     return process;
   }
 
@@ -60,27 +60,20 @@ function executeContext<T = void>(executor: Executor<T>): Promise<T> {
   return executor({ exec, command, npx });
 }
 
-if (env.IS_WINDOWS) {
-  const rl = require('readline').createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-
-  rl.on('SIGINT', function () {
-    process.emit('SIGINT');
-  });
-
-  rl.on('SIGTERM', function () {
-    process.emit('SIGTERM');
-  });
-}
-
-process.on('SIGINT', () => {
-  killChildProcesses();
-});
-
-process.on('SIGTERM', () => {
-  killChildProcesses();
-});
+// if (env.IS_WINDOWS) {
+//   const rl = require('readline').createInterface({
+//     input: process.stdin,
+//     output: process.stdout
+//   });
+//
+//   rl.on('SIGINT', function () {
+//     process.emit('SIGINT');
+//   });
+//
+// }
+//
+// process.on('SIGINT', () => {
+//   killChildProcesses();
+// });
 
 export { executeContext };

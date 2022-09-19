@@ -14,7 +14,7 @@
   "author": "Jimmy.Harding",
   "dependencies": {
     "@pmnps/core": ">=3.1.7",
-    "@pmnps/tools": ">=3.1.9"
+    "@pmnps/tools": ">=3.1.10"
   },
   "devDependencies": {
     "prettier": "^2.7.0",
