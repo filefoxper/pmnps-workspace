@@ -4,6 +4,7 @@ import { loadConfig } from './config';
 import { build } from './structure';
 import { loadPlugins } from './plugin';
 import { loadTemplates } from './template';
+import {loadCache} from "./local";
 
 function versionStringToNums(version: string) {
   return version.split('.').slice(0, 3).map(Number);
@@ -52,7 +53,7 @@ async function initial(): Promise<boolean> {
   if (!support) {
     return false;
   }
-  await loadConfig();
+  await Promise.all([loadConfig(),loadCache()]);
   await build();
   loadPlugins();
   loadTemplates();

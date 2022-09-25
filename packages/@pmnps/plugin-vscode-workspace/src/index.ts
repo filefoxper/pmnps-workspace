@@ -1,5 +1,6 @@
 import { PluginPack, structure, config, StructureNode } from '@pmnps/core';
 import { message } from '@pmnps/tools';
+import prettier from 'prettier';
 
 type Query = {
   excludes: Array<string>;
@@ -41,29 +42,12 @@ export default function (query?: Query): PluginPack {
             ({ name }) => !excludes.some(e => name.startsWith(e))
           );
           root.write([
-            file('.prettierrc.json')
-              .write(content => {
-                const data = JSON.parse(content);
-                const { overrides = [] } = data;
-                if (
-                  overrides.some(({ files }) => files === '*.code-workspace')
-                ) {
-                  return content;
-                }
-                const newOverrides = [
-                  ...overrides,
-                  { files: '*.code-workspace', options: { parser: 'json' } }
-                ];
-                const newConfig = { ...data, overrides: newOverrides };
-                return JSON.stringify(newConfig);
-              })
-              .order(['prettier']),
             file(vscodeWorkspaceName, { folders, settings: {} })
               .write(d => {
                 const data = JSON.parse(d);
-                return JSON.stringify({ ...data, folders });
+                return prettier.format(JSON.stringify({ ...data, folders }),{ parser: 'json' });
               })
-              .order(['prettier', 'git'])
+              .order(['git'])
           ]);
         });
         return true;

@@ -12,3 +12,4 @@ If you want to learn how to write plugins, please go [@pmnps/core](https://githu
 * [@pmnps/plugin-typescript](https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-typescript)
 * [@pmnps/plugin-react](https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-react)
 * [@pmnps/plugin-dependencies](https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-dependencies)
+* [@pmnps/plugin-vscode-workspace](https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-vscode-workspace)

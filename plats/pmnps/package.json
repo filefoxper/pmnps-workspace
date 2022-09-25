@@ -1,8 +1,8 @@
 {
-  "version": "3.2.4",
+  "version": "3.2.5",
   "dependencies": {
-    "@pmnps/core": ">=3.1.7",
-    "@pmnps/tools": ">=3.1.10",
+    "@pmnps/core": ">=3.1.8",
+    "@pmnps/tools": ">=3.1.11",
     "commander": "^9.3.0"
   },
   "devDependencies": {
@@ -30,7 +30,6 @@
     "ts-node": "^10.8.2",
     "typescript": "4.5.5"
   },
-  "preferGlobal": true,
   "bin": {
     "pmnps": "./bin/index.js"
   },

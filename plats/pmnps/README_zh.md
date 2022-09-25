@@ -292,6 +292,7 @@ $ pmnps refresh
 `start` 命令用于启动平台和公共包的 `npm start` 脚本，请在启用前配置 `package.json > scripts.start`。
 
 ```
+# 选择性启动
 $ pmnps start
 ```
 
@@ -303,6 +304,29 @@ $ pmnps start -a
 ```
 
 注意，在包编译模式下， start 命令将会启动所有公共包的 `npm start` 命令，如果，只希望启动被编译平台项目引用到的公共包，请使用 config 命令配置 `build by dependencies` 选项。
+
+如果需要设置常用启动分组，可以使用 `-g <group name>` 选项，使用该分组选项相同。
+
+设置分组 'xxx':
+
+```
+# 设置分组 'xxx'
+$ pmnps start -g xxx
+```
+
+使用分组 'xxx'
+
+```
+# 使用分组 'xxx'
+$ pmnps start -g xxx
+```
+
+重新设置分组 'xxx':
+
+```
+# 重新设置分组 'xxx'
+$ pmnps start -g xxx -c
+```
 
 ### 使用 build 命令
 

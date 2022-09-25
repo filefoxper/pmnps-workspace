@@ -54,6 +54,12 @@ export declare type Config = {
   createWithReadme?: boolean;
 };
 
+export declare type LocalCache = {
+  start:{
+    groups?:Record<string, undefined|(string[])>;
+  }
+}
+
 export declare type ProjectType = 'package' | 'platform' | 'root';
 
 export declare type StructureStatus = 'write' | 'create';
@@ -248,6 +254,13 @@ export declare const config: {
   writeConfig(config: Partial<Config>): void;
   flushConfig(): Promise<void>;
 };
+
+export declare const cache:{
+  loadCache(): Promise<LocalCache | null>;
+  readCache(): LocalCache | null;
+  writeCache(cache: Partial<LocalCache>): void;
+  flushCache(): Promise<void>;
+}
 
 export declare const resource: {
   defaultPackageJson: PackageJson;

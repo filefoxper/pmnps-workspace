@@ -152,6 +152,12 @@ export type Config = {
   createWithReadme?: boolean;
 };
 
+export type LocalCache = {
+  start:{
+    groups?:Record<string, undefined|(string[])>;
+  }
+}
+
 export type RebuildTools = {
   file(
     name: string,

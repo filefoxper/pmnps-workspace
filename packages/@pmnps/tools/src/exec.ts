@@ -1,8 +1,5 @@
 import { Executor } from './type';
-import { env, ExecaChildProcess, ExecaOptions, execution } from '@pmnps/core';
-import message from "./message";
-
-const { killChildProcess } = execution;
+import { ExecaChildProcess, ExecaOptions, execution } from '@pmnps/core';
 
 declare global {
   var pmnps: {
@@ -10,25 +7,9 @@ declare global {
   };
 }
 
-function killChildProcesses() {
-  [...(global.pmnps!.pidStats||[])].forEach((d)=>{
-    try {
-      killChildProcess(d)
-    }catch (e){
-      message.warn('This process may has been stopped yet.');
-    }
-  });
-  process.exit();
-}
-
 function executeContext<T = void>(executor: Executor<T>): Promise<T> {
-  // global.pmnps=global.pmnps||{};
-  // global.pmnps.pidStats = global.pmnps.pidStats||new Map<number, ExecaChildProcess>();
+
   function record(process: ExecaChildProcess) {
-    // const { pid } = process;
-    // if (pid != null) {
-    //   global.pmnps.pidStats!.set(pid, process);
-    // }
     return process;
   }
 
@@ -59,21 +40,5 @@ function executeContext<T = void>(executor: Executor<T>): Promise<T> {
 
   return executor({ exec, command, npx });
 }
-
-// if (env.IS_WINDOWS) {
-//   const rl = require('readline').createInterface({
-//     input: process.stdin,
-//     output: process.stdout
-//   });
-//
-//   rl.on('SIGINT', function () {
-//     process.emit('SIGINT');
-//   });
-//
-// }
-//
-// process.on('SIGINT', () => {
-//   killChildProcesses();
-// });
 
 export { executeContext };
