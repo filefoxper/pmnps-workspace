@@ -14,6 +14,7 @@ const gitignore = `node_modules/
 /dist/
 /bin/
 /esm/
+.pmnps.local.json
 `;
 
 const forbiddenNpmrc = 'registry=https://forbidden.manual.install';

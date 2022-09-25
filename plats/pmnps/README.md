@@ -310,6 +310,29 @@ $ pmnps start -a
 
 The `start` command will start every package which has a `start` script in package.json for supporting the platform, if you only want to start the packages which are in the dependencies tree of starting platforms, you can config it by use command `pmnps config`, and select `build by dependencies` option.
 
+You can set platforms as a group, so, you can start this group without choose operation.
+
+set platforms as a group named 'xxx':
+
+```
+# set platforms as a group named 'xxx'
+$ pmnps start -g xxx
+```
+
+use the group name you have set yet.
+
+```
+# use the group name you have set yet
+$ pmnps start -g xxx
+```
+
+reset group named 'xxx':
+
+```
+# reset group named 'xxx'
+$ pmnps start -g xxx -c
+```
+
 ### use build command
 
 The `build` command can build platforms and packages. It runs `npm run build` command in platform `package.json > scripts.build`.
