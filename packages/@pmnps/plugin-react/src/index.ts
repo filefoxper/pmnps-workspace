@@ -48,11 +48,11 @@ function writePackageJsonNode(
   });
 }
 
-function writeTsConfig(tsconfigNode: StructureNode) {
+function writeTsConfig(tsconfigNode: StructureNode,jsx:string) {
   tsconfigNode.write(c => {
     const tsconfig = JSON.parse(c);
     tsconfig.compilerOptions = tsconfig.compilerOptions || {};
-    tsconfig.compilerOptions.jsx = 'react';
+    tsconfig.compilerOptions.jsx = jsx;
     return JSON.stringify(tsconfig);
   });
 }
@@ -63,7 +63,18 @@ export default function (): PluginPack {
     isOption: true,
     renders: {
       async create([rv, rdv, trv, trdv]): Promise<boolean> {
-        const { changeIndex } = await inquirer.prompt([
+        const { jsx,changeIndex } = await inquirer.prompt([
+          {
+            name:'jsx',
+            type:'list',
+            message:'Please select a jsx parser:',
+            choices:[
+                'react',
+                'react-jsx',
+                'react-jsxdev',
+                'react-native'
+            ]
+          },
           {
             name: 'changeIndex',
             type: 'confirm',
@@ -105,7 +116,7 @@ export default function (): PluginPack {
               : undefined
           );
           if (tsconfigNode) {
-            writeTsConfig(tsconfigNode);
+            writeTsConfig(tsconfigNode,jsx);
           }
         });
         return true;
