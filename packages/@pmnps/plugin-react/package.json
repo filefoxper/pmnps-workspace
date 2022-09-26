@@ -1,6 +1,6 @@
 {
   "description": "This is a pmnps plugin to complete react project creation",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/filefoxper/pmnps-workspace/packages/@pmnps/plugin-react"
