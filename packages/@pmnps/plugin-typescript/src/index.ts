@@ -24,7 +24,8 @@ function renameIndexNode(indexNode: StructureNode | undefined) {
 function writePackageJsonNode(
   packageJsonNode: StructureNode | undefined,
   indexDExist: boolean,
-  tsVersion: string
+  tsVersion: string,
+  noDefineTypings?: boolean
 ) {
   if (!packageJsonNode) {
     return;
@@ -33,8 +34,8 @@ function writePackageJsonNode(
     const json: PackageJson = JSON.parse(content);
     json.devDependencies = json.devDependencies || {};
     if (indexDExist) {
-      json.typings = 'index.d.ts';
-      if (json.files) {
+      json.typings = noDefineTypings ? './src/index.ts' : 'index.d.ts';
+      if (json.files && !noDefineTypings) {
         json.files.push('index.d.ts');
       }
     }
@@ -90,12 +91,13 @@ function writeTsConfig(
   ]);
 }
 
-export default function (): PluginPack {
+export default function (query?: { noDefineTypings?: boolean }): PluginPack {
   return {
     requires: ['typescript'],
     isOption: true,
     renders: {
       async create([tsVersion]): Promise<boolean> {
+        const { noDefineTypings } = query || {};
         structure.rebuild((r, tools) => {
           const { file } = tools;
           const created = r.find(
@@ -113,13 +115,14 @@ export default function (): PluginPack {
           const shouldCreateIndexDFile =
             !!index &&
             index.parent === created.find({ name: 'src', type: 'dir' });
-          if (shouldCreateIndexDFile) {
+          if (shouldCreateIndexDFile&&!noDefineTypings) {
             created.write([file('index.d.ts')]);
           }
           writePackageJsonNode(
             packageJsonNode,
             shouldCreateIndexDFile,
-            tsVersion
+            tsVersion,
+            noDefineTypings
           );
           writeTsConfig(index, packageJsonNode, tools);
         });
