@@ -271,7 +271,7 @@ export declare const resource: {
 
 export declare const pkgJson: {
   writeRootPackageJson(packageJson: PackageJson): Promise<PackageJson>;
-  refreshRootPackageJson(): PackageJson;
+  refreshRootPackageJson(): [PackageJson, PackageJson[]];
 };
 
 export declare const plugin: {

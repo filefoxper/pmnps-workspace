@@ -641,3 +641,7 @@ All the plugins and templates can be kept in `packages` dir or publish to `npm s
 ### v3.2.1
 
 * when create a module package or platform, pmnps do not provide a "type":"module" config in `package.json`.
+
+### v3.2.6
+
+* when use `refresh` command, root package.json will feedback the dependencies which are exist in package/platform package.json.

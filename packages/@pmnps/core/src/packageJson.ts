@@ -1,5 +1,5 @@
 import { PackageJson } from './type';
-import { isFile, readJson } from './file';
+import { readJson } from './file';
 import path from './path';
 import { defaultPackageJson } from './resource';
 import { packageJsons } from './structure';
@@ -82,7 +82,7 @@ function removeDepPacks(
   };
 }
 
-function refreshRootPackageJson(): PackageJson {
+function refreshRootPackageJson(): [PackageJson, PackageJson[]] {
   const { root, packages, platforms } = packageJsons();
   const packageJson = packages.reduce(
     (data: PackageJson, pack: PackageJson) => {
@@ -117,7 +117,60 @@ function refreshRootPackageJson(): PackageJson {
     finalPackageJson,
     list
   );
-  return cleanPackageJson;
+  const rootPkgDeps = {
+    ...cleanPackageJson.dependencies,
+    ...cleanPackageJson.devDependencies
+  };
+  const needUpdates = packages
+    .concat(platforms)
+    .map(pkg => {
+      if (isOwnRootPlat(pkg)) {
+        return pkg;
+      }
+      const { dependencies = {}, devDependencies = {} } = pkg;
+      const dependenciesResult = Object.keys(dependencies).reduce(
+        (r, c) => {
+          const { deps } = r;
+          const rootVersion = rootPkgDeps[c];
+          if (rootVersion === deps[c]) {
+            return r;
+          }
+          return { deps: { ...deps, [c]: rootVersion }, needUpdate: true };
+        },
+        { deps: dependencies, needUpdate: false }
+      );
+      const devDependenciesResult = Object.keys(devDependencies).reduce(
+        (r, c) => {
+          const { deps } = r;
+          const rootVersion = rootPkgDeps[c];
+          if (rootVersion === deps[c]) {
+            return r;
+          }
+          return { deps: { ...deps, [c]: rootVersion }, needUpdate: true };
+        },
+        { deps: devDependencies, needUpdate: false }
+      );
+      if (!dependenciesResult.needUpdate && !devDependenciesResult.needUpdate) {
+        return pkg;
+      }
+      return {
+        ...pkg,
+        dependencies: dependenciesResult.deps,
+        devDependencies: devDependenciesResult.deps,
+        needPmnpsUpdatePackageJson: true
+      };
+    })
+    .filter(
+      (
+        d: PackageJson & { needPmnpsUpdatePackageJson?: boolean }
+      ): d is PackageJson & { needPmnpsUpdatePackageJson: true } =>
+        !!d.needPmnpsUpdatePackageJson
+    );
+  const updatePackages = needUpdates.map((d): PackageJson => {
+    const { needPmnpsUpdatePackageJson, ...pkg } = d;
+    return pkg;
+  });
+  return [cleanPackageJson, updatePackages];
 }
 
 export default {
