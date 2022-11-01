@@ -5,7 +5,7 @@ import {
   path,
   resource,
   plugin,
-  config, env
+  config
 } from '@pmnps/core';
 import { executeContext, message, Execution } from '@pmnps/tools';
 import { Command } from 'commander';
@@ -162,7 +162,8 @@ async function refreshAction() {
   }
   message.info('refresh project ...');
   const { platforms, packages } = structure.packageJsons();
-  const rootPackageJson = pkgJson.refreshRootPackageJson();
+  const [rootPackageJson, needUpdatePackageJsons] =
+    pkgJson.refreshRootPackageJson();
   const allPackageJsons = [...packages, ...platforms];
   const updatePackageJsons = refreshWorkspaceDependencies();
   structure.rebuild((r, { file }) => {
@@ -174,6 +175,20 @@ async function refreshAction() {
     r.write([file('package.json', rootPackageJson).write()]);
     npmrcNodes.forEach(s => {
       s.write(content => content.replace(resource.forbiddenNpmrc, ''));
+    });
+    const packageJsonEntries = needUpdatePackageJsons
+      .map(d => {
+        const dirPath = d.getDirPath?.();
+        if (!dirPath) {
+          return undefined;
+        }
+        return [path.join(dirPath, 'package.json'), d];
+      })
+      .filter((pair): pair is [string, PackageJson] => !!pair);
+    const packageJsonMap = new Map(packageJsonEntries);
+    r.filter(node => packageJsonMap.has(node.path)).forEach(node => {
+      const pkgJson = packageJsonMap.get(node.path);
+      node.write(JSON.stringify(pkgJson)).order(['prettier']);
     });
   });
   await structure.flush();
