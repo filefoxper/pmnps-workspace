@@ -132,7 +132,7 @@ function refreshRootPackageJson(): [PackageJson, PackageJson[]] {
         (r, c) => {
           const { deps } = r;
           const rootVersion = rootPkgDeps[c];
-          if (rootVersion === deps[c]) {
+          if (rootVersion === deps[c] || !rootVersion) {
             return r;
           }
           return { deps: { ...deps, [c]: rootVersion }, needUpdate: true };
@@ -143,7 +143,7 @@ function refreshRootPackageJson(): [PackageJson, PackageJson[]] {
         (r, c) => {
           const { deps } = r;
           const rootVersion = rootPkgDeps[c];
-          if (rootVersion === deps[c]) {
+          if (rootVersion === deps[c] || !rootVersion) {
             return r;
           }
           return { deps: { ...deps, [c]: rootVersion }, needUpdate: true };
