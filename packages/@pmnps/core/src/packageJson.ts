@@ -127,29 +127,33 @@ function refreshRootPackageJson(): [PackageJson, PackageJson[]] {
       if (isOwnRootPlat(pkg)) {
         return pkg;
       }
-      const { dependencies = {}, devDependencies = {} } = pkg;
-      const dependenciesResult = Object.keys(dependencies).reduce(
-        (r, c) => {
-          const { deps } = r;
-          const rootVersion = rootPkgDeps[c];
-          if (rootVersion === deps[c] || !rootVersion) {
-            return r;
-          }
-          return { deps: { ...deps, [c]: rootVersion }, needUpdate: true };
-        },
-        { deps: dependencies, needUpdate: false }
-      );
-      const devDependenciesResult = Object.keys(devDependencies).reduce(
-        (r, c) => {
-          const { deps } = r;
-          const rootVersion = rootPkgDeps[c];
-          if (rootVersion === deps[c] || !rootVersion) {
-            return r;
-          }
-          return { deps: { ...deps, [c]: rootVersion }, needUpdate: true };
-        },
-        { deps: devDependencies, needUpdate: false }
-      );
+      const { dependencies, devDependencies } = pkg;
+      const dependenciesResult = !dependencies
+        ? { deps: undefined, needUpdate: false }
+        : Object.keys(dependencies).reduce(
+            (r, c) => {
+              const { deps } = r;
+              const rootVersion = rootPkgDeps[c];
+              if (rootVersion === deps[c] || !rootVersion) {
+                return r;
+              }
+              return { deps: { ...deps, [c]: rootVersion }, needUpdate: true };
+            },
+            { deps: dependencies, needUpdate: false }
+          );
+      const devDependenciesResult = !devDependencies
+        ? { deps: undefined, needUpdate: false }
+        : Object.keys(devDependencies).reduce(
+            (r, c) => {
+              const { deps } = r;
+              const rootVersion = rootPkgDeps[c];
+              if (rootVersion === deps[c] || !rootVersion) {
+                return r;
+              }
+              return { deps: { ...deps, [c]: rootVersion }, needUpdate: true };
+            },
+            { deps: devDependencies, needUpdate: false }
+          );
       if (!dependenciesResult.needUpdate && !devDependenciesResult.needUpdate) {
         return pkg;
       }
