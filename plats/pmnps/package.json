@@ -1,8 +1,8 @@
 {
-  "version": "3.2.8",
+  "version": "3.2.10",
   "dependencies": {
-    "@pmnps/core": ">=3.1.11",
-    "@pmnps/tools": ">=3.1.11",
+    "@pmnps/core": ">=3.1.12",
+    "@pmnps/tools": ">=3.1.12",
     "commander": "^9.3.0"
   },
   "devDependencies": {
@@ -56,6 +56,6 @@
   ],
   "scripts": {
     "start": "ts-node ./src/test.index.ts",
-    "build": "esbuild ./src/index.ts --outfile=./bin/index.js --bundle --target=node17 --platform=node --format=cjs"
+    "build": "esbuild ./src/index.ts --outfile=./bin/index.js --bundle '--external:@pmnps/*' '--external:commander' --target=node17 --platform=node --format=cjs"
   }
 }

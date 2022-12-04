@@ -6,6 +6,7 @@ export declare type Pmnps = {
   platDependencies?: string[];
   ownRoot?: boolean;
   alias?: string;
+  publishable?:boolean;
   buildHook?: { before?: string; after?: string };
 };
 
