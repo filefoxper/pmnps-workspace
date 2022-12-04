@@ -166,10 +166,10 @@ async function publishAction(option: { otp?: string }) {
   message.log('start to analyze publish packages and platforms');
   const { packages, platforms } = structure.packageJsons();
   const packagesFetcher = executeContext(execution => {
-    return Promise.all(packages.map(p => fetchVersion(p, execution)));
+    return Promise.all(packages.filter((d)=>d.pmnps?.publishable !== false).map(p => fetchVersion(p, execution)));
   });
   const platformsFetcher = executeContext(execution => {
-    return Promise.all(platforms.map(p => fetchVersion(p, execution)));
+    return Promise.all(platforms.filter((d)=>d.pmnps?.publishable !== false).map(p => fetchVersion(p, execution)));
   });
   const packs = await packagesFetcher;
   const plats = await platformsFetcher;
