@@ -328,6 +328,20 @@ $ pmnps start -g xxx
 $ pmnps start -g xxx -c
 ```
 
+我们可以预先为我们希望启动的项目设置参数。
+
+```
+# 设置全局参数
+$ pmnps start -p xxx
+```
+
+or
+
+```
+# 设置独立启动项参数
+$ pmnps start -p "?<platName>= xxx"
+```
+
 ### 使用 build 命令
 
 `build` 命令用于启动多个或单个平台的 `npm run build` 脚本，请在启用前配置 `package.json > scripts.build`。
