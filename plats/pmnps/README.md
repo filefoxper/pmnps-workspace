@@ -333,6 +333,20 @@ reset group named 'xxx':
 $ pmnps start -g xxx -c
 ```
 
+We can set parameters for starting platforms, it looks like build params, but has no `buildHooks`.
+
+```
+# set parameters
+$ pmnps start -p xxx
+```
+
+or
+
+```
+# set parameters
+$ pmnps start -p "?<platName>= xxx"
+```
+
 ### use build command
 
 The `build` command can build platforms and packages. It runs `npm run build` command in platform `package.json > scripts.build`.

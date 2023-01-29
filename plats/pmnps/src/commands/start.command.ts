@@ -8,6 +8,7 @@ import {
   structure
 } from '@pmnps/core';
 import { executeContext, message } from '@pmnps/tools';
+import { parseParam } from './params';
 
 function markPackage(
   range: Array<PackageJson>,
@@ -69,12 +70,14 @@ function startPackages(platforms: PackageJson[], packages: PackageJson[]) {
 
 async function startPlatforms(
   platforms: PackageJson[],
-  packages: PackageJson[]
+  packages: PackageJson[],
+  params: string | undefined
 ) {
   const packagesStarter = startPackages(platforms, packages);
   const starter = executeContext(({ exec }) => {
     const runners = platforms.map(platform => {
-      return exec('npm', ['start'], {
+      const pam = parseParam(platform, params);
+      return exec('npm', pam ? ['start', '-- ' + pam] : ['start'], {
         cwd: platform.getDirPath?.(),
         stdio: 'inherit'
       });
@@ -88,14 +91,15 @@ async function startAction(op?: {
   all?: boolean;
   group?: string;
   choose?: boolean;
+  params?: string;
 }) {
   const { start: startCache } = cache.readCache() || {};
-  const { all, group, choose } = op || {};
+  const { all, group, choose, params } = op || {};
   message.desc(
-    'You can choose the platforms for developing by running the `npm start` script in package.jsons'
+    'You can choose the platforms or packages for developing by running the `npm start` script in package.jsons'
   );
   message.desc(
-    'The packages will be started too, if there are `start script` in the package.jsons'
+    'If you want to set parameters for starting platforms or packages, use `-p "xxx"` option'
   );
   message.desc(
     'If you want to start all platforms without choose operation, use `-a` option.'
@@ -129,12 +133,12 @@ async function startAction(op?: {
   const validGroupForms = forms.filter(d => groupSet.has(d.name));
   if (validGroupForms.length && !choose) {
     message.info(`start developing group ${group?.trim() || 'unknown'}`);
-    await startPlatforms(validGroupForms, packages);
+    await startPlatforms(validGroupForms, packages, params);
     return;
   }
   if (all && !choose) {
     message.info(`start developing all platform`);
-    await startPlatforms(platforms, packages);
+    await startPlatforms(platforms, packages, params);
     return;
   }
   const names = forms.map(d => d.name);
@@ -158,14 +162,14 @@ async function startAction(op?: {
       ...startCache,
       groups: {
         ...startCache?.groups,
-        [group.trim() || 'unknown']: groupValue.length?groupValue:undefined
+        [group.trim() || 'unknown']: groupValue.length ? groupValue : undefined
       }
     };
     cache.writeCache({ start: c });
     await cache.flushCache();
   }
   message.info(`start developing platforms: ${platNames.join()}`);
-  await startPlatforms(platformList, packages);
+  await startPlatforms(platformList, packages, params);
 }
 
 function commandStart(program: Command) {
@@ -174,6 +178,7 @@ function commandStart(program: Command) {
     .description('Start `platform` for development.')
     .option('-a, --all', 'Start all platform for development')
     .option('-c, --choose', 'Start with force choose option')
+    .option('-p, --param <char>', 'Enter the platform start params')
     .option('-g, --group <char>', 'Memo the started platforms as a group')
     .action(startAction);
 }
