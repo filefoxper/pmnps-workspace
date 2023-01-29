@@ -74,10 +74,10 @@ async function startPlatforms(
   params: string | undefined
 ) {
   const packagesStarter = startPackages(platforms, packages);
-  const starter = executeContext(({ exec }) => {
+  const starter = executeContext(({ exec,command }) => {
     const runners = platforms.map(platform => {
       const pam = parseParam(platform, params);
-      return exec('npm', pam ? ['start', '-- ' + pam] : ['start'], {
+      return command(pam?`npm start -- ${pam}`:'npm start', {
         cwd: platform.getDirPath?.(),
         stdio: 'inherit'
       });
@@ -91,10 +91,10 @@ async function startAction(op?: {
   all?: boolean;
   group?: string;
   choose?: boolean;
-  params?: string;
+  param?: string;
 }) {
   const { start: startCache } = cache.readCache() || {};
-  const { all, group, choose, params } = op || {};
+  const { all, group, choose, param:params } = op || {};
   message.desc(
     'You can choose the platforms or packages for developing by running the `npm start` script in package.jsons'
   );
