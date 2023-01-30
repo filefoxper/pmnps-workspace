@@ -659,3 +659,8 @@ All the plugins and templates can be kept in `packages` dir or publish to `npm s
 ### v3.2.6
 
 * when use `refresh` command, root package.json will feedback the dependencies which are exist in package/platform package.json.
+
+### v3.3.0
+
+* prettier `package.json` with `prettier-package-json`.
+* if the workspace projects can be published, the `ownRoot` packages or platforms will not update the version of dependency workspace packages when use command `pmnps update`. 

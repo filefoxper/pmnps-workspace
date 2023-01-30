@@ -71,7 +71,9 @@ async function installAction(packageJsons: PackageJson[], refresh?: boolean) {
 
 function mergeDeps(
   deps: Record<string, any> | undefined,
-  packageMap: Map<string, PackageJson>
+  packageMap: Map<string, PackageJson>,
+  isPlatformOwnRoot: boolean,
+  allPublishable: boolean
 ): Record<string, any> | undefined {
   function rebuildVersion(version: string, target: string): string {
     if (version.startsWith('>=') || version.startsWith('<=')) {
@@ -100,6 +102,13 @@ function mergeDeps(
       if (v.includes(workspacePackage.version)) {
         return undefined;
       }
+      if (
+        isPlatformOwnRoot &&
+        allPublishable &&
+        workspacePackage.pmnps?.publishable !== false
+      ) {
+        return undefined;
+      }
       return [n, rebuildVersion(v, workspacePackage.version)];
     })
     .filter((d): d is [string, string] => !!d);
@@ -110,6 +119,7 @@ function mergeDeps(
 }
 
 function refreshWorkspaceDependencies() {
+  const { publishable = false } = config.readConfig() || {};
   const { platforms, packages } = structure.packageJsons();
   const packageMap = new Map<string, PackageJson>(
     packages.map(p => [p.name, p])
@@ -117,9 +127,20 @@ function refreshWorkspaceDependencies() {
   const needUpdates = packages
     .concat(platforms)
     .map(p => {
-      const { dependencies, devDependencies } = p;
-      const newDependencies = mergeDeps(dependencies, packageMap);
-      const newDevDependencies = mergeDeps(devDependencies, packageMap);
+      const { dependencies, devDependencies, pmnps = {} } = p;
+      const ownRoot = pmnps.ownRoot || false;
+      const newDependencies = mergeDeps(
+        dependencies,
+        packageMap,
+        ownRoot,
+        publishable
+      );
+      const newDevDependencies = mergeDeps(
+        devDependencies,
+        packageMap,
+        ownRoot,
+        publishable
+      );
       if (
         dependencies === newDependencies &&
         devDependencies === newDevDependencies
@@ -192,21 +213,27 @@ async function refreshAction() {
     });
   });
   await structure.flush();
-  await installAction(allPackageJsons);
   await executeContext(async ({ npx }) => {
     const paths = updatePackageJsons.keys();
-    return npx(
-      [
-        'prettier',
+    await Promise.all([
+      npx([
+        'prettier-package-json',
         '--write',
         path.join(path.rootPath, 'package.json'),
-        path.join(path.rootPath, '.pmnpsrc.json'),
-        path.join(path.rootPath, '.prettierrc.json'),
         ...paths
-      ],
-      { cwd: path.rootPath }
-    );
+      ]),
+      npx(
+        [
+          'prettier',
+          '--write',
+          path.join(path.rootPath, '.pmnpsrc.json'),
+          path.join(path.rootPath, '.prettierrc.json')
+        ],
+        { cwd: path.rootPath }
+      )
+    ]);
   });
+  await installAction(allPackageJsons);
 }
 
 function commandRefresh(program: Command) {

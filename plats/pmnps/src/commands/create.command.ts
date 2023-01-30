@@ -100,9 +100,16 @@ async function selectTemplates(
     if (git) {
       await exec('git', ['add', folderPath], { cwd: path.rootPath });
     }
-    await npx(['prettier', '--write', path.join(folderPath, 'package.json')], {
-      cwd: path.rootPath
-    });
+    await npx(
+      [
+        'prettier-package-json',
+        '--write',
+        path.join(folderPath, 'package.json')
+      ],
+      {
+        cwd: path.rootPath
+      }
+    );
   });
   return true;
 }
@@ -199,16 +206,31 @@ async function optimize(
   const files = (node.children || []).filter(
     ({ type, name }) => type === 'file' && name.endsWith('.json')
   );
-  const filePaths = files.map(file => file.path);
+  const packageJsonPaths = files
+    .filter(file => file.name.toLocaleLowerCase() === 'package.json')
+    .map(file => file.path);
+  const filePaths = files
+    .filter(file => file.name.toLocaleLowerCase() !== 'package.json')
+    .map(file => file.path);
   await executeContext(async ({ exec, npx }): Promise<void> => {
     let gitProcess: Promise<unknown> = Promise.resolve(undefined);
     if (git) {
       gitProcess = exec('git', ['add', node.path], { cwd: path.rootPath });
     }
+    const packageJsonPrettierProcess = npx(
+      ['prettier-package-json', '--write', ...packageJsonPaths],
+      {
+        cwd: path.rootPath
+      }
+    );
     const prettierProcess = npx(['prettier', '--write', ...filePaths], {
       cwd: path.rootPath
     });
-    await Promise.all([gitProcess, prettierProcess]);
+    await Promise.all([
+      gitProcess,
+      packageJsonPrettierProcess,
+      prettierProcess
+    ]);
   });
 }
 
