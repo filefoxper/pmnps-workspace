@@ -92,7 +92,7 @@ async function updateAction() {
   await structure.flush();
   await Promise.all([
     executeContext(({ npx }) => {
-      return npx(['prettier', '--write', ...jsons], { cwd: path.rootPath });
+      return npx(['prettier-package-json', '--write', ...jsons], { cwd: path.rootPath });
     }),
     refreshAction()
   ]);

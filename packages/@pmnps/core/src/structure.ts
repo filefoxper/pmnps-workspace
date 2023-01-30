@@ -622,22 +622,34 @@ async function execute(commandNodes: StructureNode[]) {
   }
   const { git } = config;
   const prettierSet = new Set<string>();
+  const packageJsonPrettierSet = new Set<string>();
   const gitSet = new Set<string>();
   commandNodes.forEach(node => {
     const { commands = [] } = node;
     if (commands.includes('prettier')) {
-      prettierSet.add(node.path);
+      if (node.name.toLocaleLowerCase() === 'package.json') {
+        packageJsonPrettierSet.add(node.path);
+      } else {
+        prettierSet.add(node.path);
+      }
     }
     if (commands.includes('git')) {
       gitSet.add(node.path);
     }
   });
-  if (prettierSet.size) {
-    await exec('npx', ['prettier', '--write', ...prettierSet]);
-  }
-  if (gitSet.size && git) {
-    await exec('git', ['add', ...gitSet]);
-  }
+  await Promise.all([
+    packageJsonPrettierSet.size
+      ? exec('npx', [
+          'prettier-package-json',
+          '--write',
+          ...packageJsonPrettierSet
+        ])
+      : Promise.resolve(),
+    prettierSet.size
+      ? exec('npx', ['prettier', '--write', ...prettierSet])
+      : Promise.resolve(),
+    gitSet.size && git ? exec('git', ['add', ...gitSet]) : Promise.resolve()
+  ]);
 }
 
 async function flush(): Promise<void> {
