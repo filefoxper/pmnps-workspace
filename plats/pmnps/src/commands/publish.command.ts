@@ -18,15 +18,15 @@ async function fetchVersion(
   if (pri || !version || !name) {
     return null;
   }
-  if(force){
-    return pack;
-  }
   try {
     const { stdout, stderr } = await exec('npm', ['view', name, 'version']);
     if (stderr) {
       return pack;
     }
     const remoteVersion = stdout.trim();
+    if (remoteVersion !== version && force) {
+      return pack;
+    }
     const isNotGreater = env.versionCompare(remoteVersion, version);
     if (!isNotGreater) {
       return pack;
