@@ -11,11 +11,15 @@ import { executeContext, Execution, message } from '@pmnps/tools';
 
 async function fetchVersion(
   pack: PackageJson,
-  { exec }: Execution
+  { exec }: Execution,
+  force?: boolean
 ): Promise<PackageJson | null> {
   const { name, version, private: pri } = pack;
   if (pri || !version || !name) {
     return null;
+  }
+  if(force){
+    return pack;
   }
   try {
     const { stdout, stderr } = await exec('npm', ['view', name, 'version']);
@@ -151,7 +155,7 @@ async function batchPublishPackages(
   return publishPackageTask('package', tasks, packSet, option);
 }
 
-async function publishAction(option: { otp?: string }) {
+async function publishAction(option: { otp?: string; force?: boolean }) {
   message.desc('This command can publish packages and platforms to npm server');
   message.desc('If you want to use one passwd, try `pmnps publish -o xxxxxx`');
   if (!config.readConfig()) {
@@ -166,10 +170,18 @@ async function publishAction(option: { otp?: string }) {
   message.log('start to analyze publish packages and platforms');
   const { packages, platforms } = structure.packageJsons();
   const packagesFetcher = executeContext(execution => {
-    return Promise.all(packages.filter((d)=>d.pmnps?.publishable !== false).map(p => fetchVersion(p, execution)));
+    return Promise.all(
+      packages
+        .filter(d => d.pmnps?.publishable !== false)
+        .map(p => fetchVersion(p, execution, option.force))
+    );
   });
   const platformsFetcher = executeContext(execution => {
-    return Promise.all(platforms.filter((d)=>d.pmnps?.publishable !== false).map(p => fetchVersion(p, execution)));
+    return Promise.all(
+      platforms
+        .filter(d => d.pmnps?.publishable !== false)
+        .map(p => fetchVersion(p, execution, option.force))
+    );
   });
   const packs = await packagesFetcher;
   const plats = await platformsFetcher;
@@ -200,6 +212,10 @@ function commandPublish(program: Command) {
     .command('publish')
     .description('Publish all packages and platforms')
     .option('-o, --otp <char>', 'Set the one-time passwd for publishing')
+    .option(
+      '-f, --force',
+      'Set force update mode for publishing without version detection.'
+    )
     .action(publishAction);
 }
 
