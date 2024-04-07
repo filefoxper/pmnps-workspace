@@ -1,0 +1,8 @@
+{
+  "name": "test",
+  "private": true,
+  "projectType": "monorepo",
+  "useGit": true,
+  "registry": "https://registry.npmmirror.com",
+  "usePerformanceFirst": false
+}

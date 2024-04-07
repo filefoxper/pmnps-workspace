@@ -1,22 +1,12 @@
 {
-  "name": "pmnps-workspace",
-  "version": "3.0.0",
-  "description": "project of monorepo platforms",
-  "scripts": {
-    "start": "ts-node ./platforms/pmnps/src/index.ts"
-  },
-  "workspaces": [
-    "packages/*",
-    "packages/@pmnps/*",
-    "platforms/*"
-  ],
+  "version": "4.0.0",
   "dependencies": {
-    "chalk": "^4.1.0",
-    "commander": "^9.3.0",
     "execa": "^5.1.0",
+    "chalk": "^4.1.0",
     "inquirer": "^6.5.0",
-    "prettier": "^3.0.3",
-    "prettier-package-json": "^2.8.0"
+    "commander": "^9.3.0",
+    "prettier-package-json": "^2.8.0",
+    "prettier": "^3.0.3"
   },
   "devDependencies": {
     "@types/inquirer": "^8.2.1",
@@ -48,5 +38,33 @@
     "ts-node": "^10.8.2",
     "typescript": "4.5.5",
     "tsconfig-paths": "^4.2.0"
+  },
+  "bin": {
+    "pmnps": "./bin/index.js"
+  },
+  "module": "src/index.ts",
+  "typings": "index.d.ts",
+  "files": [
+    "index.d.ts",
+    "bin"
+  ],
+  "name": "pmnps",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/filefoxper/pmnps-workspace"
+  },
+  "homepage": "https://github.com/filefoxper/pmnps-workspace",
+  "author": "Jimmy.Harding",
+  "description": "This is a monorepo manage tool using `npm:workspaces` tech",
+  "keywords": [
+    "monorepo",
+    "platforms",
+    "browser",
+    "js"
+  ],
+  "scripts": {
+    "start": "ts-node --require ./tsconfig-paths-require.js ./src/test.index.ts",
+    "build": "esbuild ./src/index.ts --outfile=./bin/index.js --bundle '--external:@pmnps/*' '--external:commander' --target=node17 --platform=node --format=cjs"
   }
 }
