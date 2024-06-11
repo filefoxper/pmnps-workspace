@@ -436,7 +436,7 @@ async function executeAction(
 ) {
   let error = undefined;
   if (actionMessage?.type !== 'failed') {
-    error = await executeTasks(requireRefresh);
+    error = await executeTasks(requireRefresh||(actionMessage?.requireRefresh??false));
   }
   message.result(error ?? actionMessage);
   process.exit(0);

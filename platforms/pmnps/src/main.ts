@@ -88,7 +88,8 @@ async function initialAction() {
   if (!action) {
     return null;
   }
-  return action();
+  const res:ActionMessage = await action();
+  return {requireRefresh:['create','config'].includes(command),...res} as ActionMessage;
 }
 
 export async function startup(isDevelopment?: boolean) {
@@ -117,8 +118,7 @@ export async function startup(isDevelopment?: boolean) {
       .name('pmnps')
       .description('This is a tool to build monorepo platforms.')
       .version('4.0.0'),
-    initialAction,
-    true
+    initialAction
   );
   useCommand(
     program
@@ -151,8 +151,7 @@ export async function startup(isDevelopment?: boolean) {
         'Enter a group name for starting packages and platforms.'
       )
       .description('Run start script in packages or platforms'),
-    startAction,
-    true
+    startAction
   );
   useCommand(
     program
@@ -168,12 +167,12 @@ export async function startup(isDevelopment?: boolean) {
         'Enter a group name for executing scripts in package or platforms.'
       )
       .description('Run script in packages or platforms'),
-    runAction,
-    true
+    runAction
   );
   useCommand(
     program.command('config').description('Config pmnps workspace'),
-    configAction
+    configAction,
+      true
   );
   customizedCommands.forEach(c => {
     const { name: commandName, options, action, description } = c;
