@@ -1,9 +1,12 @@
 import process from 'process';
-import child_process from 'child_process';
 import { version, message, path } from '@/libs';
 import { hold } from '@/state';
 import { configure } from '@/support';
-import type { State } from '@/types';
+import { getPluginRequireState } from '@/plugin';
+import { loadCacheData } from '@/loadCacheProcessor';
+import { loadData } from '@/loadProcessor';
+import type { Template } from '@/types';
+import type { Plugin } from '@pmnps/tools';
 
 function checkRuntimeEnv(): string | null {
   const nodeVersion = process.version;
@@ -17,42 +20,78 @@ function checkRuntimeEnv(): string | null {
   return `Env: node@${nodeV}`;
 }
 
-export function loadProject(withCache?: boolean) {
+export async function loadProject(withCache?: boolean) {
   const cwd = path.cwd();
-  const resolver = {
-    resolve: (s: Partial<State>) => {
-      // noop
-    },
-    reject: (e: unknown) => {
-      // noop
+  if (withCache) {
+    const [projectState, cacheProjectState] = await Promise.all([
+      loadData(cwd),
+      loadCacheData(cwd)
+    ]);
+    return { ...projectState, ...cacheProjectState };
+  }
+  return loadData(cwd);
+}
+
+function loadPlugins(
+  cwd: string,
+  plugins: (string | [string, Record<string, any>])[]
+) {
+  return plugins.map(pluginSetting => {
+    const name =
+      typeof pluginSetting === 'string' ? pluginSetting : pluginSetting[0];
+    const setting =
+      typeof pluginSetting === 'string' ? undefined : pluginSetting[1];
+    const names = name.split('/');
+    const requiredPathname = path.join(cwd, 'node_modules', ...names);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const plugin = require(requiredPathname).default as Plugin<any>;
+    return plugin(setting);
+  });
+}
+
+function loadTemplates(cwd: string, templates: string[]) {
+  return templates.map(name => {
+    const names = name.split('/');
+    const requiredPathname = path.join(cwd, 'node_modules', ...names);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const temp = require(requiredPathname).default as Template;
+    return { ...temp, name };
+  });
+}
+
+async function loadConfig() {
+  const cwd = path.cwd();
+  const config = await configure.readConfig(cwd);
+  const { templates = [], plugins = [] } = config ?? {};
+  return {
+    config,
+    resources: {
+      templates: loadTemplates(cwd, templates),
+      commands: loadPlugins(cwd, plugins)
     }
   };
-  const loadPromise = new Promise<Partial<State>>((resolve, reject) => {
-    resolver.resolve = (s: Partial<State>) => {
-      resolve(s);
-    };
-    resolver.reject = reject as any;
-  });
-  const loadProcess = child_process.fork(
-    path.join(__dirname, 'loadProcessor'),
-    [cwd, withCache ? 'true' : 'false'],
-    {
-      stdio: 'inherit'
+}
+
+function loadPluginRequires() {
+  const state = getPluginRequireState();
+  const commands = hold.instance().getCommands();
+  commands.forEach(command => {
+    if (!command.require) {
+      return;
     }
-  );
-  loadProcess.once('message', (s: Partial<State>) => {
-    resolver.resolve(s);
+    command.require(state, command.options);
   });
-  return loadPromise;
 }
 
 async function load() {
   const holder = hold.instance();
-  const [config, partState] = await Promise.all([
-    configure.readConfig(path.cwd()),
-    holder.load(true)
-  ]);
+  const loading = holder.load(true);
+  const fetchingConfig = loadConfig();
+  const partState = await loading;
+  const { config, resources } = await fetchingConfig;
   holder.setState({ ...partState, config });
+  holder.setResources(resources);
+  loadPluginRequires();
 }
 
 export async function initialize() {

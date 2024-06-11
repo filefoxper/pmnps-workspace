@@ -1,12 +1,10 @@
 {
   "version": "4.0.0",
   "dependencies": {
-    "execa": "^5.1.0",
-    "chalk": "^4.1.0",
-    "inquirer": "^6.5.0",
     "commander": "^9.3.0",
     "prettier-package-json": "^2.8.0",
-    "prettier": "^3.0.3"
+    "prettier": "^3.0.3",
+    "@pmnps/tools": "4.0.0"
   },
   "devDependencies": {
     "@types/inquirer": "^8.2.1",
@@ -29,10 +27,8 @@
     "prettier": "^3.0.3",
     "prettier-eslint": "^15.0.1",
     "prettier-eslint-cli": "^7.1.0",
-    "husky": "^7.0.1",
     "identity-obj-proxy": "^3.0.0",
     "jest": "26.6.3",
-    "pre-commit": "^1.2.2",
     "regenerator-runtime": "0.13.5",
     "rewire": "5.0.0",
     "ts-node": "^10.8.2",
@@ -65,6 +61,6 @@
   ],
   "scripts": {
     "start": "ts-node --require ./tsconfig-paths-require.js ./src/test.index.ts",
-    "build": "esbuild ./src/index.ts --outfile=./bin/index.js --bundle '--external:@pmnps/*' '--external:commander' --target=node17 --platform=node --format=cjs"
+    "build": "esbuild ./src/index.ts --outfile=./bin/index.js --bundle --external:@pmnps/* --target=node17 --platform=node --format=cjs"
   }
 }

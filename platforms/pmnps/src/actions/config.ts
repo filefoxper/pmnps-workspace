@@ -4,7 +4,6 @@ import { CONF_NAME, DEFAULT_REGISTRY } from '@/constants';
 import { packageJson } from '@/resource';
 import { equal } from '@/libs/polyfill';
 import { task } from './task';
-import { refreshAction } from './refresh';
 import type { ActionMessage } from '@/actions/task/type';
 import type { Config, ConfigDetail, PackageJson } from '@/types';
 
@@ -12,7 +11,8 @@ const configRange: Array<[string, keyof ConfigDetail]> = [
   ['allow publish to npm', 'private'],
   ['use monorepo', 'projectType'],
   ['use git', 'useGit'],
-  ['use performance first', 'usePerformanceFirst']
+  ['use performance first', 'usePerformanceFirst'],
+  ['use refresh after install', 'useRefreshAfterInstall']
 ];
 
 function decodeConfig(config: Config | undefined) {
@@ -20,7 +20,8 @@ function decodeConfig(config: Config | undefined) {
     projectType: 'monorepo',
     private: false,
     useGit: true,
-    usePerformanceFirst: true
+    usePerformanceFirst: true,
+    useRefreshAfterInstall: true
   };
   const conf =
     config ??
@@ -29,7 +30,8 @@ function decodeConfig(config: Config | undefined) {
       projectType: 'monorepo',
       private: true,
       useGit: false,
-      usePerformanceFirst: false
+      usePerformanceFirst: false,
+      useRefreshAfterInstall: false
     } as Config);
   return configRange
     .map(([desc, value]) => {
@@ -43,13 +45,15 @@ function encodeConfig(detail: string[]): ConfigDetail {
     projectType: 'monorepo',
     private: false,
     useGit: true,
-    usePerformanceFirst: true
+    usePerformanceFirst: true,
+    useRefreshAfterInstall: true
   };
   const allUncheckedConfig = {
     projectType: 'classify',
     private: true,
     useGit: false,
-    usePerformanceFirst: false
+    usePerformanceFirst: false,
+    useRefreshAfterInstall: false
   };
   const set = new Set(detail);
   const e = configRange.map(([desc, key]) => {
@@ -64,27 +68,45 @@ function encodeConfig(detail: string[]): ConfigDetail {
 
 export async function configAction(): Promise<ActionMessage> {
   const { config, project } = hold.instance().getState();
-  const { name, detail } = await inquirer.prompt([
-    {
-      name: 'name',
-      type: 'input',
-      message: 'Please enter the project name:',
-      default: config?.name || project?.name || 'project'
-    },
-    {
-      name: 'detail',
-      type: 'checkbox',
-      message: 'Config project:',
-      choices: [
-        new inquirer.Separator('-- choosing --'),
-        ...configRange.map(([desc]) => desc),
-        new inquirer.Separator('-- setting --'),
-        'set customized npm registry',
-        'set project detail'
-      ],
-      default: decodeConfig(config)
-    }
-  ]);
+  let name = config?.name;
+  const { name: firstSetName, detail } = await inquirer.prompt(
+    [
+      config?.name
+        ? null
+        : {
+            name: 'name',
+            type: 'input',
+            message: 'Please enter the project name:',
+            default: config?.name || project?.name || 'project'
+          },
+      {
+        name: 'detail',
+        type: 'checkbox',
+        message: 'Config project:',
+        choices: [
+          new inquirer.Separator('-- choosing --'),
+          ...configRange.map(([desc]) => desc),
+          new inquirer.Separator('-- setting --'),
+          'set workspace name',
+          'set customized npm registry',
+          'set project detail'
+        ],
+        default: decodeConfig(config)
+      }
+    ].filter(d => d != null)
+  );
+  name = firstSetName;
+  if (detail.includes('set workspace name')) {
+    const { name: workspaceName } = await inquirer.prompt([
+      {
+        name: 'name',
+        type: 'input',
+        message: 'Please enter the workspace name:',
+        default: name ?? 'project'
+      }
+    ]);
+    name = workspaceName;
+  }
   let registry = config?.registry?.trim() || DEFAULT_REGISTRY;
   if (detail.includes('set customized npm registry')) {
     const { registry: reg } = await inquirer.prompt([
@@ -125,7 +147,15 @@ export async function configAction(): Promise<ActionMessage> {
   const configDetail = encodeConfig(detail);
   const { config: nextConfig } = hold.instance().setState(s => {
     const { config: cf } = s;
-    return { ...s, config: { ...cf, name, ...configDetail, ...configSetting } };
+    return {
+      ...s,
+      config: {
+        ...cf,
+        name: name == null ? cf?.name ?? 'project' : name,
+        ...configDetail,
+        ...configSetting
+      }
+    };
   });
   if (!nextConfig) {
     return {
@@ -160,6 +190,5 @@ export async function configAction(): Promise<ActionMessage> {
     },
     type: 'workspace'
   });
-  await refreshAction();
   return { content: 'Config success...', type: 'success' };
 }

@@ -127,15 +127,21 @@ function diffDepsPackagesMap(
     if (!targetPj) {
       return true;
     }
-    const { dependencies: sd, devDependencies: sdev } = v.packageJson;
-    const { dependencies: td, devDependencies: tdev } = targetPj;
+    const {
+      dependencies: sd,
+      devDependencies: sdev,
+      pmnps: spmnps
+    } = v.packageJson;
+    const { dependencies: td, devDependencies: tdev, pmnps: tpmnps } = targetPj;
     const sourceDeps = omitBy({ ...sd, ...sdev }, (v, k) =>
       packageNameSet.has(k as string)
     );
     const targetDeps = omitBy({ ...td, ...tdev }, (v, k) =>
       packageNameSet.has(k as string)
     );
-    return !equal(sourceDeps, targetDeps);
+    return (
+      !equal(sourceDeps, targetDeps) || spmnps?.ownRoot !== tpmnps?.ownRoot
+    );
   });
   return Object.fromEntries(differs);
 }

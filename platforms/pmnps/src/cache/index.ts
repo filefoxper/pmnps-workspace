@@ -24,6 +24,11 @@ async function writeCache<T extends Record<string, any>>(
   return data;
 }
 
+async function readCommands(cwd: string) {
+  await mkdirIfNotExist(cwd);
+  return readCache<Record<string, Record<string, any>>>(cwd, 'commands.json');
+}
+
 async function readProject(cwd: string) {
   await mkdirIfNotExist(cwd);
   return readCache<ProjectSerial>(cwd, 'project.json');
@@ -36,5 +41,6 @@ async function writeProject(cwd: string, project: ProjectSerial) {
 
 export const cache = {
   readProject,
+  readCommands,
   writeProject
 };

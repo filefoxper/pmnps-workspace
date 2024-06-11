@@ -1,6 +1,7 @@
 import { projectSupport } from '@/support';
+import type { Command } from '@pmnps/tools';
 import type { Task } from '@/actions/task/type';
-import type { Package, Project, State } from '@/types';
+import type { Package, Project, Resource, State, Template } from '@/types';
 
 export function hold() {
   const listeners: (() => void)[] = [];
@@ -13,8 +14,24 @@ export function hold() {
       Object.assign(global.pmnps.state, s);
       return global.pmnps.state;
     },
+    setResources(resources: Partial<Resource>) {
+      global.pmnps.resources = global.pmnps.resources || {};
+      Object.assign(global.pmnps.resources, resources);
+    },
     load(withCache?: boolean) {
       return global.pmnps.load(withCache);
+    },
+    setTemplates(templates: Template[]) {
+      global.pmnps.resources.templates = templates;
+    },
+    getTemplates() {
+      return global.pmnps.resources.templates;
+    },
+    setCommands(commands: Command[]) {
+      global.pmnps.resources.commands = commands;
+    },
+    getCommands() {
+      return global.pmnps.resources.commands;
     },
     pushTask(task: Task) {
       global.pmnps.tasks.push(task);
@@ -24,6 +41,9 @@ export function hold() {
       const tasks = [...global.pmnps.tasks];
       global.pmnps.tasks = [];
       return tasks;
+    },
+    getTasks() {
+      return global.pmnps.tasks || [];
     },
     diffProjectPackages() {
       const { cacheProject: target, project: source } = global.pmnps.state;
@@ -80,4 +100,9 @@ export function hold() {
 
 hold.instance = function instance() {
   return global.pmnps.holder;
+};
+
+hold.plugin = {
+  getProject: () => hold.instance().getState().project,
+  getConfig: () => hold.instance().getState().config
 };

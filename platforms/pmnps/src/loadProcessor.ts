@@ -1,6 +1,4 @@
-import process from 'process';
 import { file, path } from '@/libs';
-import { cache } from '@/cache';
 import { projectSupport } from '@/support';
 import { groupBy, orderBy, partition } from '@/libs/polyfill';
 import type { Package, PackageJson, Project, State } from '@/types';
@@ -46,35 +44,7 @@ async function readProject(cwd: string): Promise<undefined | Project> {
   };
 }
 
-async function loadCacheProject(cwd: string): Promise<Project | undefined> {
-  const serial = await cache.readProject(cwd);
-  if (serial == null) {
-    return serial;
-  }
-  try {
-    return projectSupport.parse(serial);
-  } catch (e) {
-    return undefined;
-  }
+export async function loadData(cwd: string) {
+  const project = await readProject(cwd);
+  return { project } as State;
 }
-
-function loadProject(cwd: string) {
-  return readProject(cwd);
-}
-
-async function load(cwd: string, useCache: 'true' | 'false') {
-  if (!useCache) {
-    const project = await loadProject(cwd);
-    process.send?.({ project } as State);
-    return;
-  }
-  const [cacheProject, project] = await Promise.all([
-    loadCacheProject(cwd),
-    loadProject(cwd)
-  ]);
-  process.send?.({ project, cacheProject } as State);
-}
-
-const [, , cwd, useCache] = process.argv;
-
-load(cwd, useCache as 'true' | 'false');

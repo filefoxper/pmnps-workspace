@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "name": "@template/package",
+  "version": "1.0.0",
+  "description": "This is a package",
+  "main": "index.js",
+  "files": [
+    "resource"
+  ]
+}

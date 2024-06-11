@@ -17,6 +17,7 @@ export interface WriteTask {
   file: string;
   content: string | object | ((c: string | null) => string | null);
   cwd?: string;
+  dirSource?: string;
   option?: {
     formatter?: (content: string) => Promise<string>;
     skipIfExist?: true;
@@ -44,7 +45,8 @@ export interface Execution {
 
 export type Task = WriteTask | ExecuteTask | PackageTask;
 
-export type ActionMessage = {
+export type ActionMessage<P = unknown> = {
   type: 'success' | 'failed' | 'warning';
   content: string;
+  payload?: P;
 };

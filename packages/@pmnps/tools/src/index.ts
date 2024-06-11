@@ -1,5 +1,7 @@
-import message from './message';
+export { message } from './message';
 
-export { executeContext } from './exec';
+export { inquirer } from './inquirer';
 
-export { message };
+export { createPluginCommand } from './plugin';
+
+export { execution } from './exec';

@@ -1,5 +1,6 @@
 {
   "folders": [
+    { "name": "root", "path": "." },
     { "name": "packages/@pmnps/core", "path": "packages/@pmnps/core" },
     {
       "name": "packages/@pmnps/plugin-dependencies",

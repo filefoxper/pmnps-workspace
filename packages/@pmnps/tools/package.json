@@ -1,6 +1,6 @@
 {
-  "description": "These are tools for pmnps",
-  "version": "3.1.12",
+  "description": "These are tools for pmnps plugin development",
+  "version": "4.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/filefoxper/pmnps-workspace/packages/@pmnps/tools"
@@ -9,7 +9,8 @@
   "author": "Jimmy.Harding",
   "dependencies": {
     "chalk": "^4.1.0",
-    "@pmnps/core": ">=3.2.0"
+    "inquirer": "^6.5.0",
+    "execa": "^5.1.0"
   },
   "devDependencies": {
     "prettier": "^2.7.0",
@@ -24,6 +25,6 @@
   "name": "@pmnps/tools",
   "private": false,
   "scripts": {
-    "build": "esbuild ./src/index.ts --outfile=./dist/index.js --bundle '--external:@pmnps/*' '--external:chalk' --target=node17 --platform=node --format=cjs"
+    "build": "esbuild ./src/index.ts --outfile=./dist/index.js --bundle --target=node17 --platform=node --format=cjs"
   }
 }

@@ -1,10 +1,10 @@
-import { inquirer } from '@/libs';
+import { inquirer, path } from '@/libs';
 import { task } from '@/actions/task';
 import { hold } from '@/state';
 import { packageJson } from '@/resource';
 import { omitBy, pick } from '@/libs/polyfill';
-import { refreshAction } from '@/actions/refresh';
-import type { PackageJson, Scope } from '@/types';
+import { templateSupport } from '@/support/template';
+import type { PackageJson, PackageType, PmnpsJson, Scope } from '@/types';
 import type { ActionMessage } from '@/actions/task/type';
 
 const creations: Array<string | undefined | null> = [
@@ -58,10 +58,32 @@ async function createScope(target: string | undefined): Promise<ActionMessage> {
   return { content: `Create scope "${scopeName}" success...`, type: 'success' };
 }
 
+function getRootPackageJson() {
+  const project = hold.instance().getState().project?.project ?? {};
+  return (
+    project.workspace?.packageJson ?? {
+      version: '0.0.0',
+      author: undefined
+    }
+  );
+}
+
 async function createPackageOrTemplate(
   target: string | undefined,
   packageType: 'package' | 'template' = 'package'
-): Promise<ActionMessage> {
+): Promise<
+  ActionMessage<
+    | {
+        paths: string[] | null;
+        packageJson:
+          | PackageJson
+          | null
+          | ((json: PackageJson | null) => PackageJson | null);
+        type: PackageType;
+      }
+    | undefined
+  >
+> {
   async function reselectScope(
     currentScopeName: string,
     similarScopes: Scope[],
@@ -92,9 +114,10 @@ async function createPackageOrTemplate(
     ]);
     return { content: scopeName, type: 'success' };
   }
+
   const res = await processName(packageType, target);
   if (res.type !== 'success') {
-    return res;
+    return res as ActionMessage<undefined>;
   }
   const { content: packageName } = res;
   const names = packageName.split('/');
@@ -106,10 +129,7 @@ async function createPackageOrTemplate(
     return undefined;
   })();
   const project = hold.instance().getState().project?.project ?? {};
-  const rootPackageJson = project.workspace?.packageJson ?? {
-    version: '0.0.0',
-    author: undefined
-  };
+  const rootPackageJson = getRootPackageJson();
   const scopes = project.scopes ?? [];
   const similarScopes =
     scopeName && scopes.every(s => s.name !== scopeName)
@@ -139,15 +159,52 @@ async function createPackageOrTemplate(
     const [directName] = names;
     return directName;
   })();
+  const packageJsonTemplate = omitBy(
+    pick(rootPackageJson, 'version', 'author'),
+    v => v == null
+  );
   const pj: PackageJson = packageJson(
     packageJsonName,
     'package',
-    omitBy(pick(rootPackageJson, 'version', 'author'), v => v == null)
+    packageJsonTemplate
   );
-  task.writePackage({ paths: packagePath, type: 'package', packageJson: pj });
   return {
     content: packageJsonName,
+    payload: { paths: packagePath, type: 'package', packageJson: pj },
     type: 'success'
+  };
+}
+
+async function setPackageOptions(
+  type: 'package' | 'platform'
+): Promise<{ pmnps?: PmnpsJson }> {
+  const { setting } = await inquirer.prompt([
+    {
+      name: 'setting',
+      type: 'confirm',
+      message: `Do you want to set options for this ${type}?`
+    }
+  ]);
+  if (!setting) {
+    return {};
+  }
+  const optionMap = new Map([[`use node_modules in this ${type}`, 'ownRoot']]);
+  const { options } = await inquirer.prompt([
+    {
+      name: 'options',
+      type: 'checkbox',
+      message: `Choose options for this ${type}`,
+      choices: [...optionMap.keys()]
+    }
+  ]);
+  const pmnpsOptions: string[] = options;
+  const pmnpsKeys = pmnpsOptions
+    .map(n => optionMap.get(n))
+    .filter((v): v is string => !!v);
+  return {
+    pmnps: Object.fromEntries(
+      pmnpsKeys.map(k => [k, true] as const)
+    ) as PmnpsJson
   };
 }
 
@@ -158,6 +215,60 @@ async function createPackage(
   if (res.type !== 'success') {
     return res;
   }
+  const { payload } = res;
+  if (!payload) {
+    return {
+      content: `Create package "${res.content}" success...`,
+      type: 'success'
+    };
+  }
+  const pmnpsWrap = await setPackageOptions('package');
+  const templates = hold
+    .instance()
+    .getTemplates()
+    .filter(t => t.projectType === 'package');
+  if (templates.length) {
+    const { confirm } = await inquirer.prompt([
+      {
+        name: 'confirm',
+        type: 'confirm',
+        message: 'Do you want to create package with templates?'
+      }
+    ]);
+    if (!confirm) {
+      const pj = payload.packageJson as PackageJson;
+      task.writePackage({
+        ...payload,
+        packageJson: p => (p == null ? pj : { ...p, ...pj, ...pmnpsWrap })
+      });
+      return {
+        content: `Create package "${res.content}" success...`,
+        type: 'success'
+      };
+    }
+    const templateMap = new Map(templates.map(t => [t.name, t]));
+    const names = templates.map(t => t.name);
+    const { templateName } = await inquirer.prompt([
+      {
+        name: 'templateName',
+        type: 'list',
+        choices: names,
+        message: 'Choose the template for creating package.',
+        default: names[0]
+      }
+    ]);
+    const template = templateMap.get(templateName);
+    if (template) {
+      const sourcePath = path.join(template.path, 'resource');
+      const targetPath = path.join(path.cwd(), ...(payload.paths ?? []));
+      task.writeDir(targetPath, { source: sourcePath });
+    }
+  }
+  const pj = payload.packageJson as PackageJson;
+  task.writePackage({
+    ...payload,
+    packageJson: p => (p == null ? pj : { ...p, ...pj, ...pmnpsWrap })
+  });
   return {
     content: `Create package "${res.content}" success...`,
     type: 'success'
@@ -170,6 +281,57 @@ async function createTemplate(
   const res = await createPackageOrTemplate(target, 'template');
   if (res.type !== 'success') {
     return res;
+  }
+  const { payload } = res;
+  if (!payload) {
+    return {
+      content: `Create template "${res.content}" success...`,
+      type: 'success'
+    };
+  }
+  const { templateType, setting } = await inquirer.prompt([
+    {
+      name: 'templateType',
+      type: 'list',
+      choices: ['package', 'platform'],
+      message: 'Choose a package type for your template.',
+      default: 'package'
+    },
+    {
+      name: 'setting',
+      type: 'confirm',
+      message: 'Do you want to set this template to config for usage?',
+      default: true
+    }
+  ]);
+  const parents = payload.paths as string[];
+  task.writeDir([...parents, 'resource']);
+  task.write(
+    path.join(path.cwd(), ...parents),
+    'index.js',
+    templateSupport.buildTemplate(templateType)
+  );
+  task.writePackage(
+    Object.assign(payload, {
+      packageJson: {
+        ...payload.packageJson,
+        main: 'index.js',
+        files: ['index.js', 'resource'],
+        pmnps: {
+          slot: 'template'
+        }
+      }
+    })
+  );
+  if (setting) {
+    task.writeConfig(cfg => {
+      const { templates = [] } = cfg;
+      const newTemplateSet = new Set([
+        ...templates,
+        payload.packageJson?.name || ''
+      ]);
+      return { ...cfg, templates: [...newTemplateSet] };
+    });
   }
   return {
     content: `Create template "${res.content}" success...`,
@@ -186,6 +348,64 @@ async function createPlatform(
   }
   const { content: name } = res;
   const platformName = name;
+  const templates = hold
+    .instance()
+    .getTemplates()
+    .filter(t => t.projectType === 'platform');
+  const rootPackageJson = getRootPackageJson();
+  const packageJsonTemplate = omitBy(
+    pick(rootPackageJson, 'version', 'author'),
+    v => v == null
+  );
+  const pj: PackageJson = packageJson(
+    platformName,
+    'platform',
+    packageJsonTemplate
+  );
+  const pmnpsWrap = await setPackageOptions('platform');
+  const paths = ['platforms', platformName];
+  if (templates.length) {
+    const { confirm } = await inquirer.prompt([
+      {
+        name: 'confirm',
+        type: 'confirm',
+        message: 'Do you want to create platform with templates?'
+      }
+    ]);
+    if (!confirm) {
+      task.writePackage({
+        paths,
+        packageJson: p => (p == null ? pj : { ...p, ...pj, ...pmnpsWrap }),
+        type: 'platform'
+      });
+      return {
+        content: `Create platform "${platformName}" success...`,
+        type: 'success'
+      };
+    }
+    const templateMap = new Map(templates.map(t => [t.name, t]));
+    const names = templates.map(t => t.name);
+    const { templateName } = await inquirer.prompt([
+      {
+        name: 'templateName',
+        type: 'list',
+        choices: names,
+        message: 'Choose the template for creating platform.',
+        default: names[0]
+      }
+    ]);
+    const template = templateMap.get(templateName);
+    if (template) {
+      const sourcePath = path.join(template.path, 'resource');
+      const targetPath = path.join(path.cwd(), ...paths);
+      task.writeDir(targetPath, { source: sourcePath });
+    }
+  }
+  task.writePackage({
+    paths,
+    packageJson: p => (p == null ? pj : { ...p, ...pj, ...pmnpsWrap }),
+    type: 'platform'
+  });
   return {
     content: `Create platform "${platformName}" success...`,
     type: 'success'
@@ -221,11 +441,9 @@ export async function createActionResolve(
   return createPackage(target);
 }
 
-export async function createAction(
+export function createAction(
   argument?: string | null,
   options?: { name?: string }
 ): Promise<ActionMessage> {
-  const result = await createActionResolve(argument, options);
-  await refreshAction();
-  return result;
+  return createActionResolve(argument, options);
 }

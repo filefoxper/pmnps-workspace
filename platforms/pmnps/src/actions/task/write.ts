@@ -38,11 +38,27 @@ async function readContent(p: string, fileName: string) {
   return file.readFile(path.join(p, fileName));
 }
 
+async function copydirs(tasks: WriteTask[]) {
+  const [copyTasks, createTasks] = partition(tasks, t => !!t.dirSource);
+  const map = new Map(copyTasks.map(t => [t.path, t]));
+  await Promise.all(
+    [...map.keys()].map(p => {
+      const t = map.get(p);
+      if (!t || !t.dirSource) {
+        return Promise.resolve(undefined);
+      }
+      const { dirSource } = t;
+      return file.copyFolder(dirSource, t.path);
+    })
+  );
+  return createTasks.filter(t => !map.has(t.path));
+}
+
 async function mkdirs(tasks: WriteTask[]) {
   const { cacheProject } = hold.instance().getState();
   const map = cacheProject?.packageMap ?? {};
-  const pathSet = new Set(tasks.map(d => d.path));
-  const paths = [...pathSet].filter(p => !map[p]);
+  const pathMap = new Map(tasks.map(d => [d.path, d]));
+  const paths = [...pathMap.keys()].filter(p => !map[p]);
   const sorted = orderBy(paths, [p => p.length], ['desc']);
   const result: string[] = [];
   let array = sorted;
@@ -53,12 +69,25 @@ async function mkdirs(tasks: WriteTask[]) {
       result.push(start);
     }
   }
-  return Promise.all(result.map(d => file.mkdirIfNotExist(d)));
+  return Promise.all(
+    result.map(d => {
+      const t = pathMap.get(d);
+      if (t == null) {
+        return Promise.resolve(undefined);
+      }
+      const { dirSource } = t;
+      if (dirSource) {
+        return file.copyFolder(dirSource, d);
+      }
+      return file.mkdirIfNotExist(d);
+    })
+  );
 }
 
 export async function write(...task: Task[]) {
   const tasks = task as WriteTask[];
   const [fileTasks, dirTasks] = partition(tasks, t => t.fileType === 'file');
+  const createDirTasks = await copydirs(dirTasks);
   const groups = groupBy(fileTasks, t => path.join(t.path, t.file));
   const taskReaders = [...groups.values()].map(async group => {
     const [start, ...rest] = group;
@@ -103,6 +132,6 @@ export async function write(...task: Task[]) {
   });
   const ts = await Promise.all(taskReaders);
   const fileWrites = ts.filter((d): d is WriteTask => !!d && d.content != null);
-  await mkdirs([...fileWrites, ...dirTasks]);
+  await mkdirs([...fileWrites, ...createDirTasks]);
   return Promise.all(fileWrites.map(writeTask));
 }

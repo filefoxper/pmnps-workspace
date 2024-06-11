@@ -10,11 +10,11 @@
 
 # pmnps
 
-`pmnps` is a monorepo tool, it uses `npm workspaces` to manage packages and platforms.
+`pmnps` is a monorepo tool, it uses `npm workspaces` to manage packages and platforms. From `pmnps@4.0.0`, this tool focuses on the monorepo management, so, it removes some functions like `build`, `publish` and `update`. If you still need these functions, you can find some of them in plugins.
 
 ## Other language
 
-[中文](https://github.com/filefoxper/pmnps-workspace/blob/master/plats/pmnps/README_zh.md)
+[中文](https://github.com/filefoxper/pmnps-workspace/blob/master/platforms/pmnps/README_zh.md)
 
 ## Install
 
@@ -42,7 +42,7 @@ after running:
 - project
   - node_modules
   - packages
-  - platforms(plats)
+  - platforms
   package.json
   .pmnpsrc.json
 ```
@@ -65,7 +65,9 @@ Welcome to pmnps!
   template
 ```
 
-This command can guide you to create `package`, `platform`, `scope` and `template`. Or you can enter the command detail as below.
+This command guides you to create a `package`, `platform`, `scope` or `template`. 
+
+You can enter the command detail for a quick create.
 
 #### create scope
 
@@ -120,30 +122,13 @@ test
 then:
 
 ```
-? Config the package: 
- ◉ create package with `root index module`
-❯◉ create package buildable
+ Use command: create package
+? Do you want to set options for this package? Yes
+? Choose options for this package (Press <space> to select, <a> to toggle all, <i> to invert selection)
+>(*) use node_modules in this package
 ```
 
-* Create package with `root index module` will set `index` file in package root dir just like the `test` package below, if you want set it into a `src` dir, please do not select it.
-* Create package buildable will add `build` and `start` scripts into the package.json file in this package, so, when use command `build` or `start`, this package may be started or built too.
-
-If you are building a web app project using tools like `webpack` or `esbuild`, and you do not want to publish the packages, then, do not choose `create package buildable` may have a better develop experience, you can develop platform without build packages. And in this case, if you choose `create package with root index module`, it can take more good experience for you, for the most popular code eidtors like `vscode`, `intellij ideal` are supporting the `index` code relationship, that you can edit or view codes of packages from platform without using any plugins or writing description file like `index.d.ts`.
-
-If package is buildable, then:
-
-```
-? Choose the access type about your package:
-❯◉ main
- ◯ module
- ◯ bin
-```
-
-* main: set package.json `main field` to be `dist/index.js`.
-* module: set package.json `module field` to be `esm/index.js`.
-* bin: set package.json `bin field` to be `bin/index.js`.
-
-If package is not buildable, system will auto choose the module type, and then set package.json `module field` to be `src/index.*` or `index.*`.
+* Create package with `use node_modules in this package` makes package uses a private node_modules folder in it.
 
 after running:
 
@@ -153,6 +138,33 @@ after running:
   - packages
     - @scope
     - test
+      node_modules  // private node_modules folder
+      index.js
+      package.json
+  - platforms
+  package.json
+  .pmnpsrc.json
+```
+
+If you want to build a package with the root node_modules folder, just skip this option.
+
+```
+? Use command: create package
+? Please enter the package name: test
+? Do you want to set options for this package? No
+? Do you want to create package with templates? Yes
+? Choose the template for creating package. (Use arrow keys)
+> @template/package 
+```
+
+after running:
+
+```
+- project
+  - node_modules
+  - packages
+    - @scope
+    - test  // no private node_modules folder
       index.js
       package.json
   - platforms
@@ -177,45 +189,7 @@ Welcome to pmnps!
 ? Please enter the platform name: 
 ```
 
-enter:
-
-```
-web-test
-```
-
-then:
-
-```
-? Choose the access type about your package:
-❯◉ main
- ◯ module
- ◯ bin
-```
-
-* main: set package.json `main field` to be `dist/index.js`.
-* module: set package.json `module field` to be `esm/index.js`.
-* bin: set package.json `bin field` to be `bin/index.js`.
-
-after running:
-
-```
-- project
-  - node_modules
-  - packages
-    - @scope
-    - test
-      index.js
-      package.json
-  - platforms
-    - web-test
-      -src
-        index.js
-      package.json
-  package.json
-  .pmnpsrc.json
-```
-
-This command can create a platform project.
+It is similar to create a package, but it creates a platform project.
 
 #### create a template
 
@@ -290,7 +264,7 @@ after running:
   .pmnpsrc.json
 ```
 
-This command can install all the dependencies and devDependencies from `packages` and `platforms` into the root `node_modules`.
+This command can install all the dependencies and devDependencies from `packages` and `platforms` into the root `node_modules`. It is the key command for keeping packages and platforms in monorepo environment.
 
 ### use start command
 
@@ -333,64 +307,23 @@ reset group named 'xxx':
 $ pmnps start -g xxx -c
 ```
 
-We can set parameters for starting platforms, it looks like build params, but has no `buildHooks`.
+### use run command
+
+The `run` command is not listed in pmnps command options. It runs npm scripts in `package.json`.
 
 ```
-# set parameters
-$ pmnps start -p xxx
-```
-
-or
-
-```
-# set parameters
-$ pmnps start -p "?<platName>= xxx"
-```
-
-### use build command
-
-The `build` command can build platforms and packages. It runs `npm run build` command in platform `package.json > scripts.build`.
-
-```
-# build all platforms
-$ pmnps build
+# build all platforms and packages
+$ pmnps run build
 ```
 
 or
 
 ```
-# build a special platform
-$ pmnps build -n <platform name>
+# build a special platform or package
+$ pmnps run build -n <platform or package name>
 ```
 
-If you want to install dependencies before build, you can use option param `-i`.
-
-```
-# install before build
-$ pmnps build -n <platform name> -i
-```
-
-If you want to add param to npm build script, you can use option param `-p <param>`.
-
-```
-$ pmnps build -p "-e <param desc>"
-```
-
-Notice, the usage about `-p` below is global for all building platforms, if you want assign the params to platforms which you want params work on, you can use the url query param to replace it.
-
-```
-# it looks like url query param "?name1=param1&name2=param2"
-$ pmnps build -p "?platA= -i -e <param desc>&platB= -i"
-```
-
-If you want to pass params for a build hook, try `<platform>.before` or `<platform>.after`:
-
-```
-# it looks like url query param "?name1=param1&name2=param2"
-$ pmnps build -p "?platA.before= -i -e <param desc>&platB.after= -i&platC= -b <param desc>"
-```
-
-The `build` command will build every package which has a `build` script in package.json for supporting the platform, if you only want to build the packages which are in the dependencies tree of building platforms, you can config it by use command `pmnps config`, and select `build by dependencies` option.
+It is similar with `start` command, but requires a script name for running.
 
 ### use config command
 
@@ -400,123 +333,47 @@ The `config` command allows you to reconfig pmnps. You can open `git usage`, `re
 $ pmnps config
 ```
 
+after running:
+
+```
+? Use command: config
+? Please enter the project name: test
+? Config project: (Press <space> to select, <a> to toggle all, <i> to invert selection)
+ -- choosing --
+ (*) allow publish to npm
+ (*) use monorepo
+>(*) use git
+ ( ) use performance first
+ ( ) use refresh after install
+ -- setting --
+ ( ) set customized npm registry
+>( ) set project detail
+
+```
+
 options:
 
 ```
 allow publish to npm              
-build by dependencies                
-create package or platform privately 
-create all with `README.md` file     
+use monorepo    
 use git       
-use old platforms dir name `plats`
+use performance first
+use refresh after install
 ```
 
 * `allow publish to npm`: This option allows you publish packages and platforms to npm server, if you do not want this happens, please do not choose it.
-* `build by dependencies`: This option makes the `build` and `start` command only pick the packages in the building platforms dependencies tree for working.
-* `create package or platform privately`: With this option, the package.json files created by pmnps will have a `private:true` field. It can protect the projects which are not allowed to a public space of npm server.
-* `create all with README.md file`: If you want other develops of your team can learn more about your package or platform, choose it, then the important creation will append a `README.md` file.
+* `use monorepo`: This option makes a monorepo environment.
 * `use git`: We are not certain if you have install a git tool, or you want to push your codes into git server, so, if you want, choose it.
-* `use old platforms dir name plats`: Before `pmnps@3.0.0`, we are using `plats` as a platforms root dir, and now we have change the name to `platforms`, if you still want to keep the old name, you can choose this option.
-
-### use publish command
-
-The `publish` command can help you publish the packages and platforms.
-
-```
-$ pmnps publish
-```
-
-If you have set one password, please use `-o` to pass it in.
-
-```
-$ pmnps publish -o 123456
-```
-
-### use update command
-
-The `update` command can help you updating the verions of your packages and platforms.
-
-```
-$ pmnps update
-```
-
-You can pick the updating mode, and choose the packages and platforms for updating.
-
-updating modes:
-
-```
-*.*.v
-*.v.*
-v.*.*
-```
-
-The mode will update the `v` position of your package.json `version` by `+1`.
+* `use performance first`: This option will skip descriptions and some checks to keep pmnps running with a higher performance.
+* `use refresh after install`: This option adds refresh command into the `postinstall` script of root `package.json`, so, after install all dependencies, it will refresh all packages and platforms.
 
 ## Package.json config
 
 Now, you can add `pmnps` property into your package.json in platforms or packages.
 
-### platform config platDependencies
-
-Add `pmnps.platDependencies` config to describe the build dependencies in platforms.
-
-platA -> package.json
-
-```
-{
-  "private": true,
-  "name": "platA",
-  "version": "0.0.1",
-  "scripts": {
-    "start": "...start",
-    "build": "... build"
-  },
-  "pmnps": {
-    "platDependencies": [
-      "platB"
-    ]
-  }
-}
-```
-
-platB -> package.json
-
-```
-{
-  "private": true,
-  "name": "platB",
-  "version": "0.0.1",
-  "scripts": {
-    "start": "...start",
-    "build": "... build"
-  },
-  "pmnps": {
-    "platDependencies": [
-      "platC"
-    ]
-  }
-}
-```
-
-platC -> package.json
-
-```
-{
-  "private": true,
-  "name": "platC",
-  "version": "0.0.1",
-  "scripts": {
-    "start": "...start",
-    "build": "... build"
-  }
-}
-```
-
-So, when use command `build`, it will follow the `platDependencies` build one by one, `build platC -> build platB -> build platA`.
-
 ### config ownRoot
 
-Add `pmnps.ownRoot` config to describe a platform or package which installs `node_modules` in its own root folder.
+Add `pmnps.ownRoot` config to describe a platform or package which installs `node_modules` in its own root folder. You can set it by using the option `use node_modules in this package` in `create package` or `create platform` command.
 
 ```
 {
@@ -533,90 +390,41 @@ Add `pmnps.ownRoot` config to describe a platform or package which installs `nod
 }
 ```
 
-### config alias
-
-Add `pmnps.alias` config to give your platform or package an alias name.
-
-```
-{
-  "private": true,
-  "name": "platB",
-  "version": "0.0.1",
-  "scripts": {
-    "start": "...start",
-    "build": "... build"
-  },
-  "pmnps": {
-    "alias": "pb"
-  }
-}
-```
-
-The alias name can work with `build -p` command option.
-
-```
-# it looks like url query param "?name1=param1&name2=param2"
-$ pmnps build -p "?platA= -i -e <param desc>&platB= -i"
-
-# use alias
-$ pmnps build -p "?pb= -i"
-```
-
-### config buildHook
-
-`pmnps.buildHook` provides two synchronous scripts `before` and `after` hook to every platform or package building.
-
-```
-{
-  "private": true,
-  "name": "platB",
-  "version": "0.0.1",
-  "scripts": {
-    "start": "...start",
-    "build": "... build"
-  },
-  "pmnps": {
-    "buildHook": {
-      "before":"echo build start...",
-      "after":"echo build end..."
-    }
-  }
-}
-```
-
-Use `build -p`, we can provide params for `before` or `after` scripts.
-
-```
-$ pmnps build -p "?platB.before=<params>"
-```
-
-If you want to pass params to all hooks, you can use `<global>.before` or `<global>.after`.
-
-```
-$ pmnps build -p "?<global>.before=<params>"
-```
-
 ## .pmnpsrc.json
 
 The file `pmnpsrc.json` is the config file for whole root project, it contains `workspace name`, `git usage`, `plugins`, `templates` and so on.
 
 ```
 {
-  "workspace": "workspace",
-  "publishable": true,
-  "createWithReadme": true,
-  "git": true,
-  "plugins": ["@pmnps/plugin-typescript", "@pmnps/plugin-dependencies"],
-  "templates": ["@my/bin-ts-template", "@my/web-template"],
-  "useOldDefineName": false,
+  "name": "test",
+  // "allow publish to npm"
   "private": false,
-  "buildByDependencies": true
+  // "use monorepo"
+  "projectType": "monorepo",
+  // "use git"
+  "useGit": true,
+  // "set customized npm registry"
+  "registry": "https://registry.npmmirror.com",
+  // "use performance first"
+  "usePerformanceFirst": false,
+  // "set templates for creating command"
+  "templates": ["@template/package", "@template/platform"],
+  // "set plugins for pmnps"
+  "plugins": [
+    [
+      "@pmnps/plugin-vscode-workspace",
+      { "excludes": ["@template/"] }
+    ],
+    "@pmnps/plugin-publish"
+  ],
+  // "use refresh after install"
+  "useRefreshAfterInstall": false
 }
 ```
 
 ## plugins
 
-The plugins is refact from `pmnps@3.0.0`, you can write plugins (if you want, you can publish them to `npm`), or pick the plugins you need, and config them in `pmnpsrc.json` file for usage.
+The plugins make pmnps works more powerful, you can write plugins (if you want, you can publish them to `npm`), or pick the plugins you need, and config them in `pmnpsrc.json` file for usage.
 
 ```
 {
@@ -631,7 +439,7 @@ If the plugins are from `npm`, you should add them into `devDependencies` in roo
 
 All the plugins and templates can be kept in `packages` dir or publish to `npm server`.
 
-## update
+## logs
 
 ### v3.0.0
 
@@ -664,3 +472,11 @@ All the plugins and templates can be kept in `packages` dir or publish to `npm s
 
 * prettier `package.json` with `prettier-package-json`.
 * if the workspace projects can be published, the `ownRoot` packages or platforms will not update the version of dependency workspace packages when use command `pmnps update`. 
+
+### v 4.0.0
+
+* remove command `build`, `publish` and `update`.
+* add command `run`.
+* rebuild plugin system.
+* rebuild a more efficient refresh system.
+* rebuild a more efficient io system.

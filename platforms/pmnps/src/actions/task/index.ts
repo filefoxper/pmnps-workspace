@@ -3,11 +3,13 @@ import { format as formatPackageJson } from 'prettier-package-json';
 import { message, path } from '@/libs';
 import { hold } from '@/state';
 import { equal, omitBy, orderBy, partition } from '@/libs/polyfill';
-import { write } from '@/actions/task/write';
-import { executeSystemOrders } from '@/actions/task/exec';
-import { SystemCommands, SystemFormatter } from '@/constants';
+import { CONF_NAME, SystemCommands, SystemFormatter } from '@/constants';
 import { projectSupport } from '@/support';
+import { executeSystemOrders } from './exec';
+import { refreshProject } from './refresh';
+import { write } from './write';
 import type {
+  Config,
   Package,
   PackageJson,
   PackageType,
@@ -23,6 +25,10 @@ import type {
   Task
 } from '@/actions/task/type';
 import type { Command } from 'commander';
+
+function getCachePath() {
+  return path.join(path.cwd(), 'node_modules', '.cache', 'pmnps');
+}
 
 function writeDirTask(
   p: string | Array<string>,
@@ -98,6 +104,24 @@ function writeScopeToState(cwd: string, scopeName: string) {
 }
 
 function writePackageToState(cwd: string, packageData: Package) {
+  function writeScopePackageToScope(proj: Project['project'], data: Package) {
+    const names = data.name.split('/');
+    if (names.length < 2 || !names[0].startsWith('@')) {
+      return {};
+    }
+    const [scopeName] = names;
+    const scopes = proj.scopes || [];
+    const found = scopes.find(s => s.name === scopeName);
+    if (found) {
+      found.packages = orderBy(
+        found.packages.map(p => (p.name === data.name ? data : p)),
+        ['name'],
+        ['desc']
+      );
+      return { scopes };
+    }
+    return {};
+  }
   function writeNewScopePackageToScope(
     proj: Project['project'],
     data: Package
@@ -141,9 +165,16 @@ function writePackageToState(cwd: string, packageData: Package) {
         project.project,
         packageData
       );
+      Object.assign(project.packageMap, { [packageData.path]: packageData });
       Object.assign(project.project, toProject);
     } else {
       Object.assign(p, packageData);
+      Object.assign(project.packageMap, { [p.path]: p });
+      const nextScopeContainer = writeScopePackageToScope(
+        project.project,
+        packageData
+      );
+      Object.assign(project.project, nextScopeContainer);
     }
   } else {
     project.project.platforms = project.project.platforms || [];
@@ -154,8 +185,10 @@ function writePackageToState(cwd: string, packageData: Package) {
         ['name'],
         ['desc']
       );
+      Object.assign(project.packageMap, { [packageData.path]: packageData });
     } else {
       Object.assign(p, packageData);
+      Object.assign(project.packageMap, { [p.path]: p });
     }
   }
   hold.instance().setState({ project: project as Project });
@@ -169,13 +202,19 @@ export const task = {
     config?: {
       skipIfExist?: true;
       command?: CommandSerial[];
-      formatter?: (c: string) => Promise<string>;
+      formatter?: 'json' | ((c: string) => Promise<string>);
     }
   ) {
     const formatter =
-      !config?.formatter && fileName.endsWith('.json')
+      !config?.formatter &&
+      (fileName.endsWith('.json') ||
+        (content != null &&
+          typeof content !== 'string' &&
+          typeof content !== 'function'))
         ? SystemFormatter.json
-        : config?.formatter;
+        : config?.formatter === 'json'
+          ? SystemFormatter.json
+          : config?.formatter;
     if (content == null) {
       return null;
     }
@@ -183,11 +222,51 @@ export const task = {
     hold.instance().pushTask(t);
     return t;
   },
+  writeConfig(config: Config | ((c: Config) => Config)) {
+    const currentConfig = hold.instance().getState().config;
+    if (!currentConfig) {
+      return task.write(path.cwd(), CONF_NAME, config);
+    }
+    const cfg = typeof config === 'function' ? config(currentConfig) : config;
+    hold.instance().setState({ config: cfg });
+    return task.write(path.cwd(), CONF_NAME, cfg);
+  },
+  writeCommandCache(
+    command: string,
+    data:
+      | Record<string, any>
+      | ((d: Record<string, any> | undefined) => Record<string, any>)
+  ) {
+    const t = writeFileTask(
+      getCachePath(),
+      'commands.json',
+      text => {
+        const obj =
+          text == null
+            ? {}
+            : (function parseContent() {
+                try {
+                  return JSON.parse(text);
+                } catch (e) {
+                  return {};
+                }
+              })();
+        const nextObj =
+          typeof data === 'function'
+            ? { ...obj, [command]: data(obj[command]) }
+            : { ...obj, [command]: { ...obj[command], ...data } };
+        return JSON.stringify(nextObj);
+      },
+      { formatter: SystemFormatter.json }
+    );
+    hold.instance().pushTask(t);
+    return t;
+  },
   writeDir(
     p: string | Array<string>,
-    config?: { relative?: boolean; command?: CommandSerial[] }
+    config?: { relative?: boolean; source?: string; command?: CommandSerial[] }
   ) {
-    const { command } = config ?? {};
+    const { command, source } = config ?? {};
     const pathname = typeof p === 'string' ? p : path.join(path.cwd(), ...p);
     const t: Task = {
       type: 'write',
@@ -195,6 +274,7 @@ export const task = {
       file: pathname,
       path: pathname,
       content: pathname,
+      dirSource: source,
       option: omitBy(
         {
           command
@@ -228,7 +308,33 @@ export const task = {
     const targetPackage = project.packageMap[pathname];
     const pjson = (function computeJson() {
       return typeof packageJson === 'function'
-        ? packageJson(targetPackage?.packageJson)
+        ? targetPackage?.packageJson
+          ? packageJson(targetPackage?.packageJson)
+          : (content: string | null): string | null => {
+              let r = null;
+              if (content == null) {
+                r = packageJson(null);
+              } else {
+                try {
+                  const c = JSON.parse(content) as PackageJson;
+                  r = packageJson(c);
+                } catch (e) {
+                  r = packageJson(null);
+                }
+              }
+              if (r != null) {
+                const packageData: Package = {
+                  path: pathname,
+                  paths,
+                  packageJsonFileName: 'package.json',
+                  packageJson: r,
+                  name: r.name ?? '',
+                  type: packageType
+                };
+                writePackageToState(cwd, packageData);
+              }
+              return r == null ? r : formatPackageJson(r);
+            }
         : packageJson;
     })();
     if (pjson == null) {
@@ -237,22 +343,24 @@ export const task = {
     const t = writeFileTask(
       pathname,
       'package.json',
-      formatPackageJson(pjson),
+      typeof pjson === 'function' ? pjson : formatPackageJson(pjson),
       {
         formatter: SystemFormatter.packageJson
       }
     );
     const p: PackageTask = { ...t, packageType, paths };
-    const packageData: Package = {
-      path: pathname,
-      paths,
-      packageJsonFileName: 'package.json',
-      packageJson: pjson,
-      name: pjson.name ?? '',
-      type: packageType
-    };
     hold.instance().pushTask(p);
-    writePackageToState(cwd, packageData);
+    if (typeof pjson !== 'function') {
+      const packageData: Package = {
+        path: pathname,
+        paths,
+        packageJsonFileName: 'package.json',
+        packageJson: pjson,
+        name: pjson.name ?? '',
+        type: packageType
+      };
+      writePackageToState(cwd, packageData);
+    }
     return p;
   },
   execute(command: CommandSerial, cwd: string, description?: string) {
@@ -267,20 +375,39 @@ export const task = {
   }
 };
 
-async function executeTasks(actionMessage: ActionMessage | null) {
-  const { config, project, cacheProject } = hold.instance().getState();
-  const useGit = config?.useGit;
+function ifThereAreDiffersWithCache() {
+  const { project, cacheProject } = hold.instance().getState();
+  return project != null && !equal(project, cacheProject);
+}
+
+function refreshCache() {
+  const { project, cacheProject } = hold.instance().getState();
   if (project != null && !equal(project, cacheProject)) {
+    const projectSerial = projectSupport.serial(project);
     task.write(
       path.join(path.cwd(), 'node_modules', '.cache', 'pmnps'),
       'project.json',
-      projectSupport.serial(project)
+      projectSerial
     );
+    const nextCache = projectSupport.parse(projectSerial);
+    hold.instance().setState({ cacheProject: nextCache });
+    return true;
   }
+  return false;
+}
+
+async function executeTasks(requireRefresh: boolean) {
+  if (requireRefresh) {
+    const result = await refreshProject();
+    if (result.type === 'failed') {
+      return result;
+    }
+  }
+  const { config } = hold.instance().getState();
+  const useGit = config?.useGit;
+  refreshCache();
   const tasks = hold.instance().consumeTasks();
   if (!tasks.length) {
-    message.result(actionMessage);
-    process.exit(0);
     return;
   }
   message.info('process executions...');
@@ -297,16 +424,31 @@ async function executeTasks(actionMessage: ActionMessage | null) {
         : null
     ].filter((d): d is Execution => !!d)
   );
-  message.result(actionMessage);
+  const stillDiffers = ifThereAreDiffersWithCache();
+  if (hold.instance().getTasks().length || stillDiffers) {
+    await executeTasks(requireRefresh);
+  }
+}
+
+async function executeAction(
+  actionMessage: ActionMessage | null,
+  requireRefresh: boolean
+) {
+  let error = undefined;
+  if (actionMessage?.type !== 'failed') {
+    error = await executeTasks(requireRefresh);
+  }
+  message.result(error ?? actionMessage);
   process.exit(0);
 }
 
 export function useCommand(
   com: Command,
-  action: (...args: any[]) => Promise<ActionMessage | null>
+  action: (...args: any[]) => Promise<ActionMessage | null>,
+  requireRefresh?: boolean
 ) {
   return com.action(async (...args: any[]) => {
     const actionMessage = await action(...args);
-    await executeTasks(actionMessage);
+    await executeAction(actionMessage, !!requireRefresh);
   });
 }

@@ -1,57 +1,55 @@
-import { PluginPack, structure, config, StructureNode } from '@pmnps/core';
-import { message } from '@pmnps/tools';
-import prettier from 'prettier';
+import path from 'path';
+import { createPluginCommand } from '@pmnps/tools';
+import type { Plugin } from '@pmnps/tools';
 
-type Query = {
+interface Query {
   excludes: Array<string>;
+}
+
+const refreshVscodeWorkspace: Plugin<Query> = function refreshVscodeWorkspace(
+  query?: Query
+) {
+  const slot = createPluginCommand('refresh');
+  return slot
+    .require(async state => {
+      const { name: workspace, projectType } = state.getConfig();
+      const vscodeWorkspaceName = `${workspace}.code-workspace`;
+      const cwd = state.cwd();
+      return state.reader.readJson(path.join(cwd, vscodeWorkspaceName));
+    })
+    .action(async state => {
+      const fetchingStale = state.required;
+      const stale = await fetchingStale;
+      const { name: workspace, projectType } = state.getConfig();
+      const { project } = state.getProject();
+      const task = state.task;
+      const { excludes = [] } = query || {};
+      const { packages = [], platforms = [] } = project;
+      const vscodeWorkspaceName = `${workspace}.code-workspace`;
+      const data = [...packages, ...platforms].map(d => {
+        const name = d.name;
+        const p =
+          d.type === 'package'
+            ? ['packages', ...name.split('/')].join('/')
+            : ['platforms', ...name.split('/')].join('/');
+        return { name, path: p };
+      });
+      const folders = [{ name: 'root', path: '.' }, ...data].filter(
+        ({ name }) => !excludes.some(e => name.startsWith(e))
+      );
+      const result = { folders, settings: {} };
+      if (stale && JSON.stringify(stale) === JSON.stringify(result)) {
+        return {
+          type: 'success',
+          content: 'Vscode workspace refresh success...'
+        };
+      }
+      task.write(state.cwd(), vscodeWorkspaceName, result);
+      return {
+        type: 'success',
+        content: 'Vscode workspace refresh success...'
+      };
+    });
 };
 
-function extractName(
-  project: StructureNode,
-  childNames: string[] = []
-): string[] {
-  const name = project.name;
-  if (!project.parent || project.parent.type === 'root') {
-    return [name, ...childNames];
-  }
-  return extractName(project.parent, [name, ...childNames]);
-}
-
-export default function (query?: Query): PluginPack {
-  return {
-    renders: {
-      async refresh(): Promise<boolean> {
-        const data = config.readConfig();
-        if (!data) {
-          message.warn('You should initial your project first.');
-          return false;
-        }
-        const { workspace } = data;
-        const { excludes = [] } = query || {};
-        const vscodeWorkspaceName = `${workspace}.code-workspace`;
-        structure.rebuild((root, { file }) => {
-          const projects = root.filter(
-            d => !!d.projectType && d.type === 'dir'
-          );
-          const data = projects.map(d => {
-            const names = extractName(d);
-            const name = names.join('/');
-            return { name, path: name };
-          });
-          const folders = [{ name: 'root', path: '.' }, ...data].filter(
-            ({ name }) => !excludes.some(e => name.startsWith(e))
-          );
-          root.write([
-            file(vscodeWorkspaceName, { folders, settings: {} })
-              .write(d => {
-                const data = JSON.parse(d);
-                return prettier.format(JSON.stringify({ ...data, folders }),{ parser: 'json' });
-              })
-              .order(['git'])
-          ]);
-        });
-        return true;
-      }
-    }
-  };
-}
+export default refreshVscodeWorkspace;

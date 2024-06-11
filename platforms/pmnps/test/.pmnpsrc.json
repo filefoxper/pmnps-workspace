@@ -1,8 +1,17 @@
 {
-  "name": "test",
-  "private": true,
+  "name": "project",
+  "private": false,
   "projectType": "monorepo",
   "useGit": true,
   "registry": "https://registry.npmmirror.com",
-  "usePerformanceFirst": false
+  "usePerformanceFirst": false,
+  "templates": ["@template/package", "@template/platform"],
+  "plugins": [
+    [
+      "../../../../packages/@pmnps/plugin-vscode-workspace",
+      { "excludes": ["@template/"] }
+    ],
+    "../../../../packages/@pmnps/plugin-publish"
+  ],
+  "useRefreshAfterInstall": false
 }
