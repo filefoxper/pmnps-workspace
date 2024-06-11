@@ -57,10 +57,7 @@ export async function startAction(options?: {
   const { start = {} } = hold.instance().getState().commands ?? {};
   const { groups: gs = [] } = start;
   const groups: { name: string; selected: string[] }[] = gs;
-  const groupNameMap = keyBy(
-    groups.filter(g => !packageNameKeyMap.has(g.name)),
-    'name'
-  );
+  const groupNameMap = keyBy(groups, 'name');
 
   if (!preSetNames) {
     const [packs, others] = partition(
@@ -114,7 +111,9 @@ export async function startAction(options?: {
       }
       return g.selected;
     });
-    selected = [...new Set([...allGroupSelected, ...selectedOthers])];
+    selected = [...new Set([...allGroupSelected, ...selectedOthers])].filter(
+      n => packageNameKeyMap.has(n)
+    );
   }
   if (!selected.length) {
     if (groupName && groupNameMap.has(groupName)) {
@@ -132,10 +131,10 @@ export async function startAction(options?: {
     task.writeCommandCache('start', (data = {}) => {
       const groups: { name: string; selected: string[] }[] = data.groups || [];
       const gsMap = keyBy(groups, 'name');
-      const newGsMap = [
+      const newGsMap = new Map([
         ...gsMap,
         [groupName, { name: groupName, selected }] as const
-      ];
+      ]);
       return { ...data, groups: [...newGsMap.values()] };
     });
   }
@@ -213,10 +212,7 @@ export async function runAction(
   const { run = {} } = hold.instance().getState().commands ?? {};
   const { groups: gs = [] } = run;
   const groups: { name: string; command: string; selected: string[] }[] = gs;
-  const groupNameMap = keyBy(
-    groups.filter(g => !packageNameKeyMap.has(g.name) && g.command === command),
-    'name'
-  );
+  const groupNameMap = keyBy(groups, 'name');
 
   if (!preSetNames) {
     const [packs, others] = partition(
@@ -270,7 +266,9 @@ export async function runAction(
       }
       return g.selected;
     });
-    selected = [...new Set([...allGroupSelected, ...selectedOthers])];
+    selected = [...new Set([...allGroupSelected, ...selectedOthers])].filter(
+      n => packageNameKeyMap.has(n)
+    );
   }
   if (!selected.length) {
     if (groupName && groupNameMap.has(groupName)) {
