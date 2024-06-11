@@ -87,6 +87,7 @@ declare type ActionMessage = {
   type: 'success' | 'failed' | 'warning';
   content: string;
   payload?: unknown;
+  requireRefresh?: boolean;
 };
 
 declare type Task = {
