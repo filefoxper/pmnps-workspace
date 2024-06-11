@@ -150,6 +150,10 @@ async function publishOneByOne(
   await publishOneByOne(registry, rest, otp);
 }
 
+const USE_PUBLISH_OTP = 'use npm publish --otp';
+
+const USE_BATCH_PUBLISH = 'use batch publish';
+
 const publishPlugin: Plugin<Query> = function publishPlugin(query?: Query) {
   const slot = createPluginCommand('publish');
   return slot
@@ -178,7 +182,7 @@ const publishPlugin: Plugin<Query> = function publishPlugin(query?: Query) {
     .action(async (state, option: Option | undefined) => {
       const { required, getConfig, getProject } = state;
       const { force, otp, batch } = option ?? {};
-      const { private: pri, registry } = getConfig();
+      const { private: pri, registry, projectType } = getConfig();
       const { project } = getProject();
       const { packages = [], platforms = [], workspace } = project;
       if (!workspace) {
@@ -223,33 +227,60 @@ const publishPlugin: Plugin<Query> = function publishPlugin(query?: Query) {
             ...platforms.map(p => p.name)
           ]
         : [];
-      const workspaceNames = workspacePacks.length
-        ? [
-            new inquirer.Separator('-- workspaces --'),
-            ...workspacePacks.map(p => p.name)
-          ]
+      const workspaceNames =
+        projectType === 'classify' && workspacePacks.length
+          ? [
+              new inquirer.Separator('-- workspaces --'),
+              ...workspacePacks.map(p => p.name)
+            ]
+          : [];
+      const settings = [
+        otp == null ? USE_PUBLISH_OTP : null,
+        batch ? null : USE_BATCH_PUBLISH
+      ].filter((d): d is string => d != null);
+      const settingNames = settings.length
+        ? [new inquirer.Separator('-- setting --'), ...settings]
         : [];
       const { selected } = await inquirer.prompt([
         {
           name: 'selected',
           type: 'checkbox',
-          choices: [...packageNames, ...platformNames, ...workspaceNames],
+          choices: [
+            ...packageNames,
+            ...platformNames,
+            ...workspaceNames,
+            ...settingNames
+          ],
           message: 'Choose package or platforms for publish.',
           default: publishes.map(p => p.name)
         }
       ]);
+      const settingSet = new Set([USE_PUBLISH_OTP, USE_BATCH_PUBLISH]);
+      const selectedPublishPacks = selected.filter(d => !settingSet.has(d));
       const reg = query?.registry || registry;
-      const selectedSet = new Set(selected as string[]);
+      const selectedSet = new Set(selectedPublishPacks as string[]);
       const selectedPacks = publishes.filter(p => selectedSet.has(p.name));
       const groups = levelPackages(selectedPacks);
       const sortedPacks = groups.flat();
-      if (batch) {
+      const batchPublish = batch || selected.some(d => d === USE_BATCH_PUBLISH);
+      let publishOtp = otp;
+      if (selected.some(d => d === USE_PUBLISH_OTP)) {
+        const { otp: settedOtp } = await inquirer.prompt([
+          {
+            name: 'otp',
+            type: 'input',
+            message: 'Please enter the publish password.(--otp)'
+          }
+        ]);
+        publishOtp = settedOtp;
+      }
+      if (batchPublish) {
         const processes = sortedPacks.map(p => {
           const { path: pathname, packageJson } = p;
           const { name = '' } = packageJson;
           const isScopePackage = name.startsWith('@');
           const scopeParams = isScopePackage ? ['--access=public'] : [];
-          const otpParams = otp ? ['--otp', otp] : [];
+          const otpParams = publishOtp ? ['--otp', publishOtp] : [];
           return execution.exec(
             'npm',
             [
@@ -278,7 +309,7 @@ const publishPlugin: Plugin<Query> = function publishPlugin(query?: Query) {
           content: 'Publish success...'
         };
       }
-      await publishOneByOne(reg, sortedPacks, otp);
+      await publishOneByOne(reg, sortedPacks, publishOtp);
       return {
         type: 'success',
         content: 'Publish success...'

@@ -1,27 +1,27 @@
 {
-  "scripts": {
-    "build": "esbuild ./src/index.ts --outfile=./dist/index.js --bundle --external:@pmnps/* --target=node17 --platform=node --format=cjs"
-  },
   "private": false,
   "name": "@pmnps/plugin-publish",
   "version": "4.0.0",
   "description": "This is a package",
+  "author": "Jimmy.Harding",
+  "homepage": "https://github.com/filefoxper/pmnps-workspace/packages/@pmnps/plugin-publish",
   "repository": {
     "type": "git",
     "url": "https://github.com/filefoxper/pmnps-workspace/packages/@pmnps/plugin-publish"
-  },
-  "homepage": "https://github.com/filefoxper/pmnps-workspace/packages/@pmnps/plugin-publish",
-  "author": "Jimmy.Harding",
-  "dependencies": {
-    "@pmnps/tools": "^4.0.0"
-  },
-  "devDependencies": {
-    "typescript": "4.5.5"
   },
   "main": "dist/index.js",
   "files": [
     "dist",
     "index.d.ts"
   ],
-  "typings": "index.d.ts"
+  "scripts": {
+    "build": "esbuild ./src/index.ts --outfile=./dist/index.js --bundle --external:@pmnps/* --target=node17 --platform=node --format=cjs"
+  },
+  "typings": "index.d.ts",
+  "dependencies": {
+    "@pmnps/tools": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "4.5.5"
+  }
 }

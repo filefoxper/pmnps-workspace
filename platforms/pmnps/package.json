@@ -1,10 +1,32 @@
 {
+  "private": false,
+  "name": "pmnps",
   "version": "4.0.0",
+  "description": "This is a monorepo manage tool using `npm:workspaces` tech",
+  "author": "Jimmy.Harding",
+  "homepage": "https://github.com/filefoxper/pmnps-workspace",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/filefoxper/pmnps-workspace"
+  },
+  "module": "src/index.ts",
+  "bin": {
+    "pmnps": "./bin/index.js"
+  },
+  "files": [
+    "bin",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "build": "esbuild ./src/index.ts --outfile=./bin/index.js --bundle '--external:@pmnps/*' '--external:prettier' --target=node17 --platform=node --format=cjs",
+    "start": "ts-node --require ./tsconfig-paths-require.js ./src/test.index.ts"
+  },
+  "typings": "index.d.ts",
   "dependencies": {
+    "@pmnps/tools": "4.0.0",
     "commander": "^9.3.0",
-    "prettier-package-json": "^2.8.0",
     "prettier": "^3.0.3",
-    "@pmnps/tools": "4.0.0"
+    "prettier-package-json": "^2.8.0"
   },
   "devDependencies": {
     "@types/inquirer": "^8.2.1",
@@ -24,43 +46,21 @@
     "eslint-plugin-storybook": "^0.6.14",
     "eslint-plugin-unused-imports": "^2.0.0",
     "eslint-webpack-plugin": "^4.0.1",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "26.6.3",
     "prettier": "^3.0.3",
     "prettier-eslint": "^15.0.1",
     "prettier-eslint-cli": "^7.1.0",
-    "identity-obj-proxy": "^3.0.0",
-    "jest": "26.6.3",
     "regenerator-runtime": "0.13.5",
     "rewire": "5.0.0",
     "ts-node": "^10.8.2",
-    "typescript": "4.5.5",
-    "tsconfig-paths": "^4.2.0"
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "4.5.5"
   },
-  "bin": {
-    "pmnps": "./bin/index.js"
-  },
-  "module": "src/index.ts",
-  "typings": "index.d.ts",
-  "files": [
-    "index.d.ts",
-    "bin"
-  ],
-  "name": "pmnps",
-  "private": false,
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/filefoxper/pmnps-workspace"
-  },
-  "homepage": "https://github.com/filefoxper/pmnps-workspace",
-  "author": "Jimmy.Harding",
-  "description": "This is a monorepo manage tool using `npm:workspaces` tech",
   "keywords": [
-    "monorepo",
-    "platforms",
     "browser",
-    "js"
-  ],
-  "scripts": {
-    "start": "ts-node --require ./tsconfig-paths-require.js ./src/test.index.ts",
-    "build": "esbuild ./src/index.ts --outfile=./bin/index.js --bundle --external:@pmnps/* --target=node17 --platform=node --format=cjs"
-  }
+    "js",
+    "monorepo",
+    "platforms"
+  ]
 }

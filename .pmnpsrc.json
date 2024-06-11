@@ -1,9 +1,18 @@
 {
-  "workspace": "pmnps-workspace",
+  "name": "pmnps-workspace",
   "private": false,
-  "publishable": true,
-  "git": true,
-  "buildByDependencies": false,
-  "createWithReadme": true,
-  "useOldDefineName": true
+  "projectType": "monorepo",
+  "useGit": true,
+  "usePerformanceFirst": false,
+  "useRefreshAfterInstall": false,
+  "registry": "https://registry.npmmirror.com",
+  "plugins": [
+    "@pmnps/plugin-vscode-workspace",
+    [
+      "@pmnps/plugin-publish",
+      {
+        "registry": "https://registry.npmjs.org"
+      }
+    ]
+  ]
 }
