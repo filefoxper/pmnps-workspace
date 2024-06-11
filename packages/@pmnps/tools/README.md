@@ -1,6 +1,6 @@
 # @pmnps/tools
 
-This package provides some tools for writing plugins.
+This package provides some tools for writing plugins for [pmnps](https://www.npmjs.com/package/pmnps).
 
 ## API
 
@@ -21,79 +21,59 @@ declare type Message = {
 export declare const message: Message;
 ```
 
-For example, you can use it to warn some messages in plugin.
-
-```typescript
-import {structure} from '@pmnps/core';
-import {message} from '@pmnps/tools';
-
-export default function reactPlugin(){
-  return {
-    // is optional
-    isOption:true,
-    // require react version
-    requires:['react'],
-    renders:{
-      // accept required react version,
-      // only run in create command
-      create([reactVersion]){
-        if(!reactVersion){
-            message.error('require react version failed');
-            return;
-        }
-        message.info(`use react@${reactVersion}`);
-        if(reactVersion.startsWith('15')){
-            message.warn('react version is too old.');
-        }
-      }
-    }
-  }
-}
-```
-
-### executeContext
+### execution
 
 This API helps to manage the executions.
 
 ```typescript
-declare type Execution = {
+import type execa from 'execa';
+
+export declare const execution: {
   exec(
     file: string,
-    params: string[],
+    params?: string[] | execa.Options,
     options?: execa.Options
   ): execa.ExecaChildProcess;
   command(params: string, options?: execa.Options): execa.ExecaChildProcess;
-  npx(params: string | string[],options?: execa.Options): execa.ExecaChildProcess;
+  execute: typeof execa;
+  killChildProcess([pid, process]: [number, execa.ExecaChildProcess]): void;
 };
-
-declare type Executor<T> = (execution: Execution) => Promise<T>;
-
-export declare function executeContext<T = void>(
-  executor: Executor<T>,
-): Promise<T>;
 ```
 
-It use `execa`, and manage the executions.
+### createPluginCommand
+
+This API helps to create a plugin command.
 
 ```typescript
-import {path,structure} from '@pmnps/core'
-import {executeContext} from '@pmnps/tools';
+declare type PluginSlot = {
+  name: string;
+  option(
+    optionName: string,
+    shortcut: string,
+    optional?: { description?: string; inputType?: 'string' | 'boolean' }
+  ): PluginSlot;
+  describe(description: string): PluginSlot;
+  require(requireFn: RequireFn): PluginSlot;
+  action(action: Action): Command;
+};
 
-const {platforms} = structure.packageJsons();
-
-
-await executeContext(({exec,npx})=>{
-    const json = platforms.find(({name})=>name==='web-app');
-    if(!json){
-        return;
-    }
-    const cwd = json.getDirPath?.();
-    return Promise.all([
-        exec('npm',['start'],{cwd}),
-        npx(['prettier','--write','./package.json'],{cwd})
-    ]);
-});
+export declare function createPluginCommand(name: string): PluginSlot;
 ```
 
-When the `pmnps` is canceled manually, the executeContext will kill the executions in it.
+### inquirer
 
+This API helps to create a prompt for the user.
+
+```typescript
+import type { Answers, QuestionCollection, ui, Separator } from 'inquirer';
+
+declare function prompt<T extends Answers = Answers>(
+  questions: QuestionCollection<T>,
+  initialAnswers?: Partial<T>
+): Promise<T> & { ui: ui.Prompt<T> };
+
+export declare const inquirer: {
+  prompt: typeof prompt;
+  Separator: typeof Separator;
+};
+```

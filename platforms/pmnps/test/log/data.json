@@ -1,0 +1,183 @@
+{
+  "equal": false,
+  "cache": [
+    {
+      "name": "@template",
+      "path": "C:\\Users\\filef\\IdeaProjects\\pmnps-workspace\\platforms\\pmnps\\test\\packages\\@template",
+      "packages": [
+        {
+          "path": "C:\\Users\\filef\\IdeaProjects\\pmnps-workspace\\platforms\\pmnps\\test\\packages\\@template\\platform",
+          "name": "@template/platform",
+          "paths": ["packages", "@template", "platform"],
+          "packageJson": {
+            "private": false,
+            "name": "@template/platform",
+            "version": "1.0.0",
+            "description": "This is a package",
+            "main": "index.js",
+            "files": ["resource"]
+          },
+          "packageJsonFileName": "package.json",
+          "type": "package"
+        },
+        {
+          "path": "C:\\Users\\filef\\IdeaProjects\\pmnps-workspace\\platforms\\pmnps\\test\\packages\\@template\\package",
+          "name": "@template/package",
+          "paths": ["packages", "@template", "package"],
+          "packageJson": {
+            "private": false,
+            "name": "@template/package",
+            "version": "1.0.0",
+            "description": "This is a package",
+            "main": "index.js",
+            "files": ["resource"]
+          },
+          "packageJsonFileName": "package.json",
+          "type": "package"
+        }
+      ]
+    },
+    {
+      "name": "@hades",
+      "path": "C:\\Users\\filef\\IdeaProjects\\pmnps-workspace\\platforms\\pmnps\\test\\packages\\@hades",
+      "packages": [
+        {
+          "path": "C:\\Users\\filef\\IdeaProjects\\pmnps-workspace\\platforms\\pmnps\\test\\packages\\@hades\\widgets",
+          "name": "@hades/widgets",
+          "paths": ["packages", "@hades", "widgets"],
+          "packageJson": {
+            "private": false,
+            "name": "@hades/widgets",
+            "version": "1.0.0",
+            "description": "This is a package",
+            "module": "index.ts",
+            "dependencies": {
+              "@types/react": "^17.0.45",
+              "@types/react-dom": "^17.0.17",
+              "react": "16.14.0",
+              "react-dom": "16.14.0"
+            }
+          },
+          "packageJsonFileName": "package.json",
+          "type": "package"
+        },
+        {
+          "path": "C:\\Users\\filef\\IdeaProjects\\pmnps-workspace\\platforms\\pmnps\\test\\packages\\@hades\\test",
+          "name": "@hades/test",
+          "paths": ["packages", "@hades", "test"],
+          "packageJson": {
+            "private": false,
+            "name": "@hades/test",
+            "version": "0.0.0",
+            "description": "This is a package"
+          },
+          "packageJsonFileName": "package.json",
+          "type": "package"
+        },
+        {
+          "path": "C:\\Users\\filef\\IdeaProjects\\pmnps-workspace\\platforms\\pmnps\\test\\packages\\@hades\\layout",
+          "name": "@hades/layout",
+          "paths": ["packages", "@hades", "layout"],
+          "packageJson": {
+            "private": false,
+            "name": "@hades/layout",
+            "version": "1.0.0",
+            "description": "This is a package"
+          },
+          "packageJsonFileName": "package.json",
+          "type": "package"
+        }
+      ]
+    }
+  ],
+  "project": [
+    {
+      "name": "@template",
+      "path": "C:\\Users\\filef\\IdeaProjects\\pmnps-workspace\\platforms\\pmnps\\test\\packages\\@template",
+      "packages": [
+        {
+          "path": "C:\\Users\\filef\\IdeaProjects\\pmnps-workspace\\platforms\\pmnps\\test\\packages\\@template\\platform",
+          "name": "@template/platform",
+          "paths": ["packages", "@template", "platform"],
+          "packageJson": {
+            "private": true,
+            "name": "@template/platform",
+            "version": "1.0.0",
+            "description": "This is a package",
+            "main": "index.js",
+            "files": ["resource"]
+          },
+          "packageJsonFileName": "package.json",
+          "type": "package"
+        },
+        {
+          "path": "C:\\Users\\filef\\IdeaProjects\\pmnps-workspace\\platforms\\pmnps\\test\\packages\\@template\\package",
+          "name": "@template/package",
+          "paths": ["packages", "@template", "package"],
+          "packageJson": {
+            "private": true,
+            "name": "@template/package",
+            "version": "1.0.0",
+            "description": "This is a package",
+            "main": "index.js",
+            "files": ["resource"]
+          },
+          "packageJsonFileName": "package.json",
+          "type": "package"
+        }
+      ]
+    },
+    {
+      "name": "@hades",
+      "path": "C:\\Users\\filef\\IdeaProjects\\pmnps-workspace\\platforms\\pmnps\\test\\packages\\@hades",
+      "packages": [
+        {
+          "path": "C:\\Users\\filef\\IdeaProjects\\pmnps-workspace\\platforms\\pmnps\\test\\packages\\@hades\\widgets",
+          "name": "@hades/widgets",
+          "paths": ["packages", "@hades", "widgets"],
+          "packageJson": {
+            "private": true,
+            "name": "@hades/widgets",
+            "version": "1.0.0",
+            "description": "This is a package",
+            "module": "index.ts",
+            "dependencies": {
+              "@types/react": "^17.0.45",
+              "@types/react-dom": "^17.0.17",
+              "react": "16.14.0",
+              "react-dom": "16.14.0"
+            }
+          },
+          "packageJsonFileName": "package.json",
+          "type": "package"
+        },
+        {
+          "path": "C:\\Users\\filef\\IdeaProjects\\pmnps-workspace\\platforms\\pmnps\\test\\packages\\@hades\\test",
+          "name": "@hades/test",
+          "paths": ["packages", "@hades", "test"],
+          "packageJson": {
+            "private": true,
+            "name": "@hades/test",
+            "version": "0.0.0",
+            "description": "This is a package"
+          },
+          "packageJsonFileName": "package.json",
+          "type": "package"
+        },
+        {
+          "path": "C:\\Users\\filef\\IdeaProjects\\pmnps-workspace\\platforms\\pmnps\\test\\packages\\@hades\\layout",
+          "name": "@hades/layout",
+          "paths": ["packages", "@hades", "layout"],
+          "packageJson": {
+            "private": true,
+            "name": "@hades/layout",
+            "version": "1.0.0",
+            "description": "This is a package"
+          },
+          "packageJsonFileName": "package.json",
+          "type": "package"
+        }
+      ]
+    }
+  ]
+}
