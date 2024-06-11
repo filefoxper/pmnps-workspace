@@ -194,6 +194,13 @@ function writePackageToState(cwd: string, packageData: Package) {
   hold.instance().setState({ project: project as Project });
 }
 
+function omitNullOfPackageJson(p: PackageJson | null | undefined): typeof p {
+  if (p == null) {
+    return p;
+  }
+  return omitBy(p, v => v == null) as PackageJson;
+}
+
 export const task = {
   write(
     p: string,
@@ -309,17 +316,17 @@ export const task = {
     const pjson = (function computeJson() {
       return typeof packageJson === 'function'
         ? targetPackage?.packageJson
-          ? packageJson(targetPackage?.packageJson)
+          ? omitNullOfPackageJson(packageJson(targetPackage?.packageJson))
           : (content: string | null): string | null => {
               let r = null;
               if (content == null) {
-                r = packageJson(null);
+                r = omitNullOfPackageJson(packageJson(null));
               } else {
                 try {
                   const c = JSON.parse(content) as PackageJson;
-                  r = packageJson(c);
+                  r = omitNullOfPackageJson(packageJson(c));
                 } catch (e) {
-                  r = packageJson(null);
+                  r = omitNullOfPackageJson(packageJson(null));
                 }
               }
               if (r != null) {
@@ -333,11 +340,17 @@ export const task = {
                 };
                 writePackageToState(cwd, packageData);
               }
-              return r == null ? r : formatPackageJson(r);
+              return r == null ? r ?? null : formatPackageJson(r);
             }
-        : packageJson;
+        : omitNullOfPackageJson(packageJson);
     })();
-    if (pjson == null) {
+    if (
+      pjson == null ||
+      (typeof pjson !== 'function' &&
+        targetPackage?.packageJson &&
+        formatPackageJson(pjson) ===
+          formatPackageJson(targetPackage?.packageJson))
+    ) {
       return null;
     }
     const t = writeFileTask(
@@ -436,7 +449,9 @@ async function executeAction(
 ) {
   let error = undefined;
   if (actionMessage?.type !== 'failed') {
-    error = await executeTasks(requireRefresh||(actionMessage?.requireRefresh??false));
+    error = await executeTasks(
+      requireRefresh || (actionMessage?.requireRefresh ?? false)
+    );
   }
   message.result(error ?? actionMessage);
   process.exit(0);

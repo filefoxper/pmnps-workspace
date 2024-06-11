@@ -1,25 +1,16 @@
 {
   "folders": [
     { "name": "root", "path": "." },
-    { "name": "packages/@pmnps/core", "path": "packages/@pmnps/core" },
+    { "name": "@pmnps/tools", "path": "packages/@pmnps/tools" },
     {
-      "name": "packages/@pmnps/plugin-dependencies",
-      "path": "packages/@pmnps/plugin-dependencies"
-    },
-    {
-      "name": "packages/@pmnps/plugin-react",
-      "path": "packages/@pmnps/plugin-react"
-    },
-    {
-      "name": "packages/@pmnps/plugin-typescript",
-      "path": "packages/@pmnps/plugin-typescript"
-    },
-    {
-      "name": "packages/@pmnps/plugin-vscode-workspace",
+      "name": "@pmnps/plugin-vscode-workspace",
       "path": "packages/@pmnps/plugin-vscode-workspace"
     },
-    { "name": "packages/@pmnps/tools", "path": "packages/@pmnps/tools" },
-    { "name": "plats/pmnps", "path": "plats/pmnps" }
+    {
+      "name": "@pmnps/plugin-publish",
+      "path": "packages/@pmnps/plugin-publish"
+    },
+    { "name": "pmnps", "path": "platforms/pmnps" }
   ],
   "settings": {}
 }

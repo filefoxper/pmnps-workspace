@@ -1,5 +1,5 @@
 {
-  "name": "project",
+  "name": "test",
   "private": false,
   "projectType": "monorepo",
   "useGit": true,
