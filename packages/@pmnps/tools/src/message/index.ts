@@ -1,4 +1,4 @@
-import * as console from 'console';
+import console from 'console';
 import chalk from 'chalk';
 
 function error(message: string): void {

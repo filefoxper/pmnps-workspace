@@ -1,13 +1,13 @@
 {
   "private": false,
   "name": "@pmnps/plugin-vscode-workspace",
-  "version": "4.0.0",
-  "description": "This is a package",
+  "version": "4.0.1",
+  "description": "This is a pmnps plugin for refreshing vscode-workspace file.",
   "author": "Jimmy.Harding",
-  "homepage": "https://github.com/filefoxper/pmnps-workspace/packages/@pmnps/plugin-vscode-workspace",
+  "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-vscode-workspace",
   "repository": {
     "type": "git",
-    "url": "https://github.com/filefoxper/pmnps-workspace/packages/@pmnps/plugin-vscode-workspace"
+    "url": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-vscode-workspace"
   },
   "main": "dist/index.js",
   "files": [
@@ -15,7 +15,7 @@
     "index.d.ts"
   ],
   "scripts": {
-    "build": "esbuild ./src/index.ts --outfile=./dist/index.js --bundle --external:@pmnps/* --target=node17 --platform=node --format=cjs"
+    "build": "node ./build.js"
   },
   "typings": "index.d.ts",
   "dependencies": {

@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "pmnps",
-  "version": "4.0.3",
+  "version": "4.0.4",
   "description": "This is a monorepo manage tool using `npm:workspaces` tech",
   "author": "Jimmy.Harding",
   "homepage": "https://github.com/filefoxper/pmnps-workspace",
@@ -18,17 +18,17 @@
     "index.d.ts"
   ],
   "scripts": {
-    "build": "esbuild ./src/index.ts --outfile=./bin/index.js --bundle '--external:@pmnps/*' '--external:prettier' --target=node17 --platform=node --format=cjs",
+    "build": "node ./build.js",
     "start": "ts-node --require ./tsconfig-paths-require.js ./src/test.index.ts"
   },
   "typings": "index.d.ts",
   "dependencies": {
-    "@pmnps/tools": "4.0.1",
-    "commander": "^9.3.0",
+    "@pmnps/tools": "4.0.2",
     "prettier": "^3.0.3",
     "prettier-package-json": "^2.8.0"
   },
   "devDependencies": {
+    "commander": "^9.3.0",
     "@types/inquirer": "^8.2.1",
     "@typescript-eslint/eslint-plugin": "^5.60.1",
     "@typescript-eslint/parser": "^5.44.0",
@@ -48,7 +48,6 @@
     "eslint-webpack-plugin": "^4.0.1",
     "identity-obj-proxy": "^3.0.0",
     "jest": "26.6.3",
-    "prettier": "^3.0.3",
     "prettier-eslint": "^15.0.1",
     "prettier-eslint-cli": "^7.1.0",
     "regenerator-runtime": "0.13.5",

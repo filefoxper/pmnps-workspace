@@ -33,26 +33,31 @@ npm install pmnps --save-dev
 ### use pmnps
 
 ```
-$ pmnps
+$ npx pmnps
 ```
 
-after running:
+info:
+
 
 ```
-- project
-  - node_modules
-  - packages
-  - platforms
-  package.json
-  .pmnpsrc.json
+Pmnps startup...
+Env: node@16.14.0
+? Use command: (Use arrow keys)
+  -- system commands --
+> start
+  refresh
+  create
+  config
+  -- customized commands --
+  ......
 ```
 
-This command can create a monorepo project and install the `dependencies & devDependencies` into root `node_modules`.
+This command lists all the available commands for `pmnps`.
 
 ### use create command
 
 ```
-$ pmnps create
+$ npx pmnps create
 ```
 info:
 
@@ -72,7 +77,7 @@ You can enter the command detail for a quick create.
 #### create scope
 
 ```
-$ pmnps create scope
+$ npx pmnps create scope
 ```
 info:
 
@@ -104,7 +109,7 @@ It creates a scope folder for your packages.
 #### create a package
 
 ```
-$ pmnps create package
+$ npx pmnps create package
 ```
 info:
 
@@ -179,7 +184,7 @@ If you want to create package into scope, you can enter `@scope/test`.
 #### create a platform
 
 ```
-$ pmnps create platform
+$ npx pmnps create platform
 ```
 
 info:
@@ -198,7 +203,7 @@ The template now is a package too, use command `pmnps create template` can creat
 When you config the template in `.pmnpsrc.json` file, the `create package` or `create platform` command will ask and use the codes from template resource.
 
 ```
-$ pmnps create template
+$ npx pmnps create template
 ```
 
 info:
@@ -242,7 +247,7 @@ You can copy the template files and folders into this template `resource` packag
 ### use refresh command
 
 ```
-$ pmnps refresh
+$ npx pmnps refresh
 ```
 
 after running:
@@ -272,14 +277,14 @@ The `start` command can start platforms for development. It runs `npm start` com
 
 ```
 # start with selections
-$ pmnps start
+$ npx pmnps start
 ```
 
 or
 
 ```
-# start all platforms
-$ pmnps start -a
+# start with a specific platform or package
+$ npx pmnps start -n <platform or package name>
 ```
 
 The `start` command will start every package which has a `start` script in package.json for supporting the platform, if you only want to start the packages which are in the dependencies tree of starting platforms, you can config it by use command `pmnps config`, and select `build by dependencies` option.
@@ -290,21 +295,14 @@ set platforms as a group named 'xxx':
 
 ```
 # set platforms as a group named 'xxx'
-$ pmnps start -g xxx
+$ npx pmnps start -g xxx
 ```
 
 use the group name you have set yet.
 
 ```
 # use the group name you have set yet
-$ pmnps start -g xxx
-```
-
-reset group named 'xxx':
-
-```
-# reset group named 'xxx'
-$ pmnps start -g xxx -c
+$ npx pmnps start
 ```
 
 ### use run command
@@ -312,15 +310,8 @@ $ pmnps start -g xxx -c
 The `run` command is not listed in pmnps command options. It runs npm scripts in `package.json`.
 
 ```
-# build all platforms and packages
-$ pmnps run build
-```
-
-or
-
-```
-# build a special platform or package
-$ pmnps run build -n <platform or package name>
+# run build script in a special platform or package
+$ npx pmnps run build -n <platform or package name>
 ```
 
 It is similar with `start` command, but requires a script name for running.
