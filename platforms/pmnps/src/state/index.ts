@@ -65,9 +65,8 @@ export function hold() {
         }
       );
     },
-    diffDepsPackages() {
+    diffDepsPackages(skipCompare?: boolean) {
       const { cacheProject: target, project: source } = global.pmnps.state;
-      const map = projectSupport.diffDepsPackagesMap(source, target);
       const { project } = source ?? {
         project: { workspace: undefined, packages: [], platforms: [] }
       };
@@ -76,6 +75,12 @@ export function hold() {
         packages = [],
         platforms = []
       } = project as Project['project'];
+      if (skipCompare) {
+        return [workspace, ...packages, ...platforms].filter(
+          (d): d is Package => !!d
+        );
+      }
+      const map = projectSupport.diffDepsPackagesMap(source, target);
       return [workspace, ...packages, ...platforms].filter(
         (d): d is Package => {
           if (!d) {

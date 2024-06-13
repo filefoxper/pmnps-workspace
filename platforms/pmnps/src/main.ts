@@ -88,8 +88,11 @@ async function initialAction() {
   if (!action) {
     return null;
   }
-  const res:ActionMessage = await action();
-  return {requireRefresh:['create','config'].includes(command),...res} as ActionMessage;
+  const res: ActionMessage = await action();
+  return {
+    requireRefresh: ['create', 'config'].includes(command),
+    ...res
+  } as ActionMessage;
 }
 
 export async function startup(isDevelopment?: boolean) {
@@ -123,6 +126,11 @@ export async function startup(isDevelopment?: boolean) {
   useCommand(
     program
       .command('refresh')
+      .option('-f, --force', 'Refresh force and rewrite project cache.')
+      .option(
+        '-i --install <char>',
+        'Refresh and install by type "package" | "platform" | "workspace".'
+      )
       .description('Refresh and install project dependencies.'),
     refreshAction
   );
@@ -172,7 +180,7 @@ export async function startup(isDevelopment?: boolean) {
   useCommand(
     program.command('config').description('Config pmnps workspace'),
     configAction,
-      true
+    true
   );
   customizedCommands.forEach(c => {
     const { name: commandName, options, action, description } = c;
