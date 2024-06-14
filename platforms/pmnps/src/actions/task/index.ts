@@ -429,7 +429,6 @@ async function executeTasks(
     const orders = npxOrders
       .flat()
       .concat((executes as ExecuteTask[]).map(d => d));
-    refreshCache();
     await executeSystemOrders(
       [
         ...orders,
@@ -439,6 +438,7 @@ async function executeTasks(
       ].filter((d): d is Execution => !!d)
     );
   }
+  refreshCache();
   const restTasks = hold.instance().getTasks();
   if (restTasks.length) {
     await executeTasks(
