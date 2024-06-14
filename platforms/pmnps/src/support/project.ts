@@ -123,7 +123,7 @@ function diffDepsPackagesMap(
     .map(s => s.name);
   const packageNameSet = new Set(packageNames);
   const differs = Object.entries(packageMap).filter(([k, v]) => {
-    const targetPj = targetPackageMap[k]?.packageJson;
+    const targetPj: PackageJson | undefined = targetPackageMap[k]?.packageJson;
     if (!targetPj) {
       return true;
     }
