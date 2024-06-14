@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "@pmnps/tools",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "description": "These are tools for developing pmnps and its plugins",
   "author": "Jimmy.Harding",
   "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/tools",
@@ -24,5 +24,11 @@
     "inquirer": "^6.5.0",
     "prettier": "^3.0.3",
     "typescript": "4.9.5"
-  }
+  },
+  "keywords": [
+    "js",
+    "monorepo",
+    "npm workspaces",
+    "pmnps dependency"
+  ]
 }

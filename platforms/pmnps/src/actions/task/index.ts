@@ -422,23 +422,22 @@ async function executeTasks(
   const { config } = hold.instance().getState();
   const useGit = config?.useGit;
   const tasks = hold.instance().consumeTasks();
-  if (!tasks.length) {
-    return;
+  if (tasks.length) {
+    message.info('process executions...');
+    const [writes, executes] = partition(tasks, t => t.type === 'write');
+    const npxOrders = await write(...writes);
+    const orders = npxOrders
+      .flat()
+      .concat((executes as ExecuteTask[]).map(d => d));
+    await executeSystemOrders(
+      [
+        ...orders,
+        useGit && writes.length && !ifThereAreOnlyWriteCacheTasks(writes)
+          ? { command: [...SystemCommands.gitAdd, path.cwd()] }
+          : null
+      ].filter((d): d is Execution => !!d)
+    );
   }
-  message.info('process executions...');
-  const [writes, executes] = partition(tasks, t => t.type === 'write');
-  const npxOrders = await write(...writes);
-  const orders = npxOrders
-    .flat()
-    .concat((executes as ExecuteTask[]).map(d => d));
-  await executeSystemOrders(
-    [
-      ...orders,
-      useGit && writes.length && !ifThereAreOnlyWriteCacheTasks(writes)
-        ? { command: [...SystemCommands.gitAdd, path.cwd()] }
-        : null
-    ].filter((d): d is Execution => !!d)
-  );
   refreshCache();
   const restTasks = hold.instance().getTasks();
   if (restTasks.length) {
