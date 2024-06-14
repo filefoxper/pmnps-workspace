@@ -388,9 +388,9 @@ export const task = {
   }
 };
 
-function ifThereAreDiffersWithCache() {
-  const { project, cacheProject } = hold.instance().getState();
-  return project != null && !equal(project, cacheProject);
+function ifThereAreOnlyWriteCacheTasks(tasks: Task[]) {
+  const pathname = path.join(path.cwd(), 'node_modules', '.cache', 'pmnps');
+  return tasks.every(t => t.type === 'write' && t.path === pathname);
 }
 
 function refreshCache() {
@@ -409,8 +409,11 @@ function refreshCache() {
   return false;
 }
 
-async function executeTasks(requireRefresh: boolean) {
-  if (requireRefresh) {
+async function executeTasks(
+  requireRefresh: boolean,
+  onlyCacheRefresh?: boolean
+) {
+  if (requireRefresh && !onlyCacheRefresh) {
     const result = await refreshProject();
     if (result.type === 'failed') {
       return result;
@@ -418,7 +421,6 @@ async function executeTasks(requireRefresh: boolean) {
   }
   const { config } = hold.instance().getState();
   const useGit = config?.useGit;
-  refreshCache();
   const tasks = hold.instance().consumeTasks();
   if (!tasks.length) {
     return;
@@ -432,14 +434,18 @@ async function executeTasks(requireRefresh: boolean) {
   await executeSystemOrders(
     [
       ...orders,
-      useGit && writes.length
+      useGit && writes.length && !ifThereAreOnlyWriteCacheTasks(writes)
         ? { command: [...SystemCommands.gitAdd, path.cwd()] }
         : null
     ].filter((d): d is Execution => !!d)
   );
-  const stillDiffers = ifThereAreDiffersWithCache();
-  if (hold.instance().getTasks().length || stillDiffers) {
-    await executeTasks(requireRefresh);
+  refreshCache();
+  const restTasks = hold.instance().getTasks();
+  if (restTasks.length) {
+    await executeTasks(
+      requireRefresh,
+      ifThereAreOnlyWriteCacheTasks(restTasks)
+    );
   }
 }
 

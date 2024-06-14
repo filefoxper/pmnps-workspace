@@ -34,13 +34,18 @@ function differ(
   return Object.fromEntries(te);
 }
 
+const refreshAfterWorkspaceInstallCommand = 'pmnps refresh -i package platform';
+
 function addSettingToWorkspace(workspace: Package) {
   const { config } = hold.instance().getState();
   const { useRefreshAfterInstall } = config ?? {};
   const packageJson = workspace.packageJson;
   const { scripts } = packageJson;
   if (!useRefreshAfterInstall) {
-    if (scripts && scripts['postinstall'] === 'pmnps refresh') {
+    if (
+      scripts &&
+      scripts['postinstall'] === refreshAfterWorkspaceInstallCommand
+    ) {
       const nextScripts = omit(scripts, 'postinstall');
       const withoutRefreshPackageJson = {
         ...packageJson,
@@ -55,10 +60,16 @@ function addSettingToWorkspace(workspace: Package) {
     }
     return workspace;
   }
-  if (scripts && scripts['postinstall'] === 'pmnps refresh') {
+  if (
+    scripts &&
+    scripts['postinstall'] === refreshAfterWorkspaceInstallCommand
+  ) {
     return workspace;
   }
-  const newScripts = { ...scripts, postinstall: 'pmnps refresh' };
+  const newScripts = {
+    ...scripts,
+    postinstall: refreshAfterWorkspaceInstallCommand
+  };
   const newPackageJson = { ...packageJson, scripts: newScripts };
   const newWorkspace = { ...workspace, packageJson: newPackageJson };
   task.writePackage({
@@ -321,7 +332,10 @@ function refreshChangePackages(changes: Package[]) {
   });
 }
 
-export async function refresh(): Promise<ActionMessage> {
+export async function refresh(option?: {
+  force?: boolean;
+  install?: string;
+}): Promise<ActionMessage> {
   mergeProject();
   const loops = analyzePackagePaths();
   if (loops.length) {
@@ -337,8 +351,14 @@ export async function refresh(): Promise<ActionMessage> {
       type: 'failed'
     };
   }
+  const { force, install } = option ?? {};
+  const installRange = install
+    ? (install.split(' ').filter(d => {
+        return d.trim();
+      }) as ('package' | 'platform' | 'workspace')[])
+    : undefined;
   refreshWorkspace();
-  const changes = hold.instance().diffDepsPackages();
+  const changes = hold.instance().diffDepsPackages(force);
   refreshChangePackages(changes);
   const changeRoots = changes.filter(
     p => p.type === 'workspace' || p.packageJson.pmnps?.ownRoot === true
@@ -347,12 +367,33 @@ export async function refresh(): Promise<ActionMessage> {
     changeRoots,
     p => p.type === 'workspace'
   );
-  workRoots.forEach(p => {
-    task.execute(SystemCommands.install, p.path, 'install workspace');
-  });
-  ownRoots.forEach(p => {
-    task.execute(SystemCommands.install, p.path, `install own root: ${p.name}`);
-  });
+  if (!installRange || installRange.includes('workspace')) {
+    workRoots.forEach(p => {
+      task.execute(SystemCommands.install, p.path, 'install workspace');
+    });
+  }
+  const [ownRootPackages, ownRootPlatforms] = partition(
+    ownRoots,
+    p => p.type === 'package'
+  );
+  if (!installRange || installRange.includes('package')) {
+    ownRootPackages.forEach(p => {
+      task.execute(
+        SystemCommands.install,
+        p.path,
+        `install own root: ${p.name}`
+      );
+    });
+  }
+  if (!installRange || installRange.includes('platform')) {
+    ownRootPlatforms.forEach(p => {
+      task.execute(
+        SystemCommands.install,
+        p.path,
+        `install own root: ${p.name}`
+      );
+    });
+  }
   if (workRoots.length) {
     return { content: 'Refresh success...', type: 'success' };
   }
@@ -366,7 +407,10 @@ export async function refresh(): Promise<ActionMessage> {
   return { content: 'Refresh success...', type: 'success' };
 }
 
-export async function refreshProject(): Promise<ActionMessage> {
+export async function refreshProject(option?: {
+  force?: boolean;
+  install?: string;
+}): Promise<ActionMessage> {
   const pluginState = getPluginState();
   async function runCommand(cmds: Command[]): Promise<'failed' | undefined> {
     const [cmd, ...rest] = cmds;
@@ -386,7 +430,7 @@ export async function refreshProject(): Promise<ActionMessage> {
   const refreshes = commands.filter(
     c => c.name === 'refresh' || c.name == null
   );
-  const res = await refresh();
+  const res = await refresh(option);
   if (res.type === 'success') {
     const re = await runCommand(refreshes);
     if (re === 'failed') {

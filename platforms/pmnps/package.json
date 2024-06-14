@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "pmnps",
-  "version": "4.0.4",
+  "version": "4.0.5",
   "description": "This is a monorepo manage tool using `npm:workspaces` tech",
   "author": "Jimmy.Harding",
   "homepage": "https://github.com/filefoxper/pmnps-workspace",
@@ -28,11 +28,11 @@
     "prettier-package-json": "^2.8.0"
   },
   "devDependencies": {
-    "commander": "^9.3.0",
     "@types/inquirer": "^8.2.1",
     "@typescript-eslint/eslint-plugin": "^5.60.1",
     "@typescript-eslint/parser": "^5.44.0",
-    "esbuild": "^0.14.27",
+    "commander": "^9.3.0",
+    "esbuild": "0.19.12",
     "eslint": "^8.49.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-airbnb-typescript": "^17.1.0",
