@@ -11,6 +11,7 @@ const configRange: Array<[string, keyof ConfigDetail]> = [
   ['allow publish to npm', 'private'],
   ['use monorepo', 'projectType'],
   ['use git', 'useGit'],
+  ['use command help', 'useCommandHelp'],
   ['use performance first', 'usePerformanceFirst'],
   ['use refresh after install', 'useRefreshAfterInstall']
 ];
@@ -20,6 +21,7 @@ function decodeConfig(config: Config | undefined) {
     projectType: 'monorepo',
     private: false,
     useGit: true,
+    useCommandHelp: true,
     usePerformanceFirst: true,
     useRefreshAfterInstall: true
   };
@@ -30,6 +32,7 @@ function decodeConfig(config: Config | undefined) {
       projectType: 'monorepo',
       private: true,
       useGit: false,
+      useCommandHelp: false,
       usePerformanceFirst: false,
       useRefreshAfterInstall: false
     } as Config);
@@ -45,6 +48,7 @@ function encodeConfig(detail: string[]): ConfigDetail {
     projectType: 'monorepo',
     private: false,
     useGit: true,
+    useCommandHelp: true,
     usePerformanceFirst: true,
     useRefreshAfterInstall: true
   };
@@ -52,6 +56,7 @@ function encodeConfig(detail: string[]): ConfigDetail {
     projectType: 'classify',
     private: true,
     useGit: false,
+    useCommandHelp: false,
     usePerformanceFirst: false,
     useRefreshAfterInstall: false
   };

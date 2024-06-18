@@ -409,11 +409,8 @@ function refreshCache() {
   return false;
 }
 
-async function executeTasks(
-  requireRefresh: boolean,
-  onlyCacheRefresh?: boolean
-) {
-  if (requireRefresh && !onlyCacheRefresh) {
+async function executeTasks(requireRefresh: boolean, level?: number) {
+  if (requireRefresh) {
     const result = await refreshProject();
     if (result.type === 'failed') {
       return result;
@@ -423,7 +420,9 @@ async function executeTasks(
   const useGit = config?.useGit;
   const tasks = hold.instance().consumeTasks();
   if (tasks.length) {
-    message.info('process executions...');
+    if (!level) {
+      message.info('process executions...');
+    }
     const [writes, executes] = partition(tasks, t => t.type === 'write');
     const npxOrders = await write(...writes);
     const orders = npxOrders
@@ -441,10 +440,7 @@ async function executeTasks(
   refreshCache();
   const restTasks = hold.instance().getTasks();
   if (restTasks.length) {
-    await executeTasks(
-      requireRefresh,
-      ifThereAreOnlyWriteCacheTasks(restTasks)
-    );
+    await executeTasks(requireRefresh, (level || 0) + 1);
   }
 }
 

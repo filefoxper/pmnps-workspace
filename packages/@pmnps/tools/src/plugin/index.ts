@@ -3,28 +3,40 @@ import type { Action, Command, CommandOption, RequireFn } from './type';
 export function createPluginCommand(name: string) {
   const command: {
     name: string;
+    requireRefresh?: boolean;
     require: RequireFn | undefined;
     required: Promise<any> | undefined;
-    pluginOptions: CommandOption[];
+    options: CommandOption[];
     action: Action | undefined;
     description: string;
+    args?: { param: string; description: string };
   } = {
     name,
+    requireRefresh: false,
     require: undefined,
     required: undefined,
-    pluginOptions: [],
+    options: [],
     action: undefined,
-    description: name
+    description: name,
+    args: undefined
   };
   const pluginSlot = {
     name,
+    args(param: string, description: string) {
+      command.args = { param, description };
+      return pluginSlot;
+    },
+    requireRefresh() {
+      command.requireRefresh = true;
+      return pluginSlot;
+    },
     option(
       optionName: string,
       shortcut: string,
-      optional?: { description?: string; inputType?: 'string' | 'boolean' }
+      optional?: { description?: string; inputType?: string }
     ) {
-      const { description = '', inputType = 'boolean' } = optional ?? {};
-      command.pluginOptions.push({
+      const { description = '', inputType } = optional ?? {};
+      command.options.push({
         name: optionName,
         shortcut,
         description,
