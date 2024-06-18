@@ -172,149 +172,165 @@ const publishPlugin: Plugin<Query> = function publishPlugin(query?: Query) {
       );
       return publishRecommends.filter((p): p is Package => !!p);
     })
-    .option('force', 'f', { description: 'Ignore version comparing' })
-    .option('otp', 'o', {
-      description: 'Use npm publish --otp',
-      inputType: 'string'
+    .option('force', 'f', {
+      description:
+        'Ignore version comparing when filter publishable projects out.'
     })
-    .option('batch', 'b', { description: 'Batch publish packages' })
+    .option('otp', 'o', {
+      description: 'Use npm publish --otp <password>',
+      inputType: 'password'
+    })
+    .option('batch', 'b', { description: 'Batch publish projects.' })
     .describe('Publish packages and platforms.')
-    .action(async (state, option: Option | undefined) => {
-      const { required, getConfig, getProject } = state;
-      const { force, otp, batch } = option ?? {};
-      const { private: pri, registry, projectType } = getConfig();
-      const { project } = getProject();
-      const { packages = [], platforms = [], workspace } = project;
-      if (!workspace) {
-        return {
-          type: 'warning',
-          content: 'No package is found for publish...'
-        };
-      }
-      if (pri) {
-        return {
-          type: 'failed',
-          content:
-            'This is a private project, all packages in it can not be published...'
-        };
-      }
-      let publishes: Package[] = [...packages, ...platforms, workspace].filter(
-        p =>
-          !p.packageJson.private && p.packageJson.name && p.packageJson.version
-      );
-      if (!force) {
-        const publishRecommends: Package[] | null = await required;
-        publishes = publishRecommends || [];
-      }
-      if (!publishes.length) {
-        return {
-          type: 'warning',
-          content: 'No package is found for publish...'
-        };
-      }
-      const packagePacks = publishes.filter(p => p.type === 'package');
-      const platformPacks = publishes.filter(p => p.type === 'platform');
-      const workspacePacks = publishes.filter(p => p.type === 'workspace');
-      const packageNames = packagePacks.length
-        ? [
-            new inquirer.Separator('-- packages --'),
-            ...packages.map(p => p.name)
-          ]
-        : [];
-      const platformNames = platformPacks.length
-        ? [
-            new inquirer.Separator('-- platforms --'),
-            ...platforms.map(p => p.name)
-          ]
-        : [];
-      const workspaceNames =
-        projectType === 'classify' && workspacePacks.length
+    .action(
+      async (
+        state,
+        argument: string | undefined,
+        option: Option | undefined
+      ) => {
+        const { required, getConfig, getProject } = state;
+        const { force, otp, batch } = option ?? {};
+        const { private: pri, registry, projectType } = getConfig();
+        const { project } = getProject();
+        const { packages = [], platforms = [], workspace } = project;
+        if (!workspace) {
+          return {
+            type: 'warning',
+            content: 'No package is found for publish...'
+          };
+        }
+        if (pri) {
+          return {
+            type: 'failed',
+            content:
+              'This is a private project, all packages in it can not be published...'
+          };
+        }
+        let publishes: Package[] = [
+          ...packages,
+          ...platforms,
+          workspace
+        ].filter(
+          p =>
+            !p.packageJson.private &&
+            p.packageJson.name &&
+            p.packageJson.version
+        );
+        if (!force) {
+          const publishRecommends: Package[] | null = await required;
+          publishes = publishRecommends || [];
+        }
+        if (!publishes.length) {
+          return {
+            type: 'warning',
+            content: 'No package is found for publish...'
+          };
+        }
+        const packagePacks = publishes.filter(p => p.type === 'package');
+        const platformPacks = publishes.filter(p => p.type === 'platform');
+        const workspacePacks = publishes.filter(p => p.type === 'workspace');
+        const packageNames = packagePacks.length
           ? [
-              new inquirer.Separator('-- workspaces --'),
-              ...workspacePacks.map(p => p.name)
+              new inquirer.Separator('-- packages --'),
+              ...packages.map(p => p.name)
             ]
           : [];
-      const settings = [
-        otp == null ? USE_PUBLISH_OTP : null,
-        batch ? null : USE_BATCH_PUBLISH
-      ].filter((d): d is string => d != null);
-      const settingNames = settings.length
-        ? [new inquirer.Separator('-- setting --'), ...settings]
-        : [];
-      const { selected } = await inquirer.prompt([
-        {
-          name: 'selected',
-          type: 'checkbox',
-          choices: [
-            ...packageNames,
-            ...platformNames,
-            ...workspaceNames,
-            ...settingNames
-          ],
-          message: 'Choose package or platforms for publish.',
-          default: publishes.map(p => p.name)
-        }
-      ]);
-      const settingSet = new Set([USE_PUBLISH_OTP, USE_BATCH_PUBLISH]);
-      const selectedPublishPacks = selected.filter(d => !settingSet.has(d));
-      const reg = query?.registry || registry;
-      const selectedSet = new Set(selectedPublishPacks as string[]);
-      const selectedPacks = publishes.filter(p => selectedSet.has(p.name));
-      const groups = levelPackages(selectedPacks);
-      const sortedPacks = groups.flat();
-      const batchPublish = batch || selected.some(d => d === USE_BATCH_PUBLISH);
-      let publishOtp = otp;
-      if (selected.some(d => d === USE_PUBLISH_OTP)) {
-        const { otp: settedOtp } = await inquirer.prompt([
+        const platformNames = platformPacks.length
+          ? [
+              new inquirer.Separator('-- platforms --'),
+              ...platforms.map(p => p.name)
+            ]
+          : [];
+        const workspaceNames =
+          projectType === 'classify' && workspacePacks.length
+            ? [
+                new inquirer.Separator('-- workspaces --'),
+                ...workspacePacks.map(p => p.name)
+              ]
+            : [];
+        const settings = [
+          otp == null ? USE_PUBLISH_OTP : null,
+          batch ? null : USE_BATCH_PUBLISH
+        ].filter((d): d is string => d != null);
+        const settingNames = settings.length
+          ? [new inquirer.Separator('-- setting --'), ...settings]
+          : [];
+        const { selected } = await inquirer.prompt([
           {
-            name: 'otp',
-            type: 'input',
-            message: 'Please enter the publish password.(--otp)'
+            name: 'selected',
+            type: 'checkbox',
+            choices: [
+              ...packageNames,
+              ...platformNames,
+              ...workspaceNames,
+              ...settingNames
+            ],
+            message: 'Choose package or platforms for publish.',
+            default: publishes.map(p => p.name)
           }
         ]);
-        publishOtp = settedOtp;
-      }
-      if (batchPublish) {
-        const processes = sortedPacks.map(p => {
-          const { path: pathname, packageJson } = p;
-          const { name = '' } = packageJson;
-          const isScopePackage = name.startsWith('@');
-          const scopeParams = isScopePackage ? ['--access=public'] : [];
-          const otpParams = publishOtp ? ['--otp', publishOtp] : [];
-          return execution.exec(
-            'npm',
-            [
-              'publish',
-              '--registry',
-              reg || officialReg,
-              ...scopeParams,
-              ...otpParams
-            ],
+        const settingSet = new Set([USE_PUBLISH_OTP, USE_BATCH_PUBLISH]);
+        const selectedPublishPacks = selected.filter(d => !settingSet.has(d));
+        const reg = query?.registry || registry;
+        const selectedSet = new Set(selectedPublishPacks as string[]);
+        const selectedPacks = publishes.filter(p => selectedSet.has(p.name));
+        const groups = levelPackages(selectedPacks);
+        const sortedPacks = groups.flat();
+        const batchPublish =
+          batch || selected.some(d => d === USE_BATCH_PUBLISH);
+        let publishOtp = otp;
+        if (selected.some(d => d === USE_PUBLISH_OTP)) {
+          const { otp: settedOtp } = await inquirer.prompt([
             {
-              cwd: pathname,
-              stdin: 'inherit'
+              name: 'otp',
+              type: 'input',
+              message: 'Please enter the publish password.(--otp)'
             }
-          );
-        });
-        const results = await Promise.all(processes);
-        results.forEach((buffer, index) => {
-          const { name, type } = sortedPacks[index];
-          message.log(
-            `==================== ${type} ${name} ====================`
-          );
-          logBuffer(buffer);
-        });
+          ]);
+          publishOtp = settedOtp;
+        }
+        if (batchPublish) {
+          const processes = sortedPacks.map(p => {
+            const { path: pathname, packageJson } = p;
+            const { name = '' } = packageJson;
+            const isScopePackage = name.startsWith('@');
+            const scopeParams = isScopePackage ? ['--access=public'] : [];
+            const otpParams = publishOtp ? ['--otp', publishOtp] : [];
+            return execution.exec(
+              'npm',
+              [
+                'publish',
+                '--registry',
+                reg || officialReg,
+                ...scopeParams,
+                ...otpParams
+              ],
+              {
+                cwd: pathname,
+                stdin: 'inherit'
+              }
+            );
+          });
+          const results = await Promise.all(processes);
+          results.forEach((buffer, index) => {
+            const { name, type } = sortedPacks[index];
+            message.log(
+              `==================== ${type} ${name} ====================`
+            );
+            logBuffer(buffer);
+          });
+          return {
+            type: 'success',
+            content: 'Publish success...'
+          };
+        }
+        await publishOneByOne(reg, sortedPacks, publishOtp);
         return {
           type: 'success',
           content: 'Publish success...'
         };
       }
-      await publishOneByOne(reg, sortedPacks, publishOtp);
-      return {
-        type: 'success',
-        content: 'Publish success...'
-      };
-    });
+    );
 };
 
 export default publishPlugin;

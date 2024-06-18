@@ -44,7 +44,7 @@ export type CommandOption = {
   name: string;
   shortcut: string;
   description: string;
-  inputType: 'string' | 'boolean';
+  inputType?: string;
 };
 
 export type ActionMessage = {
@@ -76,14 +76,17 @@ export type Action = <O extends Record<string, any>>(
     cwd: () => string;
     required?: Promise<any>;
   },
+  argument: string | undefined,
   option?: O
 ) => Promise<ActionMessage>;
 
 export type Command = {
   name: string;
+  requireRefresh?: boolean;
   require?: RequireFn;
   options?: CommandOption[];
   action: Action;
   required?: Promise<any>;
   description: string;
+  args?: { params: string; description: string };
 };

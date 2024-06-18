@@ -1,4 +1,5 @@
 import { program } from 'commander';
+import { createPluginCommand } from '@pmnps/tools';
 import { hold } from '@/state';
 import { configAction } from '@/actions/config';
 import { refreshAction } from '@/actions/refresh';
@@ -6,11 +7,12 @@ import { createAction } from '@/actions/create';
 import { useCommand } from '@/actions/task';
 import { runAction, startAction } from '@/actions/run';
 import { getPluginState } from '@/plugin';
-import { env, file, path, inquirer } from './libs';
+import { env, file, path, inquirer, message } from './libs';
 import { initialize, loadProject } from './processor';
-import type { Action } from '@pmnps/tools';
+import type { Command } from '@pmnps/tools';
+import type { CommandOption } from '@pmnps/tools/src/plugin/type';
 import type { ActionMessage, Task } from '@/actions/task/type';
-import type { ProjectType, Resource, State } from './types';
+import type { Resource, State } from './types';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -26,44 +28,142 @@ declare global {
   };
 }
 
-const getCommands = (
-  projectType: ProjectType
-): Array<[string, (...args: any[]) => Promise<ActionMessage>]> => {
-  return projectType === 'monorepo'
-    ? [
-        ['start', startAction],
-        ['refresh', refreshAction],
-        ['create', createAction],
-        ['config', configAction]
-      ]
-    : [
-        ['start', startAction],
-        ['refresh', refreshAction],
-        ['config', configAction]
-      ];
+const refreshCommand = createPluginCommand('refresh')
+  .option('force', 'f', {
+    description: 'Refresh force and rewrite project cache.'
+  })
+  .option('install', 'i', {
+    description: 'Enter project types to limit the install command range',
+    inputType: 'package | platform | workspace'
+  })
+  .describe('Integrate and install project dependencies.')
+  .action((state, argument, option) => refreshAction(option));
+
+const createCommand = createPluginCommand('create')
+  .args('package|platform|scope|template', 'Enter a creating type')
+  .requireRefresh()
+  .describe('Create package, platform, scope or template')
+  .action((state, argument, option) => createAction(argument, option));
+
+const startCommand = createPluginCommand('start')
+  .option('all', 'a', {
+    description: 'Starts all platforms and packages.'
+  })
+  .option('name', 'n', {
+    description:
+      'Enter the package or platform name for executing "start" script.',
+    inputType: 'package or platform name'
+  })
+  .option('group', 'g', {
+    description:
+      'Enter a group name for executing "start" script in package or platforms.',
+    inputType: 'group name'
+  })
+  .describe('Run start script in packages or platforms.')
+  .action((state, argument, option) => startAction(option));
+
+const runCommand = createPluginCommand('run')
+  .args('script', 'Enter npm script command')
+  .option('all', 'a', {
+    description: 'Executing scripts in all package or platforms.'
+  })
+  .option('name', 'n', {
+    description: 'Enter the package or platform name for executing script.',
+    inputType: 'package or platform name'
+  })
+  .option('group', 'g', {
+    description:
+      'Enter a group name for executing scripts in package or platforms.',
+    inputType: 'group name'
+  })
+  .describe('Run script in packages or platforms.')
+  .action((state, argument, option) => runAction(argument, option));
+
+const configCommand = createPluginCommand('config')
+  .describe('Config pmnps workspace')
+  .action(() => configAction());
+
+function actCommands(cmds: Command[]) {
+  const state = getPluginState();
+  const { useCommandHelp } = hold.instance().getState().config ?? {};
+  return cmds.map(c => {
+    return {
+      ...c,
+      action: c.args
+        ? function commandAction(arg: string | undefined, option?: any) {
+            if (useCommandHelp) {
+              generateCommandHelp(c).forEach(d => message.desc(d));
+            }
+            return c.action({ ...state, required: c.required }, arg, option);
+          }
+        : function commandAction(option?: any) {
+            if (useCommandHelp) {
+              generateCommandHelp(c).forEach(d => message.desc(d));
+            }
+            return c.action(
+              { ...state, required: c.required },
+              undefined,
+              option
+            );
+          }
+    };
+  });
+}
+
+const getCommands = () => {
+  const { projectType = 'monorepo' } = hold.instance().getState().config ?? {};
+  return actCommands(
+    projectType === 'monorepo'
+      ? ([
+          startCommand,
+          runCommand,
+          refreshCommand,
+          createCommand,
+          configCommand
+        ] as Command[])
+      : ([startCommand, runCommand, refreshCommand, configCommand] as Command[])
+  );
 };
+
+function generateOption(o: CommandOption): [string, string] {
+  const { inputType } = o;
+  return [
+    typeof inputType === 'string'
+      ? `-${o.shortcut} --${o.name} <${inputType}>`
+      : `-${o.shortcut} --${o.name}`,
+    o.description
+  ];
+}
+
+function generateCommandHelp(command: Command): string[] {
+  const { options = [], description, name, args } = command;
+  const summary = `==== pmnps ${name + (args ? ' <' + args.param + '>' : '')} ====`;
+  const opts = options.map(generateOption);
+  const fs = opts.map(t => t[0].length);
+  const maxLen = Math.max(...fs);
+  const optStrings = opts.map(([f, d]) => {
+    return '  ' + f.padEnd(maxLen + 4, ' ') + d;
+  });
+  const optHelps = optStrings.length ? ['Options:', ...optStrings] : [];
+  return [summary, description, ...optHelps];
+}
 
 function getCustomizedCommands() {
   const customizedCommands = hold.instance().getCommands();
-  const state = getPluginState();
-  return customizedCommands
-    .filter(({ name }) => name && name !== 'refresh')
-    .map(c => {
-      return {
-        ...c,
-        action: function commandAction(option?: any) {
-          return c.action({ ...state, required: c.required }, option);
-        }
-      };
-    });
+  return actCommands(
+    customizedCommands.filter(({ name }) => name && name !== 'refresh')
+  );
 }
 
 async function initialAction() {
-  const { projectType = 'monorepo' } = hold.instance().getState().config ?? {};
   const customizedCommands = getCustomizedCommands().map(
-    ({ name, action }) => [name, action] as [string, Action]
+    ({ name, action }) =>
+      [name, action] as [string, (...a: any[]) => Promise<ActionMessage>]
   );
-  const systemCommands = getCommands(projectType);
+  const systemCommands = getCommands().map(
+    ({ name, action }) =>
+      [name, action] as [string, (...a: any[]) => Promise<ActionMessage>]
+  );
   const commandDesc = [
     new inquirer.Separator('-- system commands --'),
     ...systemCommands.map(([des]) => des)
@@ -115,6 +215,7 @@ export async function startup(isDevelopment?: boolean) {
   if (config == null) {
     await configAction();
   }
+  const systemCommands = getCommands();
   const customizedCommands = getCustomizedCommands();
   useCommand(
     program
@@ -123,78 +224,38 @@ export async function startup(isDevelopment?: boolean) {
       .version('4.0.0'),
     initialAction
   );
-  useCommand(
-    program
-      .command('refresh')
-      .option('-f, --force', 'Refresh force and rewrite project cache.')
-      .option(
-        '-i --install <char>',
-        'Refresh and install by type "package" | "platform" | "workspace".'
-      )
-      .description('Refresh and install project dependencies.'),
-    refreshAction
-  );
-  useCommand(
-    program
-      .command('create')
-      .argument(
-        '[string]',
-        'Choose creating target from: package, platform, scope, template',
-        null
-      )
-      .description('Create package, platform, scope or template'),
-    createAction,
-    true
-  );
-  useCommand(
-    program
-      .command('start')
-      .option('-a, --all', 'Starts all platforms and packages.')
-      .option(
-        '-n, --name <char>',
-        'Enter the name of starting package or platform.'
-      )
-      .option(
-        '-g, --group <char>',
-        'Enter a group name for starting packages and platforms.'
-      )
-      .description('Run start script in packages or platforms'),
-    startAction
-  );
-  useCommand(
-    program
-      .command('run')
-      .argument('script')
-      .option('-a, --all', 'Executing scripts in all package or platforms.')
-      .option(
-        '-n, --name <char>',
-        'Enter the package or platform name for executing script.'
-      )
-      .option(
-        '-g, --group <char>',
-        'Enter a group name for executing scripts in package or platforms.'
-      )
-      .description('Run script in packages or platforms'),
-    runAction
-  );
-  useCommand(
-    program.command('config').description('Config pmnps workspace'),
-    configAction,
-    true
-  );
+  systemCommands.forEach(c => {
+    const { name: commandName, options, action, description, args } = c;
+    const prog = !args
+      ? program.command(commandName)
+      : program
+          .command(commandName)
+          .argument(
+            '[' + args.param + ']',
+            args.description || args.param,
+            null
+          );
+    const programmer = (options ?? []).reduce((r, o) => {
+      const [flags, description] = generateOption(o);
+      r.option(flags, description);
+      return r;
+    }, prog);
+    useCommand(programmer.description(description), action, c.requireRefresh);
+  });
+
   customizedCommands.forEach(c => {
-    const { name: commandName, options, action, description } = c;
-    const prog = program.command(commandName);
-    (options ?? []).forEach(o => {
-      const { inputType } = o;
-      prog.option(
-        inputType === 'string'
-          ? `-${o.shortcut} --${o.name} <char>`
-          : `-${o.shortcut} --${o.name}`,
-        o.description
-      );
-    });
-    useCommand(prog.description(description), action);
+    const { name: commandName, options, action, description, args } = c;
+    const prog = !args
+      ? program.command(commandName)
+      : program
+          .command(commandName)
+          .argument('[' + args.param + ']', args.description || args.param);
+    const programmer = (options ?? []).reduce((r, o) => {
+      const [flags, description] = generateOption(o);
+      r.option(flags, description);
+      return r;
+    }, prog);
+    useCommand(programmer.description(description), action, c.requireRefresh);
   });
   program.parse();
 }

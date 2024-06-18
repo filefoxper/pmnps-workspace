@@ -56,6 +56,7 @@ export interface ConfigDetail {
   projectType: ProjectType;
   private: boolean;
   useGit: boolean;
+  useCommandHelp: boolean;
   usePerformanceFirst: boolean;
   useRefreshAfterInstall: boolean;
 }
@@ -80,7 +81,7 @@ declare type CommandOption = {
   name: string;
   shortcut: string;
   description: string;
-  inputType: 'string' | 'boolean';
+  inputType?: string;
 };
 
 declare type ActionMessage = {
@@ -132,6 +133,7 @@ export declare type Action = <O extends Record<string, any>>(
     cwd: () => string;
     required?: Promise<any>;
   },
+  argument: string | undefined,
   option?: O
 ) => Promise<ActionMessage>;
 
@@ -157,6 +159,8 @@ export declare type Command = {
   action: Action;
   required?: Promise<any>;
   description: string;
+  args?: { param: string; description: string };
+  requireRefresh?: boolean;
 };
 
 export declare type Plugin<S extends Record<string, any>> = (
@@ -172,10 +176,12 @@ declare type MessageLog = (mess: string) => void;
 
 declare type PluginSlot = {
   name: string;
+  args(param: string, description: string): PluginSlot;
+  requireRefresh(): PluginSlot;
   option(
     optionName: string,
     shortcut: string,
-    optional?: { description?: string; inputType?: 'string' | 'boolean' }
+    optional?: { description?: string; inputType?: string }
   ): PluginSlot;
   describe(description: string): PluginSlot;
   require(requireFn: RequireFn): PluginSlot;

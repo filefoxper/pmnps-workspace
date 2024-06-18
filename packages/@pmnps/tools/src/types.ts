@@ -72,6 +72,7 @@ export interface ConfigDetail {
   projectType: ProjectType;
   private: boolean;
   useGit: boolean;
+  useCommandHelp: boolean;
   usePerformanceFirst: boolean;
   useRefreshAfterInstall: boolean;
 }

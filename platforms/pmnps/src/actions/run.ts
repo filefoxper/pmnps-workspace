@@ -162,12 +162,22 @@ export async function startAction(options?: {
 }
 
 export async function runAction(
-  cmd: string | null,
+  cmd?: string,
   options?: { name?: string; group?: string; all?: boolean }
 ): Promise<ActionMessage> {
   const { all, name, group } = options ?? {};
   const groupName = typeof group === 'string' ? group.trim() : null;
-  const command = (cmd ?? '').trim();
+  let command = (cmd ?? '').trim();
+  if (!command) {
+    const { cmd: c } = await inquirer.prompt([
+      {
+        name: 'cmd',
+        type: 'input',
+        message: 'Please enter a npm script for running.'
+      }
+    ]);
+    command = (c || '').trim();
+  }
   if (!command) {
     return { type: 'warning', content: 'No command for execution.' };
   }
