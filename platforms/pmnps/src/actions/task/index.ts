@@ -410,12 +410,6 @@ function refreshCache() {
 }
 
 async function executeTasks(requireRefresh: boolean, level?: number) {
-  if (requireRefresh) {
-    const result = await refreshProject();
-    if (result.type === 'failed') {
-      return result;
-    }
-  }
   const { config } = hold.instance().getState();
   const useGit = config?.useGit;
   const tasks = hold.instance().consumeTasks();
@@ -436,6 +430,14 @@ async function executeTasks(requireRefresh: boolean, level?: number) {
           : null
       ].filter((d): d is Execution => !!d)
     );
+    if (requireRefresh) {
+      const result = await refreshProject();
+      if (result.type === 'failed') {
+        return result;
+      }
+      await executeTasks(false, (level || 0) + 1);
+      return;
+    }
   }
   refreshCache();
   const restTasks = hold.instance().getTasks();
