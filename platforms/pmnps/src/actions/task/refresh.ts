@@ -401,7 +401,8 @@ export async function refresh(option?: {
   if (additionPackages.length) {
     task.execute(
       [...SystemCommands.install, '--no-save', ...additionPackages],
-      path.cwd()
+      path.cwd(),
+      `install ${additionPackages.join()}`
     );
   }
   return { content: 'Refresh success...', type: 'success' };
@@ -417,7 +418,10 @@ export async function refreshProject(option?: {
     if (cmd == null) {
       return undefined;
     }
-    const re = await cmd.action({ ...pluginState, required: cmd.required });
+    const re = await cmd.action(
+      { ...pluginState, required: cmd.required },
+      undefined
+    );
     if (re.type === 'failed') {
       return 'failed';
     }

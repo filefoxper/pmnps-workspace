@@ -80,6 +80,7 @@ const runCommand = createPluginCommand('run')
   .action((state, argument, option) => runAction(argument, option));
 
 const configCommand = createPluginCommand('config')
+  .requireRefresh()
   .describe('Config pmnps workspace')
   .action(() => configAction());
 
