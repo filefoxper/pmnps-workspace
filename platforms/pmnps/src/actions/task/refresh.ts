@@ -34,7 +34,7 @@ function differ(
   return Object.fromEntries(te);
 }
 
-const refreshAfterWorkspaceInstallCommand = 'pmnps refresh -i package platform';
+const refreshAfterWorkspaceInstallCommand = 'pmnps refresh -i package,platform';
 
 function addSettingToWorkspace(workspace: Package) {
   const { config } = hold.instance().getState();
@@ -353,7 +353,7 @@ export async function refresh(option?: {
   }
   const { force, install } = option ?? {};
   const installRange = install
-    ? (install.split(' ').filter(d => {
+    ? (install.split(',').filter(d => {
         return d.trim();
       }) as ('package' | 'platform' | 'workspace')[])
     : undefined;

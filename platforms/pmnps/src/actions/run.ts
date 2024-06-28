@@ -35,7 +35,7 @@ export async function startAction(options?: {
   const argumentNames = argumentName
     ? new Set(
         argumentName
-          .split(' ')
+          .split(',')
           .map(n => n.trim())
           .filter(n => n)
       )
@@ -200,7 +200,7 @@ export async function runAction(
   const argumentNames = argumentName
     ? new Set(
         argumentName
-          .split(' ')
+          .split(',')
           .map(n => n.trim())
           .filter(n => n)
       )

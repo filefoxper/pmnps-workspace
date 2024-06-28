@@ -30,10 +30,12 @@ declare global {
 
 const refreshCommand = createPluginCommand('refresh')
   .option('force', 'f', {
-    description: 'Refresh force and rewrite project cache.'
+    description:
+      'Refresh force and rewrite project cache. ex: npx pmnps refresh -f'
   })
   .option('install', 'i', {
-    description: 'Enter project types to limit the install command range',
+    description:
+      'Enter project types to limit the install command range. ex: npx pmnps refresh -i package,platform',
     inputType: 'package | platform | workspace'
   })
   .describe('Integrate and install project dependencies.')
@@ -47,16 +49,16 @@ const createCommand = createPluginCommand('create')
 
 const startCommand = createPluginCommand('start')
   .option('all', 'a', {
-    description: 'Starts all platforms and packages.'
+    description: 'Starts all platforms and packages. ex: npx pmnps start -a'
   })
   .option('name', 'n', {
     description:
-      'Enter the package or platform name for executing "start" script.',
+      'Enter the package or platform name for executing "start" script. ex: npx pmnps start -n platform1,platform2',
     inputType: 'package or platform name'
   })
   .option('group', 'g', {
     description:
-      'Enter a group name for executing "start" script in package or platforms.',
+      'Enter a group name for executing "start" script in package or platforms. ex: npx pmnps start -g pmnps-mock',
     inputType: 'group name'
   })
   .describe('Run start script in packages or platforms.')
@@ -65,15 +67,17 @@ const startCommand = createPluginCommand('start')
 const runCommand = createPluginCommand('run')
   .args('script', 'Enter npm script command')
   .option('all', 'a', {
-    description: 'Executing scripts in all package or platforms.'
+    description:
+      'Executing scripts in all package or platforms. ex: npx pmnps run build -a'
   })
   .option('name', 'n', {
-    description: 'Enter the package or platform name for executing script.',
+    description:
+      'Enter the package or platform name for executing script. ex: npx pmnps run build -n platform1,platform2',
     inputType: 'package or platform name'
   })
   .option('group', 'g', {
     description:
-      'Enter a group name for executing scripts in package or platforms.',
+      'Enter a group name for executing scripts in package or platforms. ex: npx pmnps run build -g platform-mock',
     inputType: 'group name'
   })
   .describe('Run script in packages or platforms.')
