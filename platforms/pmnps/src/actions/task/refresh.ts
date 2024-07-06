@@ -1,6 +1,6 @@
 import { hold } from '@/state';
 import { task } from '@/actions/task';
-import { SystemCommands } from '@/constants';
+import { SystemCommands } from '@/cmds';
 import {
   equal,
   groupBy,
@@ -126,7 +126,6 @@ function mergeWorkspace(workspace: Package, packs: Package[]) {
       )
     };
   }, packageJson);
-  // const withWorkspacePackages = addWorkspacePackages(result, packs);
   const nextPackageJson = omitBy(result, (value, key) => {
     if (!['dependencies', 'devDependencies'].includes(key)) {
       return false;
@@ -358,7 +357,7 @@ export async function refresh(option?: {
       }) as ('package' | 'platform' | 'workspace')[])
     : undefined;
   refreshWorkspace();
-  const changes = hold.instance().diffDepsPackages(force);
+  const { packs: changes, isEmpty } = hold.instance().diffDepsPackages(force);
   refreshChangePackages(changes);
   const changeRoots = changes.filter(
     p => p.type === 'workspace' || p.packageJson.pmnps?.ownRoot === true
@@ -369,7 +368,14 @@ export async function refresh(option?: {
   );
   if (!installRange || installRange.includes('workspace')) {
     workRoots.forEach(p => {
-      task.execute(SystemCommands.install, p.path, 'install workspace');
+      task.execute(
+        SystemCommands.install({
+          isEmpty,
+          hasPackageLockJsonFile: p.hasPackageLockJsonFile
+        }),
+        p.path,
+        'install workspace'
+      );
     });
   }
   const [ownRootPackages, ownRootPlatforms] = partition(
@@ -379,7 +385,10 @@ export async function refresh(option?: {
   if (!installRange || installRange.includes('package')) {
     ownRootPackages.forEach(p => {
       task.execute(
-        SystemCommands.install,
+        SystemCommands.install({
+          isEmpty,
+          hasPackageLockJsonFile: p.hasPackageLockJsonFile
+        }),
         p.path,
         `install own root: ${p.name}`
       );
@@ -388,7 +397,10 @@ export async function refresh(option?: {
   if (!installRange || installRange.includes('platform')) {
     ownRootPlatforms.forEach(p => {
       task.execute(
-        SystemCommands.install,
+        SystemCommands.install({
+          isEmpty,
+          hasPackageLockJsonFile: p.hasPackageLockJsonFile
+        }),
         p.path,
         `install own root: ${p.name}`
       );
@@ -400,7 +412,7 @@ export async function refresh(option?: {
   const additionPackages = extractAdditionPackages();
   if (additionPackages.length) {
     task.execute(
-      [...SystemCommands.install, '--no-save', ...additionPackages],
+      [...SystemCommands.addInstall(), ...additionPackages, '--no-save'],
       path.cwd(),
       `install ${additionPackages.join()}`
     );

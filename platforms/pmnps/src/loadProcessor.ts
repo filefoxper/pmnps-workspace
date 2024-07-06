@@ -4,9 +4,10 @@ import { groupBy, orderBy, partition } from '@/libs/polyfill';
 import type { Package, PackageJson, Project, State } from '@/types';
 
 async function readProject(cwd: string): Promise<undefined | Project> {
-  const mainPackageJson = await file.readJson<PackageJson>(
-    path.join(cwd, 'package.json')
-  );
+  const [mainPackageJson, hasPackageLockJsonFile] = await Promise.all([
+    file.readJson<PackageJson>(path.join(cwd, 'package.json')),
+    file.isFile(path.join(cwd, 'package-lock.json'))
+  ]);
   if (!mainPackageJson) {
     return undefined;
   }
@@ -16,6 +17,7 @@ async function readProject(cwd: string): Promise<undefined | Project> {
     paths: null,
     packageJson: mainPackageJson,
     packageJsonFileName: 'package.json',
+    hasPackageLockJsonFile,
     type: 'workspace'
   };
   const [children, scopes] = await Promise.all([

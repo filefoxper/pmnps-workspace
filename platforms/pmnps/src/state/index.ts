@@ -75,20 +75,32 @@ export function hold() {
         packages = [],
         platforms = []
       } = project as Project['project'];
+      if (target == null) {
+        return {
+          packs: [workspace, ...packages, ...platforms].filter(
+            (d): d is Package => !!d
+          ),
+          isEmpty: true
+        };
+      }
       if (skipCompare) {
-        return [workspace, ...packages, ...platforms].filter(
-          (d): d is Package => !!d
-        );
+        return {
+          packs: [workspace, ...packages, ...platforms].filter(
+            (d): d is Package => !!d
+          )
+        };
       }
       const map = projectSupport.diffDepsPackagesMap(source, target);
-      return [workspace, ...packages, ...platforms].filter(
-        (d): d is Package => {
-          if (!d) {
-            return false;
+      return {
+        packs: [workspace, ...packages, ...platforms].filter(
+          (d): d is Package => {
+            if (!d) {
+              return false;
+            }
+            return !!map[d.path];
           }
-          return !!map[d.path];
-        }
-      );
+        )
+      };
     },
     subscribe(listener: () => void) {
       listeners.push(listener);

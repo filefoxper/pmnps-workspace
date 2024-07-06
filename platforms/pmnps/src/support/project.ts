@@ -30,6 +30,9 @@ async function collectPackages(
   const packageJsonFile = children.find(
     c => c.trim().toLocaleLowerCase() === 'package.json'
   );
+  const hasPackageLockJsonFile = children.some(
+    c => c.trim().toLocaleLowerCase() === 'package-lock.json'
+  );
   if (packageJsonFile && state.type !== 'workspace') {
     const packageJson = await file.readJson<PackageJson>(
       path.join(filePath, packageJsonFile)
@@ -44,6 +47,7 @@ async function collectPackages(
       paths,
       packageJson,
       packageJsonFileName: packageJsonFile,
+      hasPackageLockJsonFile,
       type: state.type
     };
     return [pack];
