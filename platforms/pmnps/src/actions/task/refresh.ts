@@ -350,6 +350,7 @@ export async function refresh(option?: {
       type: 'failed'
     };
   }
+  const { dynamicState = {} } = hold.instance().getState();
   const { force, install } = option ?? {};
   const installRange = install
     ? (install.split(',').filter(d => {
@@ -357,7 +358,7 @@ export async function refresh(option?: {
       }) as ('package' | 'platform' | 'workspace')[])
     : undefined;
   refreshWorkspace();
-  const { packs: changes, isEmpty } = hold.instance().diffDepsPackages(force);
+  const { packs: changes } = hold.instance().diffDepsPackages(force);
   refreshChangePackages(changes);
   const changeRoots = changes.filter(
     p => p.type === 'workspace' || p.packageJson.pmnps?.ownRoot === true
@@ -368,14 +369,8 @@ export async function refresh(option?: {
   );
   if (!installRange || installRange.includes('workspace')) {
     workRoots.forEach(p => {
-      task.execute(
-        SystemCommands.install({
-          isEmpty,
-          hasPackageLockJsonFile: p.hasPackageLockJsonFile
-        }),
-        p.path,
-        'install workspace'
-      );
+      const ds = dynamicState[p.name];
+      task.execute(SystemCommands.install(ds), p.path, 'install workspace');
     });
   }
   const [ownRootPackages, ownRootPlatforms] = partition(
@@ -384,11 +379,9 @@ export async function refresh(option?: {
   );
   if (!installRange || installRange.includes('package')) {
     ownRootPackages.forEach(p => {
+      const ds = dynamicState[p.name];
       task.execute(
-        SystemCommands.install({
-          isEmpty,
-          hasPackageLockJsonFile: p.hasPackageLockJsonFile
-        }),
+        SystemCommands.install(ds),
         p.path,
         `install own root: ${p.name}`
       );
@@ -396,11 +389,9 @@ export async function refresh(option?: {
   }
   if (!installRange || installRange.includes('platform')) {
     ownRootPlatforms.forEach(p => {
+      const ds = dynamicState[p.name];
       task.execute(
-        SystemCommands.install({
-          isEmpty,
-          hasPackageLockJsonFile: p.hasPackageLockJsonFile
-        }),
+        SystemCommands.install(ds),
         p.path,
         `install own root: ${p.name}`
       );

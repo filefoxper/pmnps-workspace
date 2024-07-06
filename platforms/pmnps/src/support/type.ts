@@ -1,3 +1,5 @@
+import type { Package } from '@/types';
+
 export type PackageItem = {
   name: string;
   checked?: boolean;
@@ -5,3 +7,8 @@ export type PackageItem = {
   dependencyItems: PackageItem[];
   dependentItems: PackageItem[];
 };
+
+export interface PackageWithDynamicState extends Package {
+  hasPackageLockJsonFile: boolean;
+  hasNodeModules: boolean;
+}

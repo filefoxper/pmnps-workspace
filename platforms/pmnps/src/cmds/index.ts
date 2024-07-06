@@ -1,10 +1,13 @@
 import { hold } from '@/state';
 
 export const SystemCommands = {
-  install: (opt?: { isEmpty?: boolean; hasPackageLockJsonFile?: boolean }) => {
+  install: (opt?: {
+    hasPackageLockJsonFile?: boolean;
+    hasNodeModules?: boolean;
+  }) => {
     const { useNpmCi } = hold.instance().getState().config ?? {};
-    const { isEmpty, hasPackageLockJsonFile } = opt ?? {};
-    if (useNpmCi && isEmpty && hasPackageLockJsonFile) {
+    const { hasPackageLockJsonFile, hasNodeModules } = opt ?? {};
+    if (useNpmCi && !hasNodeModules && hasPackageLockJsonFile) {
       return ['npm', 'ci'];
     }
     return ['npm', 'install'];

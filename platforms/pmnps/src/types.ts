@@ -25,8 +25,12 @@ export interface Package {
   name: string;
   packageJson: PackageJson;
   packageJsonFileName: string;
-  hasPackageLockJsonFile?: boolean;
   type: PackageType;
+}
+
+export interface DynamicStateUnit {
+  hasPackageLockJsonFile: boolean;
+  hasNodeModules: boolean;
 }
 
 export type Scope = {
@@ -99,6 +103,7 @@ export interface State {
   project?: Project;
   cacheProject?: Project;
   commands?: Record<string, Record<string, any>>;
+  dynamicState?: Record<string, DynamicStateUnit>;
 }
 
 export interface Template {

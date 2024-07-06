@@ -1,6 +1,6 @@
 import { file, path } from '@/libs';
 import { equal, keyBy, mapValues, omit, omitBy } from '@/libs/polyfill';
-import type { PackageItem } from '@/support/type';
+import type { PackageItem, PackageWithDynamicState } from '@/support/type';
 import type {
   Package,
   PackageJson,
@@ -33,6 +33,9 @@ async function collectPackages(
   const hasPackageLockJsonFile = children.some(
     c => c.trim().toLocaleLowerCase() === 'package-lock.json'
   );
+  const hasNodeModules = children.some(
+    c => c.trim().toLocaleLowerCase() === 'node_modules'
+  );
   if (packageJsonFile && state.type !== 'workspace') {
     const packageJson = await file.readJson<PackageJson>(
       path.join(filePath, packageJsonFile)
@@ -41,13 +44,14 @@ async function collectPackages(
       return [];
     }
     const paths = state.dirnames;
-    const pack: Package = {
+    const pack: PackageWithDynamicState = {
       path: filePath,
       name: packageJson.name ?? '',
       paths,
       packageJson,
       packageJsonFileName: packageJsonFile,
       hasPackageLockJsonFile,
+      hasNodeModules,
       type: state.type
     };
     return [pack];
@@ -78,13 +82,22 @@ async function collectPackages(
       }
       return collectPackages(path.join(filePath, currentName), nextState);
     })
-    .filter((d): d is Promise<Package[]> => !!d);
-  const results: Package[][] = await Promise.all(promises);
+    .filter((d): d is Promise<PackageWithDynamicState[]> => !!d);
+  const results: PackageWithDynamicState[][] = await Promise.all(promises);
   return results.flat();
 }
 
 async function loadPackages(cwd: string) {
-  return await collectPackages(cwd);
+  const packs = await collectPackages(cwd);
+  const ps = packs.map((p): Package => {
+    const { hasPackageLockJsonFile, hasNodeModules, ...rest } = p;
+    return rest;
+  });
+  const dynamicStates = packs.map(p => {
+    const { name, hasNodeModules, hasPackageLockJsonFile } = p;
+    return { name, hasNodeModules, hasPackageLockJsonFile };
+  });
+  return { packs: ps, dynamicStates };
 }
 
 async function loadScopes(cwd: string) {

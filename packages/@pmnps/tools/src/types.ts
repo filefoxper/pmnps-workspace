@@ -25,7 +25,6 @@ export interface Package {
   name: string;
   packageJson: PackageJson;
   packageJsonFileName: string;
-  hasPackageLockJsonFile?: boolean;
   type: PackageType;
 }
 
