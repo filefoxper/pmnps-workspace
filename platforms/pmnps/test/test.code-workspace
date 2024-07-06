@@ -1,9 +1,0 @@
-{
-  "folders": [
-    { "name": "root", "path": "." },
-    { "name": "@hades/widgets", "path": "packages/@hades/widgets" },
-    { "name": "@hades/layout", "path": "packages/@hades/layout" },
-    { "name": "taobao", "path": "platforms/taobao" }
-  ],
-  "settings": {}
-}
