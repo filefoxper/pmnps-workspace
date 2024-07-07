@@ -9,7 +9,8 @@
   "workspaces": [
     "packages/*",
     "packages/@test/*",
-    "packages/@pmnps/*"
+    "packages/@pmnps/*",
+    "platforms/pmnps"
   ],
   "dependencies": {
     "prettier": "^3.0.3",
