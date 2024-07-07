@@ -23,9 +23,6 @@ const findPmnps = function findPmnps(
   if (exist) {
     return detectPathname;
   }
-  if (fs.existsSync(path.join(pathname, '.pmnpsrc.json'))) {
-    return null;
-  }
   return findPmnps(path.join(pathname, '..'), times + 1);
 };
 
