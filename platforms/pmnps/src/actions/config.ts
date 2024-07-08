@@ -97,6 +97,7 @@ export async function configAction(): Promise<ActionMessage> {
           new inquirer.Separator('-- choosing --'),
           ...configRange.map(([desc]) => desc),
           new inquirer.Separator('-- setting --'),
+          'set package manager',
           'set workspace name',
           'set customized npm registry',
           'set project detail'
@@ -106,6 +107,19 @@ export async function configAction(): Promise<ActionMessage> {
     ].filter(d => d != null)
   );
   name = firstSetName;
+  let core = config?.core || 'npm';
+  if (detail.includes('set package manager')) {
+    const { manager } = await inquirer.prompt([
+      {
+        name: 'manager',
+        type: 'list',
+        message: 'Please choose a package manager.',
+        choices: ['npm', 'yarn'],
+        default: core
+      }
+    ]);
+    core = manager;
+  }
   if (detail.includes('set workspace name')) {
     const { name: workspaceName } = await inquirer.prompt([
       {
@@ -129,7 +143,10 @@ export async function configAction(): Promise<ActionMessage> {
     ]);
     registry = reg ?? '';
   }
-  const configSetting = { registry: registry.trim() || DEFAULT_REGISTRY };
+  const configSetting = {
+    registry: registry.trim() || DEFAULT_REGISTRY,
+    core: core.trim() as 'npm' | 'yarn' | undefined
+  };
   const projectDetail = {};
   if (detail.includes('set project detail')) {
     const detailSetting = await inquirer.prompt([

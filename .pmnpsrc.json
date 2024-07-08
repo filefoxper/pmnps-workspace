@@ -10,5 +10,7 @@
     "@pmnps/plugin-vscode-workspace",
     ["@pmnps/plugin-publish", { "registry": "https://registry.npmjs.org" }]
   ],
-  "useCommandHelp": true
+  "useCommandHelp": true,
+  "useNpmCi": false,
+  "core": "npm"
 }

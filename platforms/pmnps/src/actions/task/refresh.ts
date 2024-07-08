@@ -265,14 +265,19 @@ function refreshWorkspace() {
   const workspaces = orderBy([...workspaceSet], [a => a], ['desc']);
   if (
     workspaces.join() ===
-    orderBy(workspacePackageJson?.workspaces ?? [], [a => a], ['desc']).join()
+      orderBy(
+        workspacePackageJson?.workspaces ?? [],
+        [a => a],
+        ['desc']
+      ).join() ||
+    workspacePackageJson.private !== true
   ) {
     return;
   }
   task.writePackage({
     paths: null,
     type: 'workspace',
-    packageJson: { ...workspacePackageJson, workspaces }
+    packageJson: { ...workspacePackageJson, workspaces, private: true }
   });
 }
 
