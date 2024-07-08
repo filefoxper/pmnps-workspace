@@ -1,6 +1,12 @@
 import { hold } from '@/state';
 
 export const SystemCommands = {
+  start: () => {
+    return ['npm', 'start'];
+  },
+  run: () => {
+    return ['npm', 'run'];
+  },
   install: (opt?: {
     hasPackageLockJsonFile?: boolean;
     hasNodeModules?: boolean;
