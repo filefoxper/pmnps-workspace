@@ -28,6 +28,11 @@ export interface Package {
   type: PackageType;
 }
 
+export interface DynamicStateUnit {
+  hasPackageLockJsonFile: boolean;
+  hasNodeModules: boolean;
+}
+
 export type Scope = {
   name: string;
   path: string;
@@ -75,6 +80,7 @@ export interface ConfigDetail {
   useCommandHelp: boolean;
   usePerformanceFirst: boolean;
   useRefreshAfterInstall: boolean;
+  useNpmCi?: boolean;
 }
 
 export interface ConfigSetting {
@@ -97,6 +103,7 @@ export interface State {
   project?: Project;
   cacheProject?: Project;
   commands?: Record<string, Record<string, any>>;
+  dynamicState?: Record<string, DynamicStateUnit>;
 }
 
 export interface Template {

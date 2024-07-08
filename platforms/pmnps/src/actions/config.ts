@@ -13,7 +13,8 @@ const configRange: Array<[string, keyof ConfigDetail]> = [
   ['use git', 'useGit'],
   ['use command help', 'useCommandHelp'],
   ['use performance first', 'usePerformanceFirst'],
-  ['use refresh after install', 'useRefreshAfterInstall']
+  ['use refresh after install', 'useRefreshAfterInstall'],
+  ['use npm ci to instead npm install intelligently', 'useNpmCi']
 ];
 
 function decodeConfig(config: Config | undefined) {
@@ -23,7 +24,8 @@ function decodeConfig(config: Config | undefined) {
     useGit: true,
     useCommandHelp: true,
     usePerformanceFirst: true,
-    useRefreshAfterInstall: true
+    useRefreshAfterInstall: true,
+    useNpmCi: true
   };
   const conf =
     config ??
@@ -34,7 +36,8 @@ function decodeConfig(config: Config | undefined) {
       useGit: false,
       useCommandHelp: false,
       usePerformanceFirst: false,
-      useRefreshAfterInstall: false
+      useRefreshAfterInstall: false,
+      useNpmCi: false
     } as Config);
   return configRange
     .map(([desc, value]) => {
@@ -50,7 +53,8 @@ function encodeConfig(detail: string[]): ConfigDetail {
     useGit: true,
     useCommandHelp: true,
     usePerformanceFirst: true,
-    useRefreshAfterInstall: true
+    useRefreshAfterInstall: true,
+    useNpmCi: true
   };
   const allUncheckedConfig = {
     projectType: 'classify',
@@ -58,7 +62,8 @@ function encodeConfig(detail: string[]): ConfigDetail {
     useGit: false,
     useCommandHelp: false,
     usePerformanceFirst: false,
-    useRefreshAfterInstall: false
+    useRefreshAfterInstall: false,
+    useNpmCi: false
   };
   const set = new Set(detail);
   const e = configRange.map(([desc, key]) => {

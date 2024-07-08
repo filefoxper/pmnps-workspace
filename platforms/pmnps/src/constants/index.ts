@@ -10,13 +10,6 @@ export const DEV_DEPS = {
 
 export const DEFAULT_REGISTRY = 'https://registry.npmjs.org/';
 
-export const SystemCommands = {
-  install: ['npm', 'install'],
-  prettier: ['npx', 'prettier', '--write'],
-  prettierPackageJson: ['npx', 'prettier-package-json', '--write'],
-  gitAdd: ['git', 'add']
-};
-
 export const SystemFormatter = {
   json: (c: string | null) =>
     Promise.resolve(format(c ?? '{}', { parser: 'json' })),

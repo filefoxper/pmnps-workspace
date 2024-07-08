@@ -3,8 +3,9 @@ import { format as formatPackageJson } from 'prettier-package-json';
 import { message, path } from '@/libs';
 import { hold } from '@/state';
 import { equal, omitBy, orderBy, partition } from '@/libs/polyfill';
-import { CONF_NAME, SystemCommands, SystemFormatter } from '@/constants';
+import { CONF_NAME, SystemFormatter } from '@/constants';
 import { projectSupport } from '@/support';
+import { SystemCommands } from '@/cmds';
 import { executeSystemOrders } from './exec';
 import { refreshProject } from './refresh';
 import { write } from './write';
@@ -426,7 +427,7 @@ async function executeTasks(requireRefresh: boolean, level?: number) {
       [
         ...orders,
         useGit && writes.length && !ifThereAreOnlyWriteCacheTasks(writes)
-          ? { command: [...SystemCommands.gitAdd, path.cwd()] }
+          ? { command: [...SystemCommands.gitAdd(), path.cwd()] }
           : null
       ].filter((d): d is Execution => !!d)
     );

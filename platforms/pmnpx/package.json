@@ -1,0 +1,27 @@
+{
+  "name": "pmnpx",
+  "version": "4.1.0",
+  "description": "This is a package for starting pmnps.",
+  "author": "Jimmy.Harding",
+  "homepage": "https://github.com/filefoxper/pmnps-workspace",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/filefoxper/pmnps-workspace"
+  },
+  "module": "src/index.ts",
+  "bin": {
+    "pmnpx": "./bin/index.js"
+  },
+  "files": [
+    "bin",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "build": "node ./build.js",
+    "start": "ts-node --require ./tsconfig-paths-require.js ./src/test.index.ts"
+  },
+  "preferGlobal": true,
+  "dependencies": {
+    "pmnps": "^4.1.0"
+  }
+}

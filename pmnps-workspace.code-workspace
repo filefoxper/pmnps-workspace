@@ -10,6 +10,7 @@
       "name": "@pmnps/plugin-publish",
       "path": "packages/@pmnps/plugin-publish"
     },
+    { "name": "pmnpx", "path": "platforms/pmnpx" },
     { "name": "pmnps", "path": "platforms/pmnps" }
   ],
   "settings": {}

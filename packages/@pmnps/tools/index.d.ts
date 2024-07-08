@@ -59,6 +59,7 @@ export interface ConfigDetail {
   useCommandHelp: boolean;
   usePerformanceFirst: boolean;
   useRefreshAfterInstall: boolean;
+  useNpmCi?: boolean;
 }
 
 export interface ConfigSetting {

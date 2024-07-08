@@ -2,6 +2,7 @@ import { inquirer } from '@/libs';
 import { hold } from '@/state';
 import { keyBy, partition } from '@/libs/polyfill';
 import { task } from '@/actions/task';
+import { SystemCommands } from '@/cmds';
 import type { ActionMessage } from '@/actions/task/type';
 
 function getProject() {
@@ -153,7 +154,7 @@ export async function startAction(options?: {
       return undefined;
     }
     const { path } = p;
-    task.execute(['npm', 'start'], path);
+    task.execute(SystemCommands.start(), path);
   });
   return {
     type: 'success',
@@ -173,7 +174,7 @@ export async function runAction(
       {
         name: 'cmd',
         type: 'input',
-        message: 'Please enter a npm script for running.'
+        message: 'Please enter a script name for running.'
       }
     ]);
     command = (c || '').trim();
@@ -319,7 +320,7 @@ export async function runAction(
       return undefined;
     }
     const { path } = p;
-    task.execute(['npm', 'run', command], path);
+    task.execute([...SystemCommands.run(), command], path);
   });
   return {
     type: 'success',

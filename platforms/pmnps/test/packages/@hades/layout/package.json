@@ -1,9 +1,0 @@
-{
-  "private": false,
-  "name": "@hades/layout",
-  "version": "1.0.0",
-  "description": "This is a package",
-  "dependencies": {
-    "@hades/widgets": "1.0.0"
-  }
-}
