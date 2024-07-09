@@ -1,4 +1,5 @@
 import { hold } from '@/state';
+import type { Package } from '@/types';
 
 export const SystemCommands = {
   start: () => {
@@ -18,23 +19,41 @@ export const SystemCommands = {
   install: (opt?: {
     hasPackageLockJsonFile?: boolean;
     hasNodeModules?: boolean;
+    isPoint?: boolean;
   }) => {
-    const { useNpmCi, core = 'npm' } = hold.instance().getState().config ?? {};
+    const {
+      useNpmCi,
+      core = 'npm',
+      useRefreshAfterInstall
+    } = hold.instance().getState().config ?? {};
+    const { hasPackageLockJsonFile, hasNodeModules, isPoint } = opt ?? {};
     if (core === 'yarn') {
-      return ['yarn', 'install'];
+      return isPoint && useRefreshAfterInstall
+        ? ['yarn', 'install', '--check-files', '--ignore-scripts']
+        : ['yarn', 'install', '--check-files'];
     }
-    const { hasPackageLockJsonFile, hasNodeModules } = opt ?? {};
     if (useNpmCi && !hasNodeModules && hasPackageLockJsonFile) {
-      return ['npm', 'ci'];
+      return isPoint && useRefreshAfterInstall
+        ? ['npm', 'ci', '--ignore-scripts']
+        : ['npm', 'ci'];
     }
-    return ['npm', 'install'];
+    return isPoint && useRefreshAfterInstall
+      ? ['npm', 'install', '--ignore-scripts']
+      : ['npm', 'install'];
   },
-  addInstall: () => {
-    const { core = 'npm' } = hold.instance().getState().config ?? {};
+  link: (packs: Package[]) => {
+    const { core = 'npm', useRefreshAfterInstall } =
+      hold.instance().getState().config ?? {};
     if (core === 'yarn') {
-      return ['yarn', 'add'];
+      return ['yarn', 'install', '--ignore-scripts'];
     }
-    return ['npm', 'install'];
+    return [
+      'npm',
+      'install',
+      '--ignore-scripts',
+      '--no-save',
+      ...packs.map(n => n.name)
+    ];
   },
   gitAdd: () => ['git', 'add']
 };

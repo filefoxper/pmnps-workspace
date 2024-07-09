@@ -235,13 +235,13 @@ function extractAdditionPackages() {
   const packages = project?.project?.packages ?? [];
   const cachePackages = cacheProject?.project?.packages ?? [];
   const cachePackageNameSet = new Set(cachePackages.map(p => p.name));
-  return packages.map(p => p.name).filter(n => !cachePackageNameSet.has(n));
+  return packages.filter(n => !cachePackageNameSet.has(n.name));
 }
 
 function refreshWorkspace() {
   const { project, config } = hold.instance().getState();
-  const { scopes = [], workspace } = project?.project ?? {};
-  const { projectType } = config ?? {};
+  const { scopes = [], workspace, platforms = [] } = project?.project ?? {};
+  const { projectType, core = 'npm' } = config ?? {};
   const workspacePackageJson = workspace?.packageJson;
   if (workspacePackageJson == null) {
     return;
@@ -256,12 +256,21 @@ function refreshWorkspace() {
     }
     return;
   }
+  function buildYarnWorkspace() {
+    return platforms
+      .filter(p => !p.packageJson?.pmnps?.ownRoot)
+      .map(p => `platforms/${p.name}`);
+  }
   const scopeWorkspaces = scopes.map(s => `packages/${s.name}/*`);
-  const workspaceSet = new Set([
-    'packages/*',
-    ...scopeWorkspaces,
-    ...(workspacePackageJson?.workspaces ?? [])
-  ]);
+  const workspaceSet = new Set(
+    core === 'yarn'
+      ? ['packages/*', ...scopeWorkspaces, ...buildYarnWorkspace()]
+      : [
+          'packages/*',
+          ...scopeWorkspaces,
+          ...(workspacePackageJson?.workspaces ?? [])
+        ].filter(n => !n.startsWith('platforms'))
+  );
   const workspaces = orderBy([...workspaceSet], [a => a], ['desc']);
   if (
     workspaces.join() ===
@@ -375,7 +384,11 @@ export async function refresh(option?: {
   if (!installRange || installRange.includes('workspace')) {
     workRoots.forEach(p => {
       const ds = dynamicState[p.name];
-      task.execute(SystemCommands.install(ds), p.path, 'install workspace');
+      task.execute(
+        SystemCommands.install({ ...ds, isPoint: !!installRange }),
+        p.path,
+        'install workspace'
+      );
     });
   }
   const [ownRootPackages, ownRootPlatforms] = partition(
@@ -386,7 +399,7 @@ export async function refresh(option?: {
     ownRootPackages.forEach(p => {
       const ds = dynamicState[p.name];
       task.execute(
-        SystemCommands.install(ds),
+        SystemCommands.install({ ...ds, isPoint: !!installRange }),
         p.path,
         `install own root: ${p.name}`
       );
@@ -396,7 +409,7 @@ export async function refresh(option?: {
     ownRootPlatforms.forEach(p => {
       const ds = dynamicState[p.name];
       task.execute(
-        SystemCommands.install(ds),
+        SystemCommands.install({ ...ds, isPoint: !!installRange }),
         p.path,
         `install own root: ${p.name}`
       );
@@ -408,7 +421,7 @@ export async function refresh(option?: {
   const additionPackages = extractAdditionPackages();
   if (additionPackages.length) {
     task.execute(
-      [...SystemCommands.addInstall(), ...additionPackages, '--no-save'],
+      SystemCommands.link(additionPackages),
       path.cwd(),
       `install ${additionPackages.join()}`
     );

@@ -15,6 +15,7 @@ export async function startAction(options?: {
   group?: string;
   name?: string;
 }): Promise<ActionMessage> {
+  const { projectType = 'monorepo' } = hold.instance().getState().config ?? {};
   const { all, name, group } = options ?? {};
   const groupName = typeof group === 'string' ? group.trim() : null;
   const projectWrap = getProject();
@@ -29,7 +30,10 @@ export async function startAction(options?: {
   const packages = entries
     .map(([p, v]) => ({ ...v, path: p }))
     .filter(pack => {
-      return pack.packageJson.scripts?.start;
+      return (
+        pack.packageJson.scripts?.start &&
+        (projectType !== 'monorepo' || pack.type !== 'workspace')
+      );
     });
   const names = packages.map(p => p.name);
   const argumentName = (name ?? '').trim();
@@ -166,6 +170,7 @@ export async function runAction(
   cmd?: string,
   options?: { name?: string; group?: string; all?: boolean }
 ): Promise<ActionMessage> {
+  const { projectType = 'monorepo' } = hold.instance().getState().config ?? {};
   const { all, name, group } = options ?? {};
   const groupName = typeof group === 'string' ? group.trim() : null;
   let command = (cmd ?? '').trim();
@@ -194,7 +199,10 @@ export async function runAction(
   const packages = entries
     .map(([p, v]) => ({ ...v, path: p }))
     .filter(pack => {
-      return pack.packageJson.scripts?.[command];
+      return (
+        pack.packageJson.scripts?.[command] &&
+        (projectType !== 'monorepo' || pack.type !== 'workspace')
+      );
     });
   const names = packages.map(p => p.name);
   const argumentName = (name ?? '').trim();

@@ -394,7 +394,7 @@ function ifThereAreOnlyWriteCacheTasks(tasks: Task[]) {
   return tasks.every(t => t.type === 'write' && t.path === pathname);
 }
 
-function refreshCache() {
+export function refreshCache() {
   const { project, cacheProject } = hold.instance().getState();
   if (project != null && !equal(project, cacheProject)) {
     const projectSerial = projectSupport.serial(project);

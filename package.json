@@ -3,7 +3,6 @@
   "version": "4.0.0",
   "description": "project of monorepo platforms",
   "scripts": {
-    "postinstall": "pmnps refresh -i package,platform",
     "start": "ts-node ./platforms/pmnps/src/index.ts"
   },
   "workspaces": [

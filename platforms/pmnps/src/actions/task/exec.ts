@@ -28,9 +28,14 @@ async function consumeAndInstall(install: Execution[], cwd: string) {
 export async function executeSystemOrders(orders: Execution[]) {
   const cwd = path.cwd();
   const { config } = hold.instance().getState();
-  const [install, others] = partition(orders, o =>
-    o.command.join('_').startsWith('npm_install')
-  );
+  const [install, others] = partition(orders, o => {
+    const k = o.command.join('_');
+    return (
+      k.startsWith('npm_install') ||
+      k.startsWith('yarn_install') ||
+      k.startsWith('pnpm_install')
+    );
+  });
   const cwds = new Map(
     install.map(i => {
       const { cwd: icwd, command } = i;

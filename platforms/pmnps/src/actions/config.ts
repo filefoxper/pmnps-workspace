@@ -13,7 +13,7 @@ const configRange: Array<[string, keyof ConfigDetail]> = [
   ['use git', 'useGit'],
   ['use command help', 'useCommandHelp'],
   ['use performance first', 'usePerformanceFirst'],
-  ['use refresh after install', 'useRefreshAfterInstall'],
+  ['use refresh after install (not recommend)', 'useRefreshAfterInstall'],
   ['use npm ci to instead npm install intelligently', 'useNpmCi']
 ];
 
