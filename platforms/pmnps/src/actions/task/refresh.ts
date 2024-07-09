@@ -241,7 +241,7 @@ function extractAdditionPackages() {
 function refreshWorkspace() {
   const { project, config } = hold.instance().getState();
   const { scopes = [], workspace } = project?.project ?? {};
-  const { projectType } = config ?? {};
+  const { projectType, core = 'npm' } = config ?? {};
   const workspacePackageJson = workspace?.packageJson;
   if (workspacePackageJson == null) {
     return;
@@ -257,12 +257,20 @@ function refreshWorkspace() {
     return;
   }
   const scopeWorkspaces = scopes.map(s => `packages/${s.name}/*`);
-  const workspaceSet = new Set([
-    'packages/*',
-    ...scopeWorkspaces,
-    'platforms/*',
-    ...(workspacePackageJson?.workspaces ?? [])
-  ]);
+  const workspaceSet = new Set(
+    core === 'yarn'
+      ? [
+          'packages/*',
+          ...scopeWorkspaces,
+          'platforms/*',
+          ...(workspacePackageJson?.workspaces ?? [])
+        ]
+      : [
+          'packages/*',
+          ...scopeWorkspaces,
+          ...(workspacePackageJson?.workspaces ?? [])
+        ].filter(n => !n.startsWith('platforms'))
+  );
   const workspaces = orderBy([...workspaceSet], [a => a], ['desc']);
   if (
     workspaces.join() ===
@@ -376,7 +384,11 @@ export async function refresh(option?: {
   if (!installRange || installRange.includes('workspace')) {
     workRoots.forEach(p => {
       const ds = dynamicState[p.name];
-      task.execute(SystemCommands.install(ds), p.path, 'install workspace');
+      task.execute(
+        SystemCommands.install({ ...ds, isPoint: !!installRange }),
+        p.path,
+        'install workspace'
+      );
     });
   }
   const [ownRootPackages, ownRootPlatforms] = partition(
@@ -387,7 +399,7 @@ export async function refresh(option?: {
     ownRootPackages.forEach(p => {
       const ds = dynamicState[p.name];
       task.execute(
-        SystemCommands.install(ds),
+        SystemCommands.install({ ...ds, isPoint: !!installRange }),
         p.path,
         `install own root: ${p.name}`
       );
@@ -397,7 +409,7 @@ export async function refresh(option?: {
     ownRootPlatforms.forEach(p => {
       const ds = dynamicState[p.name];
       task.execute(
-        SystemCommands.install(ds),
+        SystemCommands.install({ ...ds, isPoint: !!installRange }),
         p.path,
         `install own root: ${p.name}`
       );
@@ -409,7 +421,7 @@ export async function refresh(option?: {
   const additionPackages = extractAdditionPackages();
   if (additionPackages.length) {
     task.execute(
-      SystemCommands.addInstall(additionPackages),
+      SystemCommands.link(additionPackages),
       path.cwd(),
       `install ${additionPackages.join()}`
     );

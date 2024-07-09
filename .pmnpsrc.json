@@ -4,7 +4,7 @@
   "projectType": "monorepo",
   "useGit": true,
   "usePerformanceFirst": false,
-  "useRefreshAfterInstall": true,
+  "useRefreshAfterInstall": false,
   "registry": "https://registry.npmmirror.com",
   "plugins": [
     "@pmnps/plugin-vscode-workspace",
