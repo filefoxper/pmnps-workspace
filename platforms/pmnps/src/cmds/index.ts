@@ -22,7 +22,7 @@ export const SystemCommands = {
   }) => {
     const { useNpmCi, core = 'npm' } = hold.instance().getState().config ?? {};
     if (core === 'yarn') {
-      return ['yarn', 'install'];
+      return ['yarn', 'install', '--check-files'];
     }
     const { hasPackageLockJsonFile, hasNodeModules } = opt ?? {};
     if (useNpmCi && !hasNodeModules && hasPackageLockJsonFile) {
@@ -33,7 +33,7 @@ export const SystemCommands = {
   addInstall: (packs: Package[]) => {
     const { core = 'npm' } = hold.instance().getState().config ?? {};
     if (core === 'yarn') {
-      return ['yarn', 'add', ...packs.map(n => `link:/${n.path}`)];
+      return ['yarn', 'add','-W', ...packs.map(n => `link:/${n.path}`)];
     }
     return ['npm', 'install', '--no-save', ...packs.map(n => n.name)];
   },
