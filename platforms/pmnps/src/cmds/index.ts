@@ -29,8 +29,8 @@ export const SystemCommands = {
     const { hasPackageLockJsonFile, hasNodeModules, isPoint } = opt ?? {};
     if (core === 'yarn') {
       return isPoint && useRefreshAfterInstall
-        ? ['yarn', 'install', '--check-files', '--ignore-scripts']
-        : ['yarn', 'install', '--check-files'];
+        ? ['yarn', 'install', '--ignore-scripts']
+        : ['yarn', 'install'];
     }
     if (useNpmCi && !hasNodeModules && hasPackageLockJsonFile) {
       return isPoint && useRefreshAfterInstall
@@ -42,8 +42,7 @@ export const SystemCommands = {
       : ['npm', 'install'];
   },
   link: (packs: Package[]) => {
-    const { core = 'npm', useRefreshAfterInstall } =
-      hold.instance().getState().config ?? {};
+    const { core = 'npm' } = hold.instance().getState().config ?? {};
     if (core === 'yarn') {
       return ['yarn', 'install', '--ignore-scripts'];
     }
