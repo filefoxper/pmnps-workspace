@@ -471,3 +471,8 @@ All the plugins and templates can be kept in `packages` dir or publish to `npm s
 * rebuild plugin system.
 * rebuild a more efficient refresh system.
 * rebuild a more efficient io system.
+
+### v 4.1.1
+
+* support 'npm'|'yarn' as package manager
+* support 'npm ci'

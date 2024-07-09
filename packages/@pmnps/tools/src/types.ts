@@ -80,6 +80,7 @@ export interface ConfigDetail {
 
 export interface ConfigSetting {
   registry?: string;
+  core?: 'npm' | 'yarn';
 }
 
 export interface ConfigPlugins {

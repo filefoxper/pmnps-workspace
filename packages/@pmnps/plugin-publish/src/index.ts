@@ -116,6 +116,7 @@ function levelPackages(packs: Package[]): Package[][] {
 }
 
 async function publishOneByOne(
+  manager: 'npm' | 'yarn',
   registry: string | null | undefined,
   packs: Package[],
   otp?: string
@@ -130,24 +131,43 @@ async function publishOneByOne(
   const isScopePackage = name.startsWith('@');
   const scopeParams = isScopePackage ? ['--access=public'] : [];
   const otpParams = otp ? ['--otp', otp] : [];
-  await execution.exec(
-    'npm',
-    [
-      'publish',
-      '--registry',
-      registry || officialReg,
-      ...scopeParams,
-      ...otpParams
-    ],
-    {
-      cwd: pathname,
-      stdio: 'inherit'
-    }
-  );
+  if (manager === 'yarn') {
+    await execution.exec(
+      'yarn',
+      [
+        'npm',
+        'publish',
+        '--registry',
+        registry || officialReg,
+        ...scopeParams,
+        ...otpParams
+      ],
+      {
+        cwd: pathname,
+        stdio: 'inherit'
+      }
+    );
+  } else {
+    await execution.exec(
+      'npm',
+      [
+        'publish',
+        '--registry',
+        registry || officialReg,
+        ...scopeParams,
+        ...otpParams
+      ],
+      {
+        cwd: pathname,
+        stdio: 'inherit'
+      }
+    );
+  }
+
   if (!rest.length) {
     return;
   }
-  await publishOneByOne(registry, rest, otp);
+  await publishOneByOne(manager, registry, rest, otp);
 }
 
 const USE_PUBLISH_OTP = 'use npm publish --otp';
@@ -190,7 +210,12 @@ const publishPlugin: Plugin<Query> = function publishPlugin(query?: Query) {
       ) => {
         const { required, getConfig, getProject } = state;
         const { force, otp, batch } = option ?? {};
-        const { private: pri, registry, projectType } = getConfig();
+        const {
+          private: pri,
+          registry,
+          projectType,
+          core = 'npm'
+        } = getConfig();
         const { project } = getProject();
         const { packages = [], platforms = [], workspace } = project;
         if (!workspace) {
@@ -296,6 +321,23 @@ const publishPlugin: Plugin<Query> = function publishPlugin(query?: Query) {
             const isScopePackage = name.startsWith('@');
             const scopeParams = isScopePackage ? ['--access=public'] : [];
             const otpParams = publishOtp ? ['--otp', publishOtp] : [];
+            if (core === 'yarn') {
+              return execution.exec(
+                'yarn',
+                [
+                  'npm',
+                  'publish',
+                  '--registry',
+                  reg || officialReg,
+                  ...scopeParams,
+                  ...otpParams
+                ],
+                {
+                  cwd: pathname,
+                  stdin: 'inherit'
+                }
+              );
+            }
             return execution.exec(
               'npm',
               [
@@ -324,7 +366,7 @@ const publishPlugin: Plugin<Query> = function publishPlugin(query?: Query) {
             content: 'Publish success...'
           };
         }
-        await publishOneByOne(reg, sortedPacks, publishOtp);
+        await publishOneByOne(core, reg, sortedPacks, publishOtp);
         return {
           type: 'success',
           content: 'Publish success...'
