@@ -235,7 +235,7 @@ function extractAdditionPackages() {
   const packages = project?.project?.packages ?? [];
   const cachePackages = cacheProject?.project?.packages ?? [];
   const cachePackageNameSet = new Set(cachePackages.map(p => p.name));
-  return packages.map(p => p.name).filter(n => !cachePackageNameSet.has(n));
+  return packages.filter(n => !cachePackageNameSet.has(n.name));
 }
 
 function refreshWorkspace() {
@@ -260,6 +260,7 @@ function refreshWorkspace() {
   const workspaceSet = new Set([
     'packages/*',
     ...scopeWorkspaces,
+    'platforms/*',
     ...(workspacePackageJson?.workspaces ?? [])
   ]);
   const workspaces = orderBy([...workspaceSet], [a => a], ['desc']);
@@ -408,7 +409,7 @@ export async function refresh(option?: {
   const additionPackages = extractAdditionPackages();
   if (additionPackages.length) {
     task.execute(
-      [...SystemCommands.addInstall(), ...additionPackages, '--no-save'],
+      SystemCommands.addInstall(additionPackages),
       path.cwd(),
       `install ${additionPackages.join()}`
     );

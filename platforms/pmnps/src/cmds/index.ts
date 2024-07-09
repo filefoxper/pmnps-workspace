@@ -1,4 +1,5 @@
 import { hold } from '@/state';
+import type { Package } from '@/types';
 
 export const SystemCommands = {
   start: () => {
@@ -29,12 +30,12 @@ export const SystemCommands = {
     }
     return ['npm', 'install'];
   },
-  addInstall: () => {
+  addInstall: (packs: Package[]) => {
     const { core = 'npm' } = hold.instance().getState().config ?? {};
     if (core === 'yarn') {
-      return ['yarn', 'add'];
+      return ['yarn', 'add', ...packs.map(n => `link:/${n.path}`)];
     }
-    return ['npm', 'install'];
+    return ['npm', 'install', '--no-save', ...packs.map(n => n.name)];
   },
   gitAdd: () => ['git', 'add']
 };
