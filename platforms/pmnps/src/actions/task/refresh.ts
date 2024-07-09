@@ -240,7 +240,7 @@ function extractAdditionPackages() {
 
 function refreshWorkspace() {
   const { project, config } = hold.instance().getState();
-  const { scopes = [], workspace } = project?.project ?? {};
+  const { scopes = [], workspace, platforms = [] } = project?.project ?? {};
   const { projectType, core = 'npm' } = config ?? {};
   const workspacePackageJson = workspace?.packageJson;
   if (workspacePackageJson == null) {
@@ -256,15 +256,15 @@ function refreshWorkspace() {
     }
     return;
   }
+  function buildYarnWorkspace() {
+    return platforms
+      .filter(p => !p.packageJson?.pmnps?.ownRoot)
+      .map(p => `platforms/${p.name}`);
+  }
   const scopeWorkspaces = scopes.map(s => `packages/${s.name}/*`);
   const workspaceSet = new Set(
     core === 'yarn'
-      ? [
-          'packages/*',
-          ...scopeWorkspaces,
-          'platforms/*',
-          ...(workspacePackageJson?.workspaces ?? [])
-        ]
+      ? ['packages/*', ...scopeWorkspaces, ...buildYarnWorkspace()]
       : [
           'packages/*',
           ...scopeWorkspaces,
