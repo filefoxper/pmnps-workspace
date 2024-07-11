@@ -109,7 +109,7 @@ export async function configAction(): Promise<ActionMessage> {
   name = firstSetName;
   let core = config?.core || 'npm';
   let confirmSetInstallParameters = false;
-  let installParameters = undefined;
+  let installParameters = config?.installParameters;
   if (detail.includes('set package manager')) {
     const { manager, confirmSetParameters } = await inquirer.prompt([
       {
