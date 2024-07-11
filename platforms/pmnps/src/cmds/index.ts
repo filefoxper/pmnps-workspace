@@ -69,6 +69,7 @@ export const SystemCommands = {
       'install',
       '--ignore-scripts',
       '--no-save',
+      '--workspace',
       ...packs.map(n => n.name)
     ];
   },
