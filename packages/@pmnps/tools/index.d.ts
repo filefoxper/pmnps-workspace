@@ -65,6 +65,7 @@ export interface ConfigDetail {
 export interface ConfigSetting {
   registry?: string;
   core?: 'npm' | 'yarn';
+  installParameters?: string;
 }
 
 export interface ConfigPlugins {

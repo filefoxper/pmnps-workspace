@@ -38,6 +38,11 @@ const refreshCommand = createPluginCommand('refresh')
       'Enter project types to limit the install command range. ex: npx pmnps refresh -i package,platform',
     inputType: 'package | platform | workspace'
   })
+  .option('parameters', 'p', {
+    description:
+      'Enter the install command parameters. ex: npx pmnps refresh -p "--ignore-scripts"',
+    inputType: '"char"'
+  })
   .describe('Integrate and install project dependencies.')
   .action((state, argument, option) => refreshAction(option));
 
