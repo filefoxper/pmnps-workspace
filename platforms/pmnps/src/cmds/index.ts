@@ -1,6 +1,10 @@
 import { hold } from '@/state';
 import type { Package } from '@/types';
 
+function parseParameters(parameters = '') {
+  return parameters.split(/\s/).filter(d => d.trim());
+}
+
 export const SystemCommands = {
   start: () => {
     const { core = 'npm' } = hold.instance().getState().config ?? {};
@@ -20,26 +24,40 @@ export const SystemCommands = {
     hasPackageLockJsonFile?: boolean;
     hasNodeModules?: boolean;
     isPoint?: boolean;
+    parameters?: string;
   }) => {
     const {
       useNpmCi,
       core = 'npm',
-      useRefreshAfterInstall
+      useRefreshAfterInstall,
+      installParameters = ''
     } = hold.instance().getState().config ?? {};
-    const { hasPackageLockJsonFile, hasNodeModules, isPoint } = opt ?? {};
+    const {
+      hasPackageLockJsonFile,
+      hasNodeModules,
+      isPoint,
+      parameters = ''
+    } = opt ?? {};
+    const ps = [
+      ...parseParameters(installParameters),
+      ...parseParameters(parameters)
+    ]
+      .join(' ')
+      .split(' ')
+      .filter(d => d.trim());
     if (core === 'yarn') {
       return isPoint && useRefreshAfterInstall
-        ? ['yarn', 'install', '--ignore-scripts']
-        : ['yarn', 'install'];
+        ? ['yarn', 'install', '--ignore-scripts', ...ps]
+        : ['yarn', 'install', ...ps];
     }
     if (useNpmCi && !hasNodeModules && hasPackageLockJsonFile) {
       return isPoint && useRefreshAfterInstall
-        ? ['npm', 'ci', '--ignore-scripts']
-        : ['npm', 'ci'];
+        ? ['npm', 'ci', '--ignore-scripts', ...ps]
+        : ['npm', 'ci', ...ps];
     }
     return isPoint && useRefreshAfterInstall
-      ? ['npm', 'install', '--ignore-scripts']
-      : ['npm', 'install'];
+      ? ['npm', 'install', '--ignore-scripts', ...ps]
+      : ['npm', 'install', ...ps];
   },
   link: (packs: Package[]) => {
     const { core = 'npm' } = hold.instance().getState().config ?? {};

@@ -348,6 +348,7 @@ function refreshChangePackages(changes: Package[]) {
 export async function refresh(option?: {
   force?: boolean;
   install?: string;
+  parameters?: string;
 }): Promise<ActionMessage> {
   mergeProject();
   const loops = analyzePackagePaths();
@@ -365,7 +366,7 @@ export async function refresh(option?: {
     };
   }
   const { dynamicState = {} } = hold.instance().getState();
-  const { force, install } = option ?? {};
+  const { force, install, parameters } = option ?? {};
   const installRange = install
     ? (install.split(',').filter(d => {
         return d.trim();
@@ -385,7 +386,7 @@ export async function refresh(option?: {
     workRoots.forEach(p => {
       const ds = dynamicState[p.name];
       task.execute(
-        SystemCommands.install({ ...ds, isPoint: !!installRange }),
+        SystemCommands.install({ ...ds, isPoint: !!installRange, parameters }),
         p.path,
         'install workspace'
       );
@@ -399,7 +400,7 @@ export async function refresh(option?: {
     ownRootPackages.forEach(p => {
       const ds = dynamicState[p.name];
       task.execute(
-        SystemCommands.install({ ...ds, isPoint: !!installRange }),
+        SystemCommands.install({ ...ds, isPoint: !!installRange, parameters }),
         p.path,
         `install own root: ${p.name}`
       );
@@ -409,7 +410,7 @@ export async function refresh(option?: {
     ownRootPlatforms.forEach(p => {
       const ds = dynamicState[p.name];
       task.execute(
-        SystemCommands.install({ ...ds, isPoint: !!installRange }),
+        SystemCommands.install({ ...ds, isPoint: !!installRange, parameters }),
         p.path,
         `install own root: ${p.name}`
       );
@@ -432,6 +433,7 @@ export async function refresh(option?: {
 export async function refreshProject(option?: {
   force?: boolean;
   install?: string;
+  parameters?: string;
 }): Promise<ActionMessage> {
   const pluginState = getPluginState();
   async function runCommand(cmds: Command[]): Promise<'failed' | undefined> {

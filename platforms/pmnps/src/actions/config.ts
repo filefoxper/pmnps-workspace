@@ -2,7 +2,7 @@ import { inquirer, path } from '@/libs';
 import { hold } from '@/state';
 import { CONF_NAME, DEFAULT_REGISTRY } from '@/constants';
 import { packageJson } from '@/resource';
-import { equal } from '@/libs/polyfill';
+import { equal, omitBy } from '@/libs/polyfill';
 import { task } from './task';
 import type { ActionMessage } from '@/actions/task/type';
 import type { Config, ConfigDetail, PackageJson } from '@/types';
@@ -108,17 +108,36 @@ export async function configAction(): Promise<ActionMessage> {
   );
   name = firstSetName;
   let core = config?.core || 'npm';
+  let confirmSetInstallParameters = false;
+  let installParameters = undefined;
   if (detail.includes('set package manager')) {
-    const { manager } = await inquirer.prompt([
+    const { manager, confirmSetParameters } = await inquirer.prompt([
       {
         name: 'manager',
         type: 'list',
         message: 'Please choose a package manager.',
         choices: ['npm', 'yarn'],
         default: core
+      },
+      {
+        name: 'confirmSetParameters',
+        type: 'confirm',
+        message: 'Do you want to set a global install parameters?',
+        default: true
       }
     ]);
     core = manager;
+    confirmSetInstallParameters = confirmSetParameters;
+  }
+  if (confirmSetInstallParameters) {
+    const { installParam } = await inquirer.prompt([
+      {
+        name: 'installParam',
+        type: 'input',
+        message: `Please enter the global install parameters for "${core}".`
+      }
+    ]);
+    installParameters = installParam;
   }
   if (detail.includes('set workspace name')) {
     const { name: workspaceName } = await inquirer.prompt([
@@ -145,7 +164,8 @@ export async function configAction(): Promise<ActionMessage> {
   }
   const configSetting = {
     registry: registry.trim() || DEFAULT_REGISTRY,
-    core: core.trim() as 'npm' | 'yarn' | undefined
+    core: core.trim() as 'npm' | 'yarn' | undefined,
+    installParameters
   };
   const projectDetail = {};
   if (detail.includes('set project detail')) {
@@ -176,12 +196,15 @@ export async function configAction(): Promise<ActionMessage> {
     const { config: cf } = s;
     return {
       ...s,
-      config: {
-        ...cf,
-        name: name == null ? cf?.name ?? 'project' : name,
-        ...configDetail,
-        ...configSetting
-      }
+      config: omitBy(
+        {
+          ...cf,
+          name: name == null ? cf?.name ?? 'project' : name,
+          ...configDetail,
+          ...configSetting
+        },
+        value => value == null
+      ) as Config
     };
   });
   if (!nextConfig) {
