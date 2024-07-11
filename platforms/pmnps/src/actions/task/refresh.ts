@@ -424,7 +424,7 @@ export async function refresh(option?: {
     task.execute(
       SystemCommands.link(additionPackages),
       path.cwd(),
-      `install ${additionPackages.join()}`
+      `install ${additionPackages.map(n => n.name).join()}`
     );
   }
   return { content: 'Refresh success...', type: 'success' };
