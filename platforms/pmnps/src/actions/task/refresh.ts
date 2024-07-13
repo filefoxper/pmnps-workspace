@@ -345,6 +345,70 @@ function refreshChangePackages(changes: Package[]) {
   });
 }
 
+function installOwnRootPackage(
+  pack: Package,
+  opt: {
+    hasPackageLockJsonFile?: boolean;
+    hasNodeModules?: boolean;
+    isPoint?: boolean;
+    parameters?: string;
+  },
+  force?: boolean
+) {
+  const { cacheProject, project } = hold.instance().getState();
+  const cacheMap = cacheProject?.packageMap ?? {};
+  const cachePack = cacheMap[pack.path];
+  if (!cachePack || !project || force) {
+    task.execute(
+      SystemCommands.install(opt),
+      pack.path,
+      `install own root: ${pack.name}`
+    );
+    return;
+  }
+  const packages = project?.project?.packages || [];
+  const packageMap = new Map(packages.map(p => [p.name, p] as const));
+  const cachePackDeps = {
+    ...cachePack.packageJson.dependencies,
+    ...cachePack.packageJson.devDependencies
+  };
+  const packDeps = {
+    ...pack.packageJson.dependencies,
+    ...pack.packageJson.devDependencies
+  };
+  const packageNames = packages.map(n => n.name);
+  const newDepKeys = Object.keys(packDeps).filter(k => !cachePackDeps[k]);
+  const withoutWorkspaceDepPackDeps = omit(packDeps, ...packageNames);
+  const withoutWorkspaceDepCachePackDeps = omit(cachePackDeps, ...packageNames);
+  const allInWorkspaces = newDepKeys.every(k => packageMap.has(k));
+  const isBasicDepEqual = equal(
+    withoutWorkspaceDepPackDeps,
+    withoutWorkspaceDepCachePackDeps
+  );
+  message.debug('add', newDepKeys, allInWorkspaces);
+  if (allInWorkspaces && isBasicDepEqual) {
+    const additionPackages = newDepKeys
+      .map(k => packageMap.get(k))
+      .filter((p): p is Package => !!p);
+    additionPackages.forEach(p => {
+      task.execute(
+        SystemCommands.link(p, pack),
+        path.cwd(),
+        `link ${p.name} to own root: "${pack.name}"`
+      );
+    });
+    return;
+  }
+  if (isBasicDepEqual) {
+    return;
+  }
+  task.execute(
+    SystemCommands.install(opt),
+    pack.path,
+    `install own root: ${pack.name}`
+  );
+}
+
 export async function refresh(option?: {
   force?: boolean;
   install?: string;
@@ -365,7 +429,7 @@ export async function refresh(option?: {
       type: 'failed'
     };
   }
-  const { dynamicState = {} } = hold.instance().getState();
+  const { dynamicState = {}, project } = hold.instance().getState();
   const { force, install, parameters } = option ?? {};
   const installRange = install
     ? (install.split(',').filter(d => {
@@ -399,33 +463,36 @@ export async function refresh(option?: {
   if (!installRange || installRange.includes('package')) {
     ownRootPackages.forEach(p => {
       const ds = dynamicState[p.name];
-      task.execute(
-        SystemCommands.install({ ...ds, isPoint: !!installRange, parameters }),
-        p.path,
-        `install own root: ${p.name}`
+      installOwnRootPackage(
+        p,
+        { ...ds, isPoint: !!installRange, parameters },
+        force
       );
     });
   }
   if (!installRange || installRange.includes('platform')) {
     ownRootPlatforms.forEach(p => {
       const ds = dynamicState[p.name];
-      task.execute(
-        SystemCommands.install({ ...ds, isPoint: !!installRange, parameters }),
-        p.path,
-        `install own root: ${p.name}`
+      installOwnRootPackage(
+        p,
+        { ...ds, isPoint: !!installRange, parameters },
+        force
       );
     });
   }
   if (workRoots.length) {
     return { content: 'Refresh success...', type: 'success' };
   }
+  const { workspace } = project?.project ?? {};
   const additionPackages = extractAdditionPackages();
-  if (additionPackages.length) {
-    task.execute(
-      SystemCommands.link(additionPackages),
-      path.cwd(),
-      `install ${additionPackages.map(n => n.name).join()}`
-    );
+  if (additionPackages.length && workspace) {
+    additionPackages.forEach(p => {
+      task.execute(
+        SystemCommands.link(p, workspace),
+        path.cwd(),
+        `link ${p.name} to workspace`
+      );
+    });
   }
   return { content: 'Refresh success...', type: 'success' };
 }

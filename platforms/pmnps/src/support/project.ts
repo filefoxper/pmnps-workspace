@@ -1,5 +1,5 @@
 import { file, path } from '@/libs';
-import { equal, keyBy, mapValues, omit, omitBy } from '@/libs/polyfill';
+import { equal, keyBy, mapValues, omit } from '@/libs/polyfill';
 import type { PackageItem, PackageWithDynamicState } from '@/support/type';
 import type {
   Package,
@@ -135,10 +135,6 @@ function diffDepsPackagesMap(
   }
   const targetPackageMap = target.packageMap;
   const { packageMap } = source;
-  const packageNames = Object.values(packageMap)
-    .filter(s => s.type === 'package')
-    .map(s => s.name);
-  const packageNameSet = new Set(packageNames);
   const differs = Object.entries(packageMap).filter(([k, v]) => {
     const targetPj: PackageJson | undefined = targetPackageMap[k]?.packageJson;
     if (!targetPj) {
@@ -150,12 +146,8 @@ function diffDepsPackagesMap(
       pmnps: spmnps
     } = v.packageJson;
     const { dependencies: td, devDependencies: tdev, pmnps: tpmnps } = targetPj;
-    const sourceDeps = omitBy({ ...sd, ...sdev }, (v, k) =>
-      packageNameSet.has(k as string)
-    );
-    const targetDeps = omitBy({ ...td, ...tdev }, (v, k) =>
-      packageNameSet.has(k as string)
-    );
+    const sourceDeps = { ...sd, ...sdev };
+    const targetDeps = { ...td, ...tdev };
     return (
       !equal(sourceDeps, targetDeps) || spmnps?.ownRoot !== tpmnps?.ownRoot
     );

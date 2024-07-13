@@ -1,4 +1,6 @@
 import { hold } from '@/state';
+import { message, path } from '@/libs';
+import { task } from '@/actions/task';
 import type { Package } from '@/types';
 
 function parseParameters(parameters = '') {
@@ -8,14 +10,14 @@ function parseParameters(parameters = '') {
 export const SystemCommands = {
   start: () => {
     const { core = 'npm' } = hold.instance().getState().config ?? {};
-    if (core === 'yarn') {
+    if (core === 'yarn' || core === 'yarn2') {
       return ['yarn', 'run', 'start'];
     }
     return ['npm', 'start'];
   },
   run: () => {
     const { core = 'npm' } = hold.instance().getState().config ?? {};
-    if (core === 'yarn') {
+    if (core === 'yarn' || core === 'yarn2') {
       return ['yarn', 'run'];
     }
     return ['npm', 'run'];
@@ -45,7 +47,7 @@ export const SystemCommands = {
       .join(' ')
       .split(' ')
       .filter(d => d.trim());
-    if (core === 'yarn') {
+    if (core === 'yarn' || core === 'yarn2') {
       return isPoint && useRefreshAfterInstall
         ? ['yarn', 'install', '--ignore-scripts', ...ps]
         : ['yarn', 'install', ...ps];
@@ -59,19 +61,18 @@ export const SystemCommands = {
       ? ['npm', 'install', '--ignore-scripts', ...ps]
       : ['npm', 'install', ...ps];
   },
-  link: (packs: Package[]) => {
-    const { core = 'npm' } = hold.instance().getState().config ?? {};
-    if (core === 'yarn') {
-      return ['yarn', 'install', '--ignore-scripts'];
+  link: (pack: Package, to: Package) => {
+    if (!pack.paths) {
+      throw new Error('Can not add a workspace link.');
     }
-    return [
-      'npm',
-      'install',
-      '--ignore-scripts',
-      '--no-save',
-      '--workspace',
-      ...packs.map(n => n.name)
-    ];
+    const [p, ...rest] = pack.paths;
+    const parent =
+      rest.length > 1
+        ? path.join(to.path, 'node_modules', ...rest.slice(0, rest.length - 1))
+        : path.join(to.path, 'node_modules');
+    task.writeDir(parent);
+    const targetPathname = path.join(to.path, 'node_modules', ...rest);
+    return ['symlink', pack.path, targetPathname];
   },
   gitAdd: () => ['git', 'add']
 };

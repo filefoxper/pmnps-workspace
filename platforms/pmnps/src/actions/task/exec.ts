@@ -1,4 +1,4 @@
-import { execution, message, path } from '@/libs';
+import { execution, file, message, path } from '@/libs';
 import { groupBy, partition } from '@/libs/polyfill';
 import { hold } from '@/state';
 import type { Execution } from './type';
@@ -25,10 +25,18 @@ async function consumeAndInstall(install: Execution[], cwd: string) {
   await consumeAndInstall(next, cwd);
 }
 
+async function link(links: Execution[], cwd: string) {
+  const linkings = links.map(e => {
+    const [c, source, target] = e.command;
+    return file.symlink(source, target);
+  });
+  return Promise.all(linkings);
+}
+
 export async function executeSystemOrders(orders: Execution[]) {
   const cwd = path.cwd();
   const { config } = hold.instance().getState();
-  const [install, others] = partition(orders, o => {
+  const [install, withLinks] = partition(orders, o => {
     const k = o.command.join('_');
     return (
       k.startsWith('npm_install') ||
@@ -36,6 +44,8 @@ export async function executeSystemOrders(orders: Execution[]) {
       k.startsWith('pnpm_install')
     );
   });
+  const [links, others] = partition(withLinks, o => o.command[0] === 'symlink');
+  await link(links, cwd);
   const cwds = new Map(
     install.map(i => {
       const { cwd: icwd, command } = i;

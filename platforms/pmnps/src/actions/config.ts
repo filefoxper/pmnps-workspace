@@ -116,7 +116,7 @@ export async function configAction(): Promise<ActionMessage> {
         name: 'manager',
         type: 'list',
         message: 'Please choose a package manager.',
-        choices: ['npm', 'yarn'],
+        choices: ['npm', 'yarn', 'yarn2'],
         default: core
       },
       {
@@ -164,7 +164,7 @@ export async function configAction(): Promise<ActionMessage> {
   }
   const configSetting = {
     registry: registry.trim() || DEFAULT_REGISTRY,
-    core: core.trim() as 'npm' | 'yarn' | undefined,
+    core: core.trim() as 'npm' | 'yarn' | 'yarn2' | undefined,
     installParameters
   };
   const projectDetail = {};
