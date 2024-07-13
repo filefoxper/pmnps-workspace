@@ -23,7 +23,7 @@
   },
   "typings": "index.d.ts",
   "dependencies": {
-    "@pmnps/tools": "^4.1.0",
+    "@pmnps/tools": "^4.1.1",
     "prettier": "^3.0.3",
     "prettier-package-json": "^2.8.0"
   },
