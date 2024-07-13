@@ -64,7 +64,7 @@ export interface ConfigDetail {
 
 export interface ConfigSetting {
   registry?: string;
-  core?: 'npm' | 'yarn';
+  core?: 'npm' | 'yarn' | 'yarn2';
   installParameters?: string;
 }
 

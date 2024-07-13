@@ -116,7 +116,7 @@ function levelPackages(packs: Package[]): Package[][] {
 }
 
 async function publishOneByOne(
-  manager: 'npm' | 'yarn',
+  manager: 'npm' | 'yarn' | 'yarn2',
   registry: string | null | undefined,
   packs: Package[],
   otp?: string
@@ -132,6 +132,21 @@ async function publishOneByOne(
   const scopeParams = isScopePackage ? ['--access=public'] : [];
   const otpParams = otp ? ['--otp', otp] : [];
   if (manager === 'yarn') {
+    await execution.exec(
+      'yarn',
+      [
+        'publish',
+        '--registry',
+        registry || officialReg,
+        ...scopeParams,
+        ...otpParams
+      ],
+      {
+        cwd: pathname,
+        stdio: 'inherit'
+      }
+    );
+  } else if (manager === 'yarn2') {
     await execution.exec(
       'yarn',
       [
@@ -322,6 +337,22 @@ const publishPlugin: Plugin<Query> = function publishPlugin(query?: Query) {
             const scopeParams = isScopePackage ? ['--access=public'] : [];
             const otpParams = publishOtp ? ['--otp', publishOtp] : [];
             if (core === 'yarn') {
+              return execution.exec(
+                'yarn',
+                [
+                  'publish',
+                  '--registry',
+                  reg || officialReg,
+                  ...scopeParams,
+                  ...otpParams
+                ],
+                {
+                  cwd: pathname,
+                  stdin: 'inherit'
+                }
+              );
+            }
+            if (core === 'yarn2') {
               return execution.exec(
                 'yarn',
                 [

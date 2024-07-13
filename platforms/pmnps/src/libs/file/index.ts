@@ -178,6 +178,18 @@ async function readJson<T extends Record<string, any>>(
   });
 }
 
+async function symlink(source: string, target: string) {
+  return new Promise((resolve, reject) => {
+    fs.symlink(source, target, err => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(true);
+    });
+  });
+}
+
 async function writeJson(
   locationPath: string,
   json: Record<string, any>
@@ -222,6 +234,7 @@ async function copyFolder(
 export {
   readdir,
   mkdir,
+  symlink,
   mkdirIfNotExist,
   readFile,
   writeFile,
@@ -241,6 +254,7 @@ export {
 export const file = {
   readdir,
   mkdir,
+  symlink,
   mkdirIfNotExist,
   readFile,
   writeFile,

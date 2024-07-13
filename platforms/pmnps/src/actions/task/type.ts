@@ -49,5 +49,5 @@ export type ActionMessage<P = unknown> = {
   type: 'success' | 'failed' | 'warning';
   content: string;
   payload?: P;
-  requireRefresh?:boolean
+  requireRefresh?: boolean;
 };

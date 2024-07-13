@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "@pmnps/plugin-publish",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "description": "This is a pmnps plugin for publishing npm packages.",
   "author": "Jimmy.Harding",
   "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-publish",
@@ -19,7 +19,7 @@
   },
   "typings": "index.d.ts",
   "dependencies": {
-    "@pmnps/tools": "^4.1.0"
+    "@pmnps/tools": "^4.1.1"
   },
   "devDependencies": {
     "typescript": "4.9.5"
