@@ -2,14 +2,14 @@ import { file, path } from '@/libs';
 import { equal, keyBy, mapValues, omit } from '@/libs/polyfill';
 import type { PackageItem, PackageWithDynamicState } from '@/support/type';
 import type {
-  Package,
-  PackageJson,
   PackageType,
   Project,
-  ProjectSerial,
-  ProjectType,
-  Scope
-} from '@/types';
+  Package,
+  PackageJson,
+  Scope,
+  ProjectType
+} from '@pmnps/tools';
+import type { ProjectSerial } from '@/types';
 
 async function collectPackages(
   filePath: string,

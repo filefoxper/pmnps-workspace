@@ -1,6 +1,6 @@
 import { file, path } from '@/libs';
 import { CONF_NAME } from '@/constants';
-import type { Config } from '@/types';
+import type { Config } from '@pmnps/tools';
 
 function readConfig(cwd: string) {
   const configPath = path.join(cwd, CONF_NAME);

@@ -1,4 +1,4 @@
-import type { Package } from '@/types';
+import type { Package } from '@pmnps/tools';
 
 export type PackageItem = {
   name: string;

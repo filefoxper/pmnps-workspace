@@ -1,13 +1,8 @@
 import { file, path } from '@/libs';
 import { projectSupport } from '@/support';
 import { groupBy, orderBy, partition } from '@/libs/polyfill';
-import type {
-  DynamicStateUnit,
-  Package,
-  PackageJson,
-  Project,
-  State
-} from '@/types';
+import type { PackageJson, Package, Project } from '@pmnps/tools';
+import type { DynamicStateUnit, State } from '@/types';
 
 async function readProject(
   cwd: string

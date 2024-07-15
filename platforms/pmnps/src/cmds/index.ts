@@ -1,7 +1,7 @@
 import { hold } from '@/state';
-import { message, path } from '@/libs';
+import { path } from '@/libs';
 import { task } from '@/actions/task';
-import type { Package } from '@/types';
+import type { Package } from '@pmnps/tools';
 
 function parseParameters(parameters = '') {
   return parameters.split(/\s/).filter(d => d.trim());

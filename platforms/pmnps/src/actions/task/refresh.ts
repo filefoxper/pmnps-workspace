@@ -15,7 +15,7 @@ import { message, path } from '@/libs';
 import { getPluginState } from '@/plugin';
 import type { Command } from '@pmnps/tools';
 import type { ActionMessage } from '@/actions/task/type';
-import type { Package, PackageJson } from '@/types';
+import type { PackageJson, Package } from '@pmnps/tools';
 
 function differ(
   source: Record<string, any> | undefined,

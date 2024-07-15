@@ -4,7 +4,8 @@ import { hold } from '@/state';
 import { packageJson } from '@/resource';
 import { omitBy, pick } from '@/libs/polyfill';
 import { templateSupport } from '@/support/template';
-import type { PackageJson, PackageType, PmnpsJson, Scope } from '@/types';
+import type { PmnpsJson } from '@pmnps/tools';
+import type { PackageJson, PackageType, Scope } from '@pmnps/tools';
 import type { ActionMessage } from '@/actions/task/type';
 
 const creations: Array<string | undefined | null> = [

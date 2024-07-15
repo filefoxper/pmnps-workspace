@@ -9,8 +9,7 @@ import { runAction, startAction } from '@/actions/run';
 import { getPluginState } from '@/plugin';
 import { env, file, path, inquirer, message } from './libs';
 import { initialize, loadProject } from './processor';
-import type { Command } from '@pmnps/tools';
-import type { CommandOption } from '@pmnps/tools/src/plugin/type';
+import type { Command, CommandOption } from '@pmnps/tools';
 import type { ActionMessage, Task } from '@/actions/task/type';
 import type { Resource, State } from './types';
 

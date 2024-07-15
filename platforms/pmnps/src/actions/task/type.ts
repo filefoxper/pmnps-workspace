@@ -1,4 +1,4 @@
-import type { PackageType } from '@/types';
+import type { PackageType } from '@pmnps/tools';
 
 export type CommandFile =
   | 'install'

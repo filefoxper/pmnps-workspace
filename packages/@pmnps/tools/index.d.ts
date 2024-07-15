@@ -4,7 +4,7 @@ import type { Answers, QuestionCollection, ui, Separator } from 'inquirer';
 export type CommandSerial = string[];
 
 export interface PmnpsJson {
-  ownRoot?: boolean;
+  ownRoot?: boolean | 'extend' | 'independent';
   slot?: 'template';
 }
 
@@ -80,7 +80,7 @@ export type Config = {
   ConfigPlugins;
 
 /** types **/
-declare type CommandOption = {
+export declare type CommandOption = {
   name: string;
   shortcut: string;
   description: string;
