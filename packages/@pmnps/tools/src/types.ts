@@ -1,7 +1,7 @@
 /** State **/
 
 export interface PmnpsJson {
-  ownRoot?: boolean | 'extend' | 'independent';
+  ownRoot?: boolean;
   slot?: 'template';
 }
 

@@ -256,20 +256,16 @@ function refreshWorkspace() {
     }
     return;
   }
-  function buildYarnWorkspace() {
+  function buildPlatformWorkspaces() {
     return platforms
       .filter(p => !p.packageJson?.pmnps?.ownRoot)
       .map(p => `platforms/${p.name}`);
   }
   const scopeWorkspaces = scopes.map(s => `packages/${s.name}/*`);
   const workspaceSet = new Set(
-    core === 'yarn'
-      ? ['packages/*', ...scopeWorkspaces, ...buildYarnWorkspace()]
-      : [
-          'packages/*',
-          ...scopeWorkspaces,
-          ...(workspacePackageJson?.workspaces ?? [])
-        ].filter(n => !n.startsWith('platforms'))
+    ['packages/*', ...scopeWorkspaces, ...buildPlatformWorkspaces()].filter(
+      n => !n.startsWith('platforms')
+    )
   );
   const workspaces = orderBy([...workspaceSet], [a => a], ['desc']);
   if (

@@ -4,7 +4,7 @@ import type { Answers, QuestionCollection, ui, Separator } from 'inquirer';
 export type CommandSerial = string[];
 
 export interface PmnpsJson {
-  ownRoot?: boolean | 'extend' | 'independent';
+  ownRoot?: boolean;
   slot?: 'template';
 }
 
