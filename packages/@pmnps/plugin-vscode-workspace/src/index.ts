@@ -3,7 +3,8 @@ import { createPluginCommand } from '@pmnps/tools';
 import type { Plugin } from '@pmnps/tools';
 
 interface Query {
-  excludes: Array<string>;
+  excludes?: Array<string>;
+  shortcut?: boolean;
 }
 
 const refreshVscodeWorkspace: Plugin<Query> = function refreshVscodeWorkspace(
@@ -23,7 +24,7 @@ const refreshVscodeWorkspace: Plugin<Query> = function refreshVscodeWorkspace(
       const { name: workspace, projectType } = state.getConfig();
       const { project } = state.getProject();
       const task = state.task;
-      const { excludes = [] } = query || {};
+      const { excludes = [], shortcut = true } = query || {};
       const { packages = [], platforms = [] } = project;
       const vscodeWorkspaceName = `${workspace}.code-workspace`;
       const data = [...packages, ...platforms].map(d => {
@@ -32,7 +33,7 @@ const refreshVscodeWorkspace: Plugin<Query> = function refreshVscodeWorkspace(
           d.type === 'package'
             ? ['packages', ...name.split('/')].join('/')
             : ['platforms', ...name.split('/')].join('/');
-        return { name, path: p };
+        return { name: shortcut ? name : p, path: p };
       });
       const folders = [{ name: 'root', path: '.' }, ...data].filter(
         ({ name }) => !excludes.some(e => name.startsWith(e))
