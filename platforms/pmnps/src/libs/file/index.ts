@@ -178,11 +178,33 @@ async function readJson<T extends Record<string, any>>(
   });
 }
 
-async function symlink(source: string, target: string) {
+function realpath(p: string): Promise<string | null> {
   return new Promise((resolve, reject) => {
+    fs.realpath(p, (err, resolvedPath) => {
+      if (err) {
+        resolve(null);
+      }
+      resolve(resolvedPath);
+    });
+  });
+}
+
+async function symlink(source: string, target: string) {
+  if (fs.existsSync(target)) {
+    const ifSymlink = fs.lstatSync(target).isSymbolicLink();
+    if (!ifSymlink) {
+      return false;
+    }
+    const real = await realpath(target);
+    if (real === source) {
+      return true;
+    }
+    await unlink(target);
+  }
+  return new Promise(resolve => {
     fs.symlink(source, target, err => {
       if (err) {
-        reject(err);
+        resolve(false);
         return;
       }
       resolve(true);
