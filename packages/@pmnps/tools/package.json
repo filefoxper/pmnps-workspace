@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "@pmnps/tools",
-  "version": "4.1.1",
+  "version": "4.2.0",
   "description": "These are tools for developing pmnps and its plugins",
   "author": "Jimmy.Harding",
   "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/tools",
@@ -20,6 +20,7 @@
   "typings": "index.d.ts",
   "devDependencies": {
     "chalk": "^4.1.0",
+    "esbuild": "^0.23.0",
     "execa": "^5.1.0",
     "inquirer": "^6.5.0",
     "prettier": "^3.0.3",

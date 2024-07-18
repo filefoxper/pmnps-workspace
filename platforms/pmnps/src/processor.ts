@@ -1,12 +1,13 @@
 import process from 'process';
+import { requireFactory } from '@pmnps/tools';
 import { version, message, path } from '@/libs';
 import { hold } from '@/state';
 import { configure } from '@/support';
 import { getPluginRequireState } from '@/plugin';
 import { loadCacheData } from '@/loadCacheProcessor';
 import { loadData } from '@/loadProcessor';
+import type { Plugin, Command } from '@pmnps/tools';
 import type { Template } from '@/types';
-import type { Plugin } from '@pmnps/tools';
 
 function checkRuntimeEnv(): string | null {
   const nodeVersion = process.version;
@@ -32,21 +33,25 @@ export async function loadProject(withCache?: boolean) {
   return loadData(cwd);
 }
 
-function loadPlugins(
+async function loadPlugins(
   cwd: string,
   plugins: (string | [string, Record<string, any>])[]
 ) {
-  return plugins.map(pluginSetting => {
-    const name =
-      typeof pluginSetting === 'string' ? pluginSetting : pluginSetting[0];
-    const setting =
-      typeof pluginSetting === 'string' ? undefined : pluginSetting[1];
-    const names = name.split('/');
-    const requiredPathname = path.join(cwd, 'node_modules', ...names);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const plugin = require(requiredPathname).default as Plugin<any>;
-    return plugin(setting);
-  });
+  const factory = requireFactory(cwd);
+  return Promise.all(
+    plugins.map(async pluginSetting => {
+      const name =
+        typeof pluginSetting === 'string' ? pluginSetting : pluginSetting[0];
+      const setting =
+        typeof pluginSetting === 'string' ? undefined : pluginSetting[1];
+      const pluginModule = await factory.require(name);
+      if (pluginModule.module == null) {
+        return null;
+      }
+      const plugin = pluginModule.module.default as Plugin<any>;
+      return plugin(setting);
+    })
+  );
 }
 
 function loadTemplates(cwd: string, templates: string[]) {
@@ -63,11 +68,12 @@ async function loadConfig() {
   const cwd = path.cwd();
   const config = await configure.readConfig(cwd);
   const { templates = [], plugins = [] } = config ?? {};
+  const commands = await loadPlugins(cwd, plugins);
   return {
     config,
     resources: {
       templates: loadTemplates(cwd, templates),
-      commands: loadPlugins(cwd, plugins)
+      commands: commands.filter((c): c is Command => !!c)
     }
   };
 }
