@@ -4,7 +4,7 @@ import type { Answers, QuestionCollection, ui, Separator } from 'inquirer';
 export type CommandSerial = string[];
 
 export interface PmnpsJson {
-  ownRoot?: boolean;
+  ownRoot?: boolean | 'flexible' | 'independent';
   slot?: 'template';
 }
 
@@ -234,4 +234,8 @@ export declare const execution: {
 
 export declare function requireFactory(cwd: string): {
   require: (pathname: string) => Promise<{ pathname: string; module: any }>;
+};
+
+export declare const versions: {
+  satisfies(version: string, range: string): boolean;
 };

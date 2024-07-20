@@ -7,3 +7,5 @@ export { createPluginCommand } from './plugin';
 export { execution } from './exec';
 
 export { requireFactory } from './require';
+
+export { versions } from './version';

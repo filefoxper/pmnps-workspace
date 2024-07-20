@@ -27,7 +27,7 @@ __export(src_exports, {
 module.exports = __toCommonJS(src_exports);
 var src_default = {
   projectType: "${projectType}",
-  path:module.path
+  path: __dirname
 };
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {});

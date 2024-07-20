@@ -2,6 +2,7 @@
 
 import path from 'path';
 import fs from 'fs';
+import * as console from 'node:console';
 
 const cwd = process.cwd();
 
@@ -28,8 +29,12 @@ const findPmnps = function findPmnps(
 
 const founddPmnpsPathname = findPmnps(cwd);
 
+const pmnpsLocation = path.join(__dirname, '..', '..', 'pmnps');
+
 if (founddPmnpsPathname) {
   require(founddPmnpsPathname);
+} else if (fs.existsSync(pmnpsLocation)) {
+  require(pmnpsLocation);
 } else {
-  require('pmnps');
+  console.warn('Can not find pmnps dependent...');
 }

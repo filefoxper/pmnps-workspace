@@ -1,3 +1,4 @@
+import { versions } from '@pmnps/tools';
 import { hold } from '@/state';
 import { task } from '@/actions/task';
 import { SystemCommands } from '@/cmds';
@@ -13,9 +14,8 @@ import {
 import { projectSupport } from '@/support';
 import { message, path } from '@/libs';
 import { getPluginState } from '@/plugin';
-import type { Command } from '@pmnps/tools';
 import type { ActionMessage } from '@/actions/task/type';
-import type { PackageJson, Package } from '@pmnps/tools';
+import type { PackageJson, Package, Command } from '@pmnps/tools';
 
 function differ(
   source: Record<string, any> | undefined,
@@ -163,16 +163,73 @@ function mergeDeps(
 }
 
 function mergePacks(packs: Package[], workspace: Package) {
+  const packVersionMap = new Map(
+    packs.map(p => [p.name, p.packageJson.version])
+  );
+  const updateWorkspacePackVersion = function updateWorkspacePackVersion(
+    pjs: PackageJson
+  ): { packageJson: PackageJson; hasChanges: boolean } {
+    function collectChangeWorkspacePackDeps(
+      dep: Record<string, string> | undefined
+    ) {
+      if (dep == null) {
+        return undefined;
+      }
+      const depKeys = dep ? Object.keys(dep) : [];
+      const shouldUpdates = depKeys.filter(k => {
+        const range = dep[k];
+        const ve = packVersionMap.get(k);
+        return ve && !versions.satisfies(ve, range);
+      });
+      if (!shouldUpdates.length) {
+        return undefined;
+      }
+      return Object.fromEntries(
+        shouldUpdates.map(k => [k, packVersionMap.get(k)])
+      );
+    }
+    const { dependencies, devDependencies } = pjs;
+    const collectedDep = collectChangeWorkspacePackDeps(dependencies);
+    const collectedDevDep = collectChangeWorkspacePackDeps(devDependencies);
+    if (!collectedDep && !collectedDevDep) {
+      return { packageJson: pjs, hasChanges: false };
+    }
+    const nextPjs = {
+      ...pjs,
+      dependencies: !dependencies
+        ? dependencies
+        : { ...dependencies, ...collectedDep },
+      devDependencies: !devDependencies
+        ? devDependencies
+        : { ...devDependencies, ...collectedDevDep }
+    };
+    return {
+      packageJson: omitBy(nextPjs, value => value == null) as PackageJson,
+      hasChanges: true
+    };
+  };
   const { packageJson } = workspace;
   packs.forEach(pack => {
-    const { packageJson: pj, type, paths } = pack;
+    const { packageJson: pjs, type, paths } = pack;
+    const { packageJson: pj, hasChanges } = updateWorkspacePackVersion(pjs);
+    const { dependencies, devDependencies } = pj;
     if (pj.pmnps?.ownRoot) {
+      if (hasChanges) {
+        task.writePackage({
+          paths: paths,
+          packageJson: pj,
+          type
+        });
+      }
       return;
     }
-    const { dependencies, devDependencies } = pj;
     const nextDeps = mergeDeps(dependencies, packageJson);
     const nextDevDeps = mergeDeps(devDependencies, packageJson);
-    if (dependencies === nextDeps && devDependencies === nextDevDeps) {
+    if (
+      dependencies === nextDeps &&
+      devDependencies === nextDevDeps &&
+      !hasChanges
+    ) {
       return;
     }
     const nextPj = {
@@ -214,7 +271,7 @@ function mergeProject() {
   const list = (platforms ?? []).concat(packages ?? []).concat(workspace);
   const packOrRoots = list.filter(p => p.type !== 'workspace');
   const packs = packOrRoots.filter(p => !p.packageJson.pmnps?.ownRoot);
-  mergePacks(packs, mergeWorkspace(workspace, packs));
+  mergePacks(packOrRoots, mergeWorkspace(workspace, packs));
   mergeSettings();
 }
 
@@ -258,7 +315,10 @@ function refreshWorkspace() {
   }
   function buildPlatformWorkspaces() {
     return platforms
-      .filter(p => !p.packageJson?.pmnps?.ownRoot)
+      .filter(p => {
+        const or = p.packageJson?.pmnps?.ownRoot;
+        return !or || or === 'flexible';
+      })
       .map(p => `platforms/${p.name}`);
   }
   const scopeWorkspaces = scopes.map(s => `packages/${s.name}/*`);
@@ -305,7 +365,9 @@ function refreshChangePackages(changes: Package[]) {
   const packs = changes.filter(p => p.type !== 'workspace');
   const [ownRoots, parts] = partition(
     packs,
-    p => p.packageJson.pmnps?.ownRoot === true
+    p =>
+      p.packageJson.pmnps?.ownRoot === true ||
+      p.packageJson.pmnps?.ownRoot === 'independent'
   );
   parts.forEach(p => {
     if (!p.packageJson.private) {
@@ -421,6 +483,7 @@ export async function refresh(option?: {
     };
   }
   const { dynamicState = {}, project } = hold.instance().getState();
+  const { workspace } = project?.project ?? {};
   const { force, install, parameters } = option ?? {};
   const installRange = install
     ? (install.split(',').filter(d => {
@@ -431,12 +494,27 @@ export async function refresh(option?: {
   const { packs: changes } = hold.instance().diffDepsPackages(force);
   refreshChangePackages(changes);
   const changeRoots = changes.filter(
-    p => p.type === 'workspace' || p.packageJson.pmnps?.ownRoot === true
+    p => p.type === 'workspace' || p.packageJson.pmnps?.ownRoot
   );
-  const [workRoots, ownRoots] = partition(
+  const [workspaceRoots, ownRoots] = partition(
     changeRoots,
     p => p.type === 'workspace'
   );
+  const [independentOwnRoots, flexibleOwnRoots] = partition(
+    ownRoots,
+    p =>
+      p.packageJson.pmnps?.ownRoot === true ||
+      p.packageJson.pmnps?.ownRoot === 'independent'
+  );
+  const workRoots = (function recomputeWorkRoots() {
+    if (workspaceRoots.length) {
+      return workspaceRoots;
+    }
+    if (flexibleOwnRoots.length && workspace) {
+      return [workspace];
+    }
+    return [];
+  })();
   if (!installRange || installRange.includes('workspace')) {
     workRoots.forEach(p => {
       const ds = dynamicState[p.name];
@@ -448,7 +526,7 @@ export async function refresh(option?: {
     });
   }
   const [ownRootPackages, ownRootPlatforms] = partition(
-    ownRoots,
+    independentOwnRoots,
     p => p.type === 'package'
   );
   if (!installRange || installRange.includes('package')) {
@@ -474,7 +552,6 @@ export async function refresh(option?: {
   if (workRoots.length) {
     return { content: 'Refresh success...', type: 'success' };
   }
-  const { workspace } = project?.project ?? {};
   const additionPackages = extractAdditionPackages();
   if (additionPackages.length && workspace) {
     additionPackages.forEach(p => {
