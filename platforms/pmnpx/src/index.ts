@@ -31,10 +31,14 @@ const founddPmnpsPathname = findPmnps(cwd);
 
 const pmnpsLocation = path.join(__dirname, '..', '..', 'pmnps');
 
+const innerPmnpsLocation = path.join(__dirname, '..', 'node_modules', 'pmnps');
+
 if (founddPmnpsPathname) {
   require(founddPmnpsPathname);
 } else if (fs.existsSync(pmnpsLocation)) {
   require(pmnpsLocation);
+} else if (fs.existsSync(innerPmnpsLocation)) {
+  require(innerPmnpsLocation);
 } else {
   console.warn('Can not find pmnps dependent...');
 }

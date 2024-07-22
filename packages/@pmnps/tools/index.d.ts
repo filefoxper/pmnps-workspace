@@ -128,6 +128,16 @@ declare type Task = {
   execute(command: CommandSerial, cwd: string, description?: string): any;
 };
 
+declare type Reader = {
+  read(p: string): Promise<string | null>;
+  readJson<D extends Record<string, any>>(p: string): Promise<D | undefined>;
+};
+
+declare type Writer = {
+  write(locationPath: string, data: string): Promise<string>;
+  writeJson(locationPath: string, json: Record<string, any>): Promise<string>;
+};
+
 export declare type Action = <O extends Record<string, any>>(
   state: {
     getProject: () => Project;
@@ -135,21 +145,19 @@ export declare type Action = <O extends Record<string, any>>(
     task: Task;
     cwd: () => string;
     required?: Promise<any>;
+    reader: Reader;
+    writer: Writer;
   },
   argument: string | undefined,
   option?: O
 ) => Promise<ActionMessage>;
-
-declare type Reader = {
-  read(p: string): Promise<string | null>;
-  readJson<D extends Record<string, any>>(p: string): Promise<D | undefined>;
-};
 
 declare type RequireFn = <O extends Record<string, any>>(
   state: {
     getProject: () => Project;
     getConfig: () => Config;
     reader: Reader;
+    writer: Writer;
     cwd: () => string;
   },
   option?: O

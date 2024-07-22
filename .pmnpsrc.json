@@ -8,6 +8,7 @@
   "registry": "https://registry.npmmirror.com",
   "plugins": [
     "@pmnps/plugin-vscode-workspace",
+    "@pmnps/plugin-alias",
     ["@pmnps/plugin-publish", { "registry": "https://registry.npmjs.org" }]
   ],
   "useCommandHelp": true,

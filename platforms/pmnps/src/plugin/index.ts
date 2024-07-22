@@ -1,6 +1,6 @@
 import { task } from '@/actions/task';
 import { hold } from '@/state';
-import { path, readFile, readJson } from '@/libs';
+import { path, readFile, readJson, writeFile, writeJson } from '@/libs';
 
 export const getPluginState = (required?: Promise<any>) => {
   return {
@@ -20,6 +20,14 @@ export const getPluginState = (required?: Promise<any>) => {
     },
     task,
     cwd: () => path.cwd(),
+    reader: {
+      read: readFile,
+      readJson: readJson
+    },
+    writer: {
+      write: writeFile,
+      writeJson: writeJson
+    },
     required
   };
 };
@@ -44,6 +52,10 @@ export const getPluginRequireState = () => {
     reader: {
       read: readFile,
       readJson: readJson
+    },
+    writer: {
+      write: writeFile,
+      writeJson: writeJson
     }
   };
 };
