@@ -1,3 +1,4 @@
+import os from 'os';
 import { program } from 'commander';
 import { createPluginCommand } from '@pmnps/tools';
 import { hold } from '@/state';
@@ -7,7 +8,12 @@ import { createAction } from '@/actions/create';
 import { useCommand } from '@/actions/task';
 import { runAction, startAction } from '@/actions/run';
 import { getPluginState } from '@/plugin';
-import { setAction, setPackageAction, setPlatformAction } from '@/actions/set';
+import {
+  setAction,
+  setAliasAction,
+  setPackageAction,
+  setPlatformAction
+} from '@/actions/set';
 import { env, file, path, inquirer, message } from './libs';
 import { initialize, loadProject } from './processor';
 import type { Command, CommandOption } from '@pmnps/tools';
@@ -26,6 +32,7 @@ declare global {
     tasks: Task[];
     isDevelopment?: boolean;
     px?: boolean;
+    platform?: NodeJS.Platform;
   };
 }
 
@@ -110,6 +117,11 @@ const noListCommands = [
     .action((state, argument) => setPlatformAction(argument))
 ];
 
+const setAliasCommand = createPluginCommand('set:alias')
+  .describe('Set pmnpx alias.')
+  .args('alias', 'Enter a alias for pmnpx')
+  .action((state, argument) => setAliasAction(argument));
+
 function actCommands(cmds: Command[]) {
   const state = getPluginState();
   const { useCommandHelp } = hold.instance().getState().config ?? {};
@@ -139,6 +151,8 @@ function actCommands(cmds: Command[]) {
 
 const getCommands = () => {
   const { projectType = 'monorepo' } = hold.instance().getState().config ?? {};
+  const canUseAlias = !!global.pmnps.px && global.pmnps.platform === 'darwin';
+  const pmnpxCommands = canUseAlias ? [setAliasCommand] : [];
   return actCommands(
     projectType === 'monorepo'
       ? ([
@@ -148,7 +162,8 @@ const getCommands = () => {
           createCommand,
           configCommand,
           setCommand,
-          ...noListCommands
+          ...noListCommands,
+          ...pmnpxCommands
         ] as Command[])
       : ([
           startCommand,
@@ -236,7 +251,7 @@ async function initialAction() {
 
 export async function startup(isDevelopment?: boolean) {
   const px = process.env.PXS_ENV === 'pmnpx';
-  console.log('process.env.PXS_ENV', process.env.PXS_ENV);
+  const platform = os.platform();
   global.pmnps = {
     holder: hold(),
     load: loadProject,
@@ -244,6 +259,7 @@ export async function startup(isDevelopment?: boolean) {
     state: {},
     tasks: [],
     px,
+    platform,
     isDevelopment
   };
   if (env.isDevelopment) {

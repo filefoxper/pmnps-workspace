@@ -322,11 +322,11 @@ function refreshWorkspace() {
       .map(p => `platforms/${p.name}`);
   }
   const scopeWorkspaces = scopes.map(s => `packages/${s.name}/*`);
-  const workspaceSet = new Set(
-    ['packages/*', ...scopeWorkspaces, ...buildPlatformWorkspaces()].filter(
-      n => !n.startsWith('platforms')
-    )
-  );
+  const workspaceSet = new Set([
+    'packages/*',
+    ...scopeWorkspaces,
+    ...buildPlatformWorkspaces()
+  ]);
   const workspaces = orderBy([...workspaceSet], [a => a], ['desc']);
   if (
     workspaces.join() ===

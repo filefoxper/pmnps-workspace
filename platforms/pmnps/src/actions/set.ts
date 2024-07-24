@@ -1,11 +1,14 @@
+import os from 'os';
+import path from 'path';
 import { inquirer, type PackageJson } from '@pmnps/tools';
 import { hold } from '@/state';
 import { setPackageOptions } from '@/actions/create';
 import { keyBy, omitBy } from '@/libs/polyfill';
 import { task } from '@/actions/task';
+import { getPluginState } from '@/plugin';
 import type { ActionMessage } from '@/actions/task/type';
 
-const setTargets = new Set(['package', 'platform']);
+const setTargets = ['package', 'platform'];
 
 export async function setPackageAction(
   argument?: string | null
@@ -101,17 +104,97 @@ export async function setPlatformAction(
   };
 }
 
+async function readSystemProfile(file: string) {
+  const dir = os.homedir();
+  const zshrcPath = path.join(dir, '.zshrc');
+  const zshrc = await getPluginState().reader.read(zshrcPath);
+  return {
+    path: zshrcPath,
+    dir,
+    file,
+    content: zshrc || ''
+  };
+}
+
+function parseCommandAlias(args: string) {
+  const data = args
+    .trim()
+    .split('=')
+    .map(a => a.trim())
+    .filter(a => a);
+  if (data.length !== 2) {
+    return null;
+  }
+  const [alias, command] = data;
+  return [alias, command] as [string, string];
+}
+
+export async function setAliasAction(
+  argument?: string | null
+): Promise<ActionMessage> {
+  const plat = global.pmnps.platform;
+  if (plat !== 'darwin') {
+    return {
+      type: 'failed',
+      content: 'Command set:alias can only work on `darwin` system.'
+    };
+  }
+  const { file, dir, content } = await readSystemProfile('.zshrc');
+  let argString = (argument || '').trim();
+  if (!argument || !argument.trim()) {
+    const { arg } = await inquirer.prompt([
+      {
+        name: 'arg',
+        type: 'input',
+        message: 'Please enter an alias name for pmnpx:'
+      }
+    ]);
+    argString = arg.trim();
+  }
+  const args = argString.trim();
+  if (!args) {
+    return {
+      type: 'warning',
+      content: 'No alias setting is input.'
+    };
+  }
+  const addition = `alias ${args}=pmnpx`;
+  const nextContent = (function rewriteContent() {
+    if (content.indexOf(addition) >= 0) {
+      return content;
+    }
+    if (!content || !content.trim()) {
+      return addition;
+    }
+    return content.trim().concat('\n').concat(addition);
+  })();
+  if (content === nextContent) {
+    return {
+      type: 'success',
+      content: 'This command alias is already exist.'
+    };
+  }
+  task.write(dir, file, nextContent);
+  return {
+    type: 'success',
+    content: 'This command alias has been linked.'
+  };
+}
+
 export async function setAction(
   argument?: string | null
 ): Promise<ActionMessage> {
   let target = (argument || '').trim();
-  if (!setTargets.has(target)) {
+  const canUseAlias = !!global.pmnps.px && global.pmnps.platform === 'darwin';
+  const setTargetArray = canUseAlias ? [...setTargets, 'alias'] : setTargets;
+  const setTargetSet = new Set(setTargetArray);
+  if (!setTargetSet.has(target)) {
     const { target: targetName } = await inquirer.prompt([
       {
         name: 'target',
         type: 'list',
         message: 'Please choose a set target.',
-        choices: [...setTargets],
+        choices: setTargetArray,
         default: 'package'
       }
     ]);
@@ -119,7 +202,9 @@ export async function setAction(
   }
   if (target === 'package') {
     return setPackageAction();
-  } else {
+  } else if (target === 'platform') {
     return setPlatformAction();
+  } else {
+    return setAliasAction();
   }
 }
