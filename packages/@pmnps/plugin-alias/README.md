@@ -1,9 +1,6 @@
-# @pmnps/plugin-vscode-workspace
+# @pmnps/plugin-alias
 
-You might be troubled by the problem about `can not find tsconfig` in projects, when using [pmnps](https://www.npmjs.com/package/pmnps). 
-This plugin will run in refresh command, it creates a `.code-workspace` file, so, we can use [pmnps](https://www.npmjs.com/package/pmnps) more better in vscode, and resolve the `can not find tsconfig` problem.
-
-If you are not familiy with `vscode multi workspace`, please take this [reference](https://code.visualstudio.com/docs/editor/multi-root-workspaces).
+This plugin can help you set an command alias in mac os.
 
 ## Usage
 
@@ -13,23 +10,32 @@ Config the `.pmnpsrc.json`:
 {
     ...,
     "plugins":[
-        "@pmnps/plugin-vscode-workspace"
+        "@pmnps/plugin-alias"
     ]
 }
 ```
-
-If you want to exclude the folders which you don't want to show in vscode workspace, use `query` config:
+Use command `npx pmnps alias <alias>=<command>` to set an alias for a command.
 
 ```
-{
-    ...,
-    "plugins":[
-        [
-            "@pmnps/plugin-vscode-workspace",
-            {
-                "excludes":["root","packages/@template"]
-            }
-        ]
-    ]
-}
+$ npx pmnps alias px=pmnpx
 ```
+
+After that, you can use `px` command to execute `pmnpx` command.
+
+## Windows
+
+If you are using windows system, you have to add alias manually.
+
+Adding a permanent alias in Powershell (Windows):
+
+```
+notepad $profile.AllUsersAllHosts
+```
+
+In the profile.ps1 file that opens, put:
+
+```
+set-alias -name px -value pmnpx
+```
+
+Save the file and close the window. You may need to close any open Powershell window in order for the alias to take effect.

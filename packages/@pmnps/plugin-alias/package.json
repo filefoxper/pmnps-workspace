@@ -2,7 +2,7 @@
   "private": false,
   "name": "@pmnps/plugin-alias",
   "version": "4.2.0",
-  "description": "This is a pmnps plugin for refreshing vscode-workspace file.",
+  "description": "This is a pmnps plugin for making command alias in Mac os.",
   "author": "Jimmy.Harding",
   "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-alias",
   "repository": {
@@ -30,6 +30,6 @@
     "npm workspaces",
     "pmnps",
     "pmnps plugin",
-    "vscode workspace"
+    "command alias"
   ]
 }

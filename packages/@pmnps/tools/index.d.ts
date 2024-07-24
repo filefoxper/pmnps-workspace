@@ -87,7 +87,7 @@ export declare type CommandOption = {
   inputType?: string;
 };
 
-declare type ActionMessage = {
+export declare type ActionMessage = {
   type: 'success' | 'failed' | 'warning';
   content: string;
   payload?: unknown;
@@ -138,28 +138,32 @@ declare type Writer = {
   writeJson(locationPath: string, json: Record<string, any>): Promise<string>;
 };
 
+export declare type ActionState = {
+  getProject: () => Project;
+  getConfig: () => Config;
+  task: Task;
+  cwd: () => string;
+  required?: Promise<any>;
+  reader: Reader;
+  writer: Writer;
+};
+
+export declare type ActionRequiredState = {
+  getProject: () => Project;
+  getConfig: () => Config;
+  reader: Reader;
+  writer: Writer;
+  cwd: () => string;
+};
+
 export declare type Action = <O extends Record<string, any>>(
-  state: {
-    getProject: () => Project;
-    getConfig: () => Config;
-    task: Task;
-    cwd: () => string;
-    required?: Promise<any>;
-    reader: Reader;
-    writer: Writer;
-  },
+  state: ActionState,
   argument: string | undefined,
   option?: O
 ) => Promise<ActionMessage>;
 
 declare type RequireFn = <O extends Record<string, any>>(
-  state: {
-    getProject: () => Project;
-    getConfig: () => Config;
-    reader: Reader;
-    writer: Writer;
-    cwd: () => string;
-  },
+  state: ActionRequiredState,
   option?: O
 ) => Promise<any>;
 
