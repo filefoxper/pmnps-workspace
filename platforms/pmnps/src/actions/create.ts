@@ -176,7 +176,7 @@ async function createPackageOrTemplate(
   };
 }
 
-async function setPackageOptions(
+export async function setPackageOptions(
   type: 'package' | 'platform'
 ): Promise<{ pmnps?: PmnpsJson }> {
   const { setting } = await inquirer.prompt([
@@ -209,7 +209,7 @@ async function setPackageOptions(
   ]);
   const ownRoot = optionMap.get(ownRootSetting);
   if (!ownRoot || ownRoot === 'workspaces') {
-    return { pmnps: undefined };
+    return { pmnps: { ownRoot: false } };
   }
   return {
     pmnps: {

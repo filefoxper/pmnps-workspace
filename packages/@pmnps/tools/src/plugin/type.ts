@@ -82,6 +82,7 @@ export type Action = <O extends Record<string, any>>(
 
 export type Command = {
   name: string;
+  list?: boolean;
   requireRefresh?: boolean;
   require?: RequireFn;
   options?: CommandOption[];

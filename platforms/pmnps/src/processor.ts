@@ -101,7 +101,7 @@ async function load() {
 }
 
 export async function initialize() {
-  message.info('Pmnps startup...');
+  message.info(global.pmnps.px ? 'Pmnpx startup...' : 'Pmnps startup...');
   const versions = checkRuntimeEnv();
   if (!versions) {
     return false;

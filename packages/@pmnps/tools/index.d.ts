@@ -169,6 +169,7 @@ declare type RequireFn = <O extends Record<string, any>>(
 
 export declare type Command = {
   name: string;
+  list?: boolean;
   options?: CommandOption[];
   require?: RequireFn;
   action: Action;
@@ -191,6 +192,7 @@ declare type MessageLog = (mess: string) => void;
 
 declare type PluginSlot = {
   name: string;
+  list(l: boolean): PluginSlot;
   args(param: string, description: string): PluginSlot;
   requireRefresh(): PluginSlot;
   option(

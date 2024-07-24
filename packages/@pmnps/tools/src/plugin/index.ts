@@ -9,6 +9,7 @@ export function createPluginCommand(name: string) {
     options: CommandOption[];
     action: Action | undefined;
     description: string;
+    list?: boolean;
     args?: { param: string; description: string };
   } = {
     name,
@@ -22,6 +23,10 @@ export function createPluginCommand(name: string) {
   };
   const pluginSlot = {
     name,
+    list(l: boolean) {
+      command.list = l;
+      return pluginSlot;
+    },
     args(param: string, description: string) {
       command.args = { param, description };
       return pluginSlot;

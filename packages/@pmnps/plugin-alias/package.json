@@ -25,11 +25,11 @@
     "typescript": "4.9.5"
   },
   "keywords": [
+    "command alias",
     "js",
     "monorepo",
     "npm workspaces",
     "pmnps",
-    "pmnps plugin",
-    "command alias"
+    "pmnps plugin"
   ]
 }

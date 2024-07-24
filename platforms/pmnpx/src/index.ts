@@ -2,9 +2,10 @@
 
 import path from 'path';
 import fs from 'fs';
-import * as console from 'node:console';
 
 const cwd = process.cwd();
+
+process.env.PXS_ENV = 'pmnpx';
 
 const findPmnps = function findPmnps(
   pathname: string,
