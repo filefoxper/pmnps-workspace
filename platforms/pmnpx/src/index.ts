@@ -30,9 +30,23 @@ const findPmnps = function findPmnps(
 
 const founddPmnpsPathname = findPmnps(cwd);
 
-const pmnpsLocation = path.join(__dirname, '..', '..', 'pmnps');
+const pmnpsLocation = path.join(
+  __dirname,
+  '..',
+  '..',
+  'pmnps',
+  'bin',
+  'index.js'
+);
 
-const innerPmnpsLocation = path.join(__dirname, '..', 'node_modules', 'pmnps');
+const innerPmnpsLocation = path.join(
+  __dirname,
+  '..',
+  'node_modules',
+  'pmnps',
+  'bin',
+  'index.js'
+);
 
 if (founddPmnpsPathname) {
   require(founddPmnpsPathname);
