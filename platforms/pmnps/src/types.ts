@@ -1,57 +1,15 @@
-import type { Command } from '@pmnps/tools';
-
-export interface PmnpsJson {
-  ownRoot?: boolean;
-  slot?: 'template';
-}
-
-export interface PackageJson {
-  private?: boolean;
-  name?: string;
-  author?: string;
-  version?: string;
-  dependencies?: Record<string, string>;
-  devDependencies?: Record<string, string>;
-  workspaces: Array<string>;
-  pmnps?: PmnpsJson;
-  scripts?: Record<string, string>;
-}
-
-export type PackageType = 'package' | 'platform' | 'workspace';
-
-export interface Package {
-  path: string;
-  paths: string[] | null;
-  name: string;
-  packageJson: PackageJson;
-  packageJsonFileName: string;
-  type: PackageType;
-}
+import type {
+  Command,
+  Config,
+  Package,
+  Project,
+  ProjectType
+} from '@pmnps/tools';
 
 export interface DynamicStateUnit {
-  hasPackageLockJsonFile: boolean;
+  hasLockFile: boolean;
   hasNodeModules: boolean;
-}
-
-export type Scope = {
-  name: string;
-  path: string;
-  packages: Package[];
-};
-
-export type ProjectType = 'monorepo' | 'classify';
-
-export interface Project {
-  type: ProjectType;
-  path: string;
-  name: string;
-  packageMap: Record<string, Package>;
-  project: {
-    workspace?: Package;
-    scopes?: Scope[];
-    packages?: Package[];
-    platforms?: Package[];
-  };
+  lockContent?: string | null;
 }
 
 export type ScopeSerial = {
@@ -73,33 +31,6 @@ export interface ProjectSerial {
   };
 }
 
-export interface ConfigDetail {
-  projectType: ProjectType;
-  private: boolean;
-  useGit: boolean;
-  useCommandHelp: boolean;
-  usePerformanceFirst: boolean;
-  useRefreshAfterInstall: boolean;
-  useNpmCi?: boolean;
-}
-
-export interface ConfigSetting {
-  registry?: string;
-  core?: 'npm' | 'yarn' | 'yarn2';
-  installParameters?: string;
-}
-
-export interface ConfigPlugins {
-  templates?: string[];
-  plugins?: (string | [string, Record<string, any>])[];
-}
-
-export type Config = {
-  name: string;
-} & ConfigDetail &
-  ConfigSetting &
-  ConfigPlugins;
-
 export interface State {
   config?: Config;
   project?: Project;
@@ -117,9 +48,4 @@ export interface Template {
 export interface Resource {
   templates: Template[];
   commands: Command[];
-}
-
-export interface Configuration {
-  config: Config | undefined;
-  templates: Template[];
 }

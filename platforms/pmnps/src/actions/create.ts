@@ -4,7 +4,8 @@ import { hold } from '@/state';
 import { packageJson } from '@/resource';
 import { omitBy, pick } from '@/libs/polyfill';
 import { templateSupport } from '@/support/template';
-import type { PackageJson, PackageType, PmnpsJson, Scope } from '@/types';
+import type { PmnpsJson } from '@pmnps/tools';
+import type { PackageJson, PackageType, Scope } from '@pmnps/tools';
 import type { ActionMessage } from '@/actions/task/type';
 
 const creations: Array<string | undefined | null> = [
@@ -175,7 +176,7 @@ async function createPackageOrTemplate(
   };
 }
 
-async function setPackageOptions(
+export async function setPackageOptions(
   type: 'package' | 'platform'
 ): Promise<{ pmnps?: PmnpsJson }> {
   const { setting } = await inquirer.prompt([
@@ -188,23 +189,32 @@ async function setPackageOptions(
   if (!setting) {
     return {};
   }
-  const optionMap = new Map([[`use node_modules in this ${type}`, 'ownRoot']]);
-  const { options } = await inquirer.prompt([
+  const optionMap = new Map([
+    [`use workspaces node_modules in this ${type}`, 'workspaces'],
+    [`use independent node_modules in this ${type}`, 'independent'],
+    [
+      `use flexible node_modules in this ${type} (fused with workspaces node_modules)`,
+      'flexible'
+    ]
+  ]);
+  const ops = [...optionMap.keys()];
+  const { ownRootSetting } = await inquirer.prompt([
     {
-      name: 'options',
-      type: 'checkbox',
+      name: 'ownRoot',
+      type: 'list',
       message: `Choose options for this ${type}`,
-      choices: [...optionMap.keys()]
+      choices: ops,
+      default: ops[0]
     }
   ]);
-  const pmnpsOptions: string[] = options;
-  const pmnpsKeys = pmnpsOptions
-    .map(n => optionMap.get(n))
-    .filter((v): v is string => !!v);
+  const ownRoot = optionMap.get(ownRootSetting);
+  if (!ownRoot || ownRoot === 'workspaces') {
+    return { pmnps: { ownRoot: false } };
+  }
   return {
-    pmnps: Object.fromEntries(
-      pmnpsKeys.map(k => [k, true] as const)
-    ) as PmnpsJson
+    pmnps: {
+      ownRoot
+    } as PmnpsJson
   };
 }
 
@@ -222,7 +232,8 @@ async function createPackage(
       type: 'success'
     };
   }
-  const pmnpsWrap = await setPackageOptions('package');
+  const pmnpsSetting = await setPackageOptions('package');
+  const pmnpsWrap = omitBy(pmnpsSetting, (value, key) => value == null);
   const templates = hold
     .instance()
     .getTemplates()

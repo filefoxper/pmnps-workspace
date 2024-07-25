@@ -2,17 +2,18 @@ import { file, path } from '@/libs';
 import { equal, keyBy, mapValues, omit } from '@/libs/polyfill';
 import type { PackageItem, PackageWithDynamicState } from '@/support/type';
 import type {
-  Package,
-  PackageJson,
   PackageType,
   Project,
-  ProjectSerial,
-  ProjectType,
-  Scope
-} from '@/types';
+  Package,
+  PackageJson,
+  Scope,
+  ProjectType
+} from '@pmnps/tools';
+import type { ProjectSerial } from '@/types';
 
 async function collectPackages(
   filePath: string,
+  lockFileName: string,
   state: { type: PackageType; level: number; dirnames: string[] } = {
     type: 'workspace',
     level: 0,
@@ -30,16 +31,17 @@ async function collectPackages(
   const packageJsonFile = children.find(
     c => c.trim().toLocaleLowerCase() === 'package.json'
   );
-  const hasPackageLockJsonFile = children.some(
-    c => c.trim().toLocaleLowerCase() === 'package-lock.json'
+  const hasLockFile = children.some(
+    c => c.trim().toLocaleLowerCase() === lockFileName
   );
   const hasNodeModules = children.some(
     c => c.trim().toLocaleLowerCase() === 'node_modules'
   );
   if (packageJsonFile && state.type !== 'workspace') {
-    const packageJson = await file.readJson<PackageJson>(
-      path.join(filePath, packageJsonFile)
-    );
+    const [packageJson, lockContent] = await Promise.all([
+      file.readJson<PackageJson>(path.join(filePath, packageJsonFile)),
+      file.readFile(path.join(filePath, lockFileName))
+    ]);
     if (!packageJson) {
       return [];
     }
@@ -50,7 +52,8 @@ async function collectPackages(
       paths,
       packageJson,
       packageJsonFileName: packageJsonFile,
-      hasPackageLockJsonFile,
+      lockContent,
+      hasLockFile,
       hasNodeModules,
       type: state.type
     };
@@ -80,22 +83,26 @@ async function collectPackages(
       if (nextState.type === 'workspace') {
         return undefined;
       }
-      return collectPackages(path.join(filePath, currentName), nextState);
+      return collectPackages(
+        path.join(filePath, currentName),
+        lockFileName,
+        nextState
+      );
     })
     .filter((d): d is Promise<PackageWithDynamicState[]> => !!d);
   const results: PackageWithDynamicState[][] = await Promise.all(promises);
   return results.flat();
 }
 
-async function loadPackages(cwd: string) {
-  const packs = await collectPackages(cwd);
+async function loadPackages(cwd: string, lockFileName: string) {
+  const packs = await collectPackages(cwd, lockFileName);
   const ps = packs.map((p): Package => {
-    const { hasPackageLockJsonFile, hasNodeModules, ...rest } = p;
+    const { hasLockFile, hasNodeModules, lockContent, ...rest } = p;
     return rest;
   });
   const dynamicStates = packs.map(p => {
-    const { name, hasNodeModules, hasPackageLockJsonFile } = p;
-    return { name, hasNodeModules, hasPackageLockJsonFile };
+    const { name, hasNodeModules, hasLockFile, lockContent } = p;
+    return { name, hasNodeModules, hasLockFile, lockContent };
   });
   return { packs: ps, dynamicStates };
 }

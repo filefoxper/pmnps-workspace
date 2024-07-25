@@ -1,6 +1,6 @@
 import { DEV_DEPS } from '@/constants';
 import { omitBy } from '@/libs/polyfill';
-import type { PackageJson, PackageType } from '@/types';
+import type { PackageJson, PackageType } from '@pmnps/tools';
 
 export const defaultPackageJson = function defaultPackageJson() {
   return {

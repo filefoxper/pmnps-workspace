@@ -1,6 +1,6 @@
 {
   "folders": [
-    { "name": "root", "path": "." },
+    { "name": "<workspaces>", "path": "." },
     { "name": "@pmnps/tools", "path": "packages/@pmnps/tools" },
     {
       "name": "@pmnps/plugin-vscode-workspace",
@@ -11,7 +11,9 @@
       "path": "packages/@pmnps/plugin-publish"
     },
     { "name": "pmnpx", "path": "platforms/pmnpx" },
-    { "name": "pmnps", "path": "platforms/pmnps" }
+    { "name": "pmnps", "path": "platforms/pmnps" },
+    { "name": "package.json", "path": "package.json" },
+    { "name": ".pmnpsrc.json", "path": ".pmnpsrc.json" }
   ],
   "settings": {}
 }

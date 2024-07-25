@@ -1,7 +1,7 @@
 import { hold } from '@/state';
-import { message, path } from '@/libs';
+import { path } from '@/libs';
 import { task } from '@/actions/task';
-import type { Package } from '@/types';
+import type { Package } from '@pmnps/tools';
 
 function parseParameters(parameters = '') {
   return parameters.split(/\s/).filter(d => d.trim());
@@ -23,7 +23,7 @@ export const SystemCommands = {
     return ['npm', 'run'];
   },
   install: (opt?: {
-    hasPackageLockJsonFile?: boolean;
+    hasLockFile?: boolean;
     hasNodeModules?: boolean;
     isPoint?: boolean;
     parameters?: string;
@@ -34,12 +34,7 @@ export const SystemCommands = {
       useRefreshAfterInstall,
       installParameters = ''
     } = hold.instance().getState().config ?? {};
-    const {
-      hasPackageLockJsonFile,
-      hasNodeModules,
-      isPoint,
-      parameters = ''
-    } = opt ?? {};
+    const { hasLockFile, hasNodeModules, isPoint, parameters = '' } = opt ?? {};
     const ps = [
       ...parseParameters(installParameters),
       ...parseParameters(parameters)
@@ -52,7 +47,7 @@ export const SystemCommands = {
         ? ['yarn', 'install', '--ignore-scripts', ...ps]
         : ['yarn', 'install', ...ps];
     }
-    if (useNpmCi && !hasNodeModules && hasPackageLockJsonFile) {
+    if (useNpmCi && !hasNodeModules && hasLockFile) {
       return isPoint && useRefreshAfterInstall
         ? ['npm', 'ci', '--ignore-scripts', ...ps]
         : ['npm', 'ci', ...ps];

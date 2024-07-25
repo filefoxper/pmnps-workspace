@@ -1,7 +1,7 @@
 import { projectSupport } from '@/support';
-import type { Command } from '@pmnps/tools';
+import type { Command, Package, Project } from '@pmnps/tools';
 import type { Task } from '@/actions/task/type';
-import type { Package, Project, Resource, State, Template } from '@/types';
+import type { Resource, State, Template } from '@/types';
 
 export function hold() {
   const listeners: (() => void)[] = [];

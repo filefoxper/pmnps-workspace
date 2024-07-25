@@ -1,6 +1,6 @@
 {
   "name": "pmnpx",
-  "version": "4.1.0",
+  "version": "4.2.0",
   "description": "This is a package for starting pmnps.",
   "author": "Jimmy.Harding",
   "homepage": "https://github.com/filefoxper/pmnps-workspace",
@@ -22,6 +22,6 @@
   },
   "preferGlobal": true,
   "dependencies": {
-    "pmnps": "^4.1.0"
+    "pmnps": "^4.2.0"
   }
 }

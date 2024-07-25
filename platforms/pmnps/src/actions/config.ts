@@ -5,7 +5,7 @@ import { packageJson } from '@/resource';
 import { equal, omitBy } from '@/libs/polyfill';
 import { task } from './task';
 import type { ActionMessage } from '@/actions/task/type';
-import type { Config, ConfigDetail, PackageJson } from '@/types';
+import type { PackageJson, ConfigDetail, Config } from '@pmnps/tools';
 
 const configRange: Array<[string, keyof ConfigDetail]> = [
   ['allow publish to npm', 'private'],

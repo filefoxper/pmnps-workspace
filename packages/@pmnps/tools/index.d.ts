@@ -4,7 +4,7 @@ import type { Answers, QuestionCollection, ui, Separator } from 'inquirer';
 export type CommandSerial = string[];
 
 export interface PmnpsJson {
-  ownRoot?: boolean;
+  ownRoot?: boolean | 'flexible' | 'independent';
   slot?: 'template';
 }
 
@@ -80,14 +80,14 @@ export type Config = {
   ConfigPlugins;
 
 /** types **/
-declare type CommandOption = {
+export declare type CommandOption = {
   name: string;
   shortcut: string;
   description: string;
   inputType?: string;
 };
 
-declare type ActionMessage = {
+export declare type ActionMessage = {
   type: 'success' | 'failed' | 'warning';
   content: string;
   payload?: unknown;
@@ -128,35 +128,48 @@ declare type Task = {
   execute(command: CommandSerial, cwd: string, description?: string): any;
 };
 
-export declare type Action = <O extends Record<string, any>>(
-  state: {
-    getProject: () => Project;
-    getConfig: () => Config;
-    task: Task;
-    cwd: () => string;
-    required?: Promise<any>;
-  },
-  argument: string | undefined,
-  option?: O
-) => Promise<ActionMessage>;
-
 declare type Reader = {
   read(p: string): Promise<string | null>;
   readJson<D extends Record<string, any>>(p: string): Promise<D | undefined>;
 };
 
+declare type Writer = {
+  write(locationPath: string, data: string): Promise<string>;
+  writeJson(locationPath: string, json: Record<string, any>): Promise<string>;
+};
+
+export declare type ActionState = {
+  getProject: () => Project;
+  getConfig: () => Config;
+  task: Task;
+  cwd: () => string;
+  required?: Promise<any>;
+  reader: Reader;
+  writer: Writer;
+};
+
+export declare type ActionRequiredState = {
+  getProject: () => Project;
+  getConfig: () => Config;
+  reader: Reader;
+  writer: Writer;
+  cwd: () => string;
+};
+
+export declare type Action = <O extends Record<string, any>>(
+  state: ActionState,
+  argument: string | undefined,
+  option?: O
+) => Promise<ActionMessage>;
+
 declare type RequireFn = <O extends Record<string, any>>(
-  state: {
-    getProject: () => Project;
-    getConfig: () => Config;
-    reader: Reader;
-    cwd: () => string;
-  },
+  state: ActionRequiredState,
   option?: O
 ) => Promise<any>;
 
 export declare type Command = {
   name: string;
+  list?: boolean;
   options?: CommandOption[];
   require?: RequireFn;
   action: Action;
@@ -179,6 +192,7 @@ declare type MessageLog = (mess: string) => void;
 
 declare type PluginSlot = {
   name: string;
+  list(l: boolean): PluginSlot;
   args(param: string, description: string): PluginSlot;
   requireRefresh(): PluginSlot;
   option(
@@ -230,4 +244,12 @@ export declare const execution: {
   command(params: string, options?: execa.Options): execa.ExecaChildProcess;
   execute: typeof execa;
   killChildProcess([pid, process]: [number, execa.ExecaChildProcess]): void;
+};
+
+export declare function requireFactory(cwd: string): {
+  require: (pathname: string) => Promise<{ pathname: string; module: any }>;
+};
+
+export declare const versions: {
+  satisfies(version: string, range: string): boolean;
 };

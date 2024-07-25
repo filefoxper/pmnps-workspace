@@ -1,3 +1,4 @@
+import os from 'os';
 import { program } from 'commander';
 import { createPluginCommand } from '@pmnps/tools';
 import { hold } from '@/state';
@@ -7,10 +8,15 @@ import { createAction } from '@/actions/create';
 import { useCommand } from '@/actions/task';
 import { runAction, startAction } from '@/actions/run';
 import { getPluginState } from '@/plugin';
+import {
+  setAction,
+  setAliasAction,
+  setPackageAction,
+  setPlatformAction
+} from '@/actions/set';
 import { env, file, path, inquirer, message } from './libs';
 import { initialize, loadProject } from './processor';
-import type { Command } from '@pmnps/tools';
-import type { CommandOption } from '@pmnps/tools/src/plugin/type';
+import type { Command, CommandOption } from '@pmnps/tools';
 import type { ActionMessage, Task } from '@/actions/task/type';
 import type { Resource, State } from './types';
 
@@ -25,6 +31,8 @@ declare global {
     load: (withCache?: boolean) => Promise<any>;
     tasks: Task[];
     isDevelopment?: boolean;
+    px?: boolean;
+    platform?: NodeJS.Platform;
   };
 }
 
@@ -93,6 +101,30 @@ const configCommand = createPluginCommand('config')
   .describe('Config pmnps workspace')
   .action(() => configAction());
 
+const setCommand = createPluginCommand('set')
+  .describe('Set package/platform detail.')
+  .args('package|platform', 'Enter a target type for setting')
+  .action((state, argument) => setAction(argument));
+
+const noListCommands = [
+  createPluginCommand('set:package')
+    .describe('Set package detail.')
+    .list(false)
+    .args('package name', 'Enter a package name for setting')
+    .action((state, argument) => setPackageAction(argument)),
+  createPluginCommand('set:platform')
+    .describe('Set platform detail.')
+    .list(false)
+    .args('platform name', 'Enter a platform name for setting')
+    .action((state, argument) => setPlatformAction(argument))
+];
+
+const setAliasCommand = createPluginCommand('set:alias')
+  .describe('Set pmnpx alias.')
+  .list(false)
+  .args('alias', 'Enter a alias for pmnpx')
+  .action((state, argument) => setAliasAction(argument));
+
 function actCommands(cmds: Command[]) {
   const state = getPluginState();
   const { useCommandHelp } = hold.instance().getState().config ?? {};
@@ -122,6 +154,8 @@ function actCommands(cmds: Command[]) {
 
 const getCommands = () => {
   const { projectType = 'monorepo' } = hold.instance().getState().config ?? {};
+  const canUseAlias = !!global.pmnps.px && global.pmnps.platform === 'darwin';
+  const pmnpxCommands = canUseAlias ? [setAliasCommand] : [];
   return actCommands(
     projectType === 'monorepo'
       ? ([
@@ -129,9 +163,18 @@ const getCommands = () => {
           runCommand,
           refreshCommand,
           createCommand,
-          configCommand
+          configCommand,
+          setCommand,
+          ...noListCommands,
+          ...pmnpxCommands
         ] as Command[])
-      : ([startCommand, runCommand, refreshCommand, configCommand] as Command[])
+      : ([
+          startCommand,
+          runCommand,
+          refreshCommand,
+          configCommand,
+          setCommand
+        ] as Command[])
   );
 };
 
@@ -166,14 +209,18 @@ function getCustomizedCommands() {
 }
 
 async function initialAction() {
-  const customizedCommands = getCustomizedCommands().map(
-    ({ name, action }) =>
-      [name, action] as [string, (...a: any[]) => Promise<ActionMessage>]
-  );
-  const systemCommands = getCommands().map(
-    ({ name, action }) =>
-      [name, action] as [string, (...a: any[]) => Promise<ActionMessage>]
-  );
+  const customizedCommands = getCustomizedCommands()
+    .filter(c => c.list || c.list == null)
+    .map(
+      ({ name, action }) =>
+        [name, action] as [string, (...a: any[]) => Promise<ActionMessage>]
+    );
+  const systemCommands = getCommands()
+    .filter(c => c.list || c.list == null)
+    .map(
+      ({ name, action }) =>
+        [name, action] as [string, (...a: any[]) => Promise<ActionMessage>]
+    );
   const commandDesc = [
     new inquirer.Separator('-- system commands --'),
     ...systemCommands.map(([des]) => des)
@@ -206,12 +253,16 @@ async function initialAction() {
 }
 
 export async function startup(isDevelopment?: boolean) {
+  const px = process.env.PXS_ENV === 'pmnpx';
+  const platform = os.platform();
   global.pmnps = {
     holder: hold(),
     load: loadProject,
     resources: { templates: [], commands: [] },
     state: {},
     tasks: [],
+    px,
+    platform,
     isDevelopment
   };
   if (env.isDevelopment) {

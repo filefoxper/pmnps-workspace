@@ -10,13 +10,13 @@ import { executeSystemOrders } from './exec';
 import { refreshProject } from './refresh';
 import { write } from './write';
 import type {
-  Config,
-  Package,
   PackageJson,
+  Package,
   PackageType,
+  Scope,
   Project,
-  Scope
-} from '@/types';
+  Config
+} from '@pmnps/tools';
 import type {
   ActionMessage,
   CommandSerial,

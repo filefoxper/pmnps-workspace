@@ -1,4 +1,4 @@
-import type { Package } from '@/types';
+import type { Package } from '@pmnps/tools';
 
 export type PackageItem = {
   name: string;
@@ -9,6 +9,7 @@ export type PackageItem = {
 };
 
 export interface PackageWithDynamicState extends Package {
-  hasPackageLockJsonFile: boolean;
+  hasLockFile: boolean;
   hasNodeModules: boolean;
+  lockContent?: string | null;
 }

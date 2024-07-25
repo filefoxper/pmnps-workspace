@@ -1,6 +1,7 @@
 import { cache } from '@/cache';
 import { projectSupport } from '@/support';
-import type { Project, State } from '@/types';
+import type { Project } from '@pmnps/tools';
+import type { State } from '@/types';
 
 async function loadCacheProject(cwd: string): Promise<Project | undefined> {
   const serial = await cache.readProject(cwd);
