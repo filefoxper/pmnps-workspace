@@ -23,9 +23,10 @@ function checkRuntimeEnv(): string | null {
 
 export async function loadProject(withCache?: boolean) {
   const cwd = path.cwd();
+  const { config } = hold.instance().getState();
   if (withCache) {
     const [projectState, cacheProjectState] = await Promise.all([
-      loadData(cwd),
+      loadData(cwd, config?.core),
       loadCacheData(cwd)
     ]);
     return { ...projectState, ...cacheProjectState };
@@ -91,11 +92,10 @@ function loadPluginRequires() {
 
 async function load() {
   const holder = hold.instance();
-  const loading = holder.load(true);
-  const fetchingConfig = loadConfig();
-  const partState = await loading;
-  const { config, resources } = await fetchingConfig;
-  holder.setState({ ...partState, config });
+  const { config, resources } = await loadConfig();
+  holder.setState({ config });
+  const partState = await holder.load(true);
+  holder.setState(partState);
   holder.setResources(resources);
   loadPluginRequires();
 }

@@ -5,16 +5,22 @@ import type { PackageJson, Package, Project } from '@pmnps/tools';
 import type { DynamicStateUnit, State } from '@/types';
 
 async function readProject(
-  cwd: string
+  cwd: string,
+  core?: 'npm' | 'yarn' | 'yarn2'
 ): Promise<
   [undefined | Project, Record<string, DynamicStateUnit> | undefined]
 > {
-  const [mainPackageJson, hasPackageLockJsonFile, hasNodeModules] =
-    await Promise.all([
-      file.readJson<PackageJson>(path.join(cwd, 'package.json')),
-      file.isFile(path.join(cwd, 'package-lock.json')),
-      file.isDirectory(path.join(cwd, 'node_modules'))
-    ]);
+  const lockFileName = (function computeLockFileName() {
+    if (core === 'yarn' || core === 'yarn2') {
+      return 'yarn.lock';
+    }
+    return 'package-lock.json';
+  })();
+  const [mainPackageJson, lockContent, hasNodeModules] = await Promise.all([
+    file.readJson<PackageJson>(path.join(cwd, 'package.json')),
+    file.readFile(path.join(cwd, lockFileName)),
+    file.isDirectory(path.join(cwd, 'node_modules'))
+  ]);
   if (!mainPackageJson) {
     return [undefined, undefined];
   }
@@ -27,13 +33,18 @@ async function readProject(
     type: 'workspace'
   };
   const [packsInfo, scopes] = await Promise.all([
-    projectSupport.loadPackages(cwd),
+    projectSupport.loadPackages(cwd, lockFileName),
     projectSupport.loadScopes(cwd)
   ]);
   const { packs: children, dynamicStates } = packsInfo;
   const dynamicStateArray = [
     ...dynamicStates,
-    { name: mainPackage.name, hasPackageLockJsonFile, hasNodeModules }
+    {
+      name: mainPackage.name,
+      hasLockFile: !!lockContent,
+      hasNodeModules,
+      lockContent
+    }
   ];
   const dynamicState = Object.fromEntries(
     dynamicStateArray.map((d): [string, DynamicStateUnit] => [d.name, d])
@@ -63,7 +74,7 @@ async function readProject(
   ];
 }
 
-export async function loadData(cwd: string) {
-  const [project, dynamicState] = await readProject(cwd);
+export async function loadData(cwd: string, core?: 'npm' | 'yarn' | 'yarn2') {
+  const [project, dynamicState] = await readProject(cwd, core);
   return { project, dynamicState } as State;
 }

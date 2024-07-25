@@ -401,7 +401,7 @@ function refreshChangePackages(changes: Package[]) {
 function installOwnRootPackage(
   pack: Package,
   opt: {
-    hasPackageLockJsonFile?: boolean;
+    hasLockFile?: boolean;
     hasNodeModules?: boolean;
     isPoint?: boolean;
     parameters?: string;

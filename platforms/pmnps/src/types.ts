@@ -7,8 +7,9 @@ import type {
 } from '@pmnps/tools';
 
 export interface DynamicStateUnit {
-  hasPackageLockJsonFile: boolean;
+  hasLockFile: boolean;
   hasNodeModules: boolean;
+  lockContent?: string | null;
 }
 
 export type ScopeSerial = {

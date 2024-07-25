@@ -9,6 +9,7 @@ export type PackageItem = {
 };
 
 export interface PackageWithDynamicState extends Package {
-  hasPackageLockJsonFile: boolean;
+  hasLockFile: boolean;
   hasNodeModules: boolean;
+  lockContent?: string | null;
 }

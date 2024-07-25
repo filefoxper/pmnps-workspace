@@ -109,16 +109,19 @@ const setCommand = createPluginCommand('set')
 const noListCommands = [
   createPluginCommand('set:package')
     .describe('Set package detail.')
+    .list(false)
     .args('package name', 'Enter a package name for setting')
     .action((state, argument) => setPackageAction(argument)),
   createPluginCommand('set:platform')
     .describe('Set platform detail.')
+    .list(false)
     .args('platform name', 'Enter a platform name for setting')
     .action((state, argument) => setPlatformAction(argument))
 ];
 
 const setAliasCommand = createPluginCommand('set:alias')
   .describe('Set pmnpx alias.')
+  .list(false)
   .args('alias', 'Enter a alias for pmnpx')
   .action((state, argument) => setAliasAction(argument));
 
