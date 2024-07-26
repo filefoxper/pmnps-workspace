@@ -10,6 +10,7 @@ export interface DynamicStateUnit {
   hasLockFile: boolean;
   hasNodeModules: boolean;
   lockContent?: string | null;
+  lockFileName: string;
 }
 
 export type ScopeSerial = {

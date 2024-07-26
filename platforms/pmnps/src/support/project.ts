@@ -53,6 +53,7 @@ async function collectPackages(
       packageJson,
       packageJsonFileName: packageJsonFile,
       lockContent,
+      lockFileName,
       hasLockFile,
       hasNodeModules,
       type: state.type
@@ -97,12 +98,13 @@ async function collectPackages(
 async function loadPackages(cwd: string, lockFileName: string) {
   const packs = await collectPackages(cwd, lockFileName);
   const ps = packs.map((p): Package => {
-    const { hasLockFile, hasNodeModules, lockContent, ...rest } = p;
+    const { hasLockFile, hasNodeModules, lockContent, lockFileName, ...rest } =
+      p;
     return rest;
   });
   const dynamicStates = packs.map(p => {
-    const { name, hasNodeModules, hasLockFile, lockContent } = p;
-    return { name, hasNodeModules, hasLockFile, lockContent };
+    const { name, hasNodeModules, hasLockFile, lockContent, lockFileName } = p;
+    return { name, hasNodeModules, hasLockFile, lockContent, lockFileName };
   });
   return { packs: ps, dynamicStates };
 }

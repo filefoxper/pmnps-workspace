@@ -43,7 +43,8 @@ async function readProject(
       name: mainPackage.name,
       hasLockFile: !!lockContent,
       hasNodeModules,
-      lockContent
+      lockContent,
+      lockFileName
     }
   ];
   const dynamicState = Object.fromEntries(

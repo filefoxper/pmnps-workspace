@@ -14,6 +14,7 @@ import {
 import { projectSupport } from '@/support';
 import { message, path } from '@/libs';
 import { getPluginState } from '@/plugin';
+import type { DynamicStateUnit } from '@/types';
 import type { ActionMessage } from '@/actions/task/type';
 import type { PackageJson, Package, Command } from '@pmnps/tools';
 
@@ -462,6 +463,85 @@ function installOwnRootPackage(
   );
 }
 
+function checkLock(name: string, lockContent: string, packs: Package[]) {
+  const packMap = keyBy(packs, 'name');
+  const currentPack = packMap.get(name);
+  if (currentPack == null || currentPack.packageJson == null) {
+    return null;
+  }
+  try {
+    const lockJson = JSON.parse(lockContent || '');
+    const packagesObj = lockJson.packages;
+    if (!packagesObj) {
+      return null;
+    }
+    const entries = Object.entries(packagesObj);
+    const data = entries.filter(([prefix, data]) => {
+      const prefixName = (function computeName() {
+        const independentPackagePrefix = '../../packages/';
+        const independentPlatformPrefix = '../../platforms/';
+        const packagePrefix = 'packages/';
+        const platformPrefix = 'platforms/';
+        if (prefix.startsWith(independentPackagePrefix)) {
+          return prefix.slice(independentPackagePrefix.length);
+        }
+        if (prefix.startsWith(independentPlatformPrefix)) {
+          return prefix.slice(independentPlatformPrefix.length);
+        }
+        if (prefix.startsWith(packagePrefix)) {
+          return prefix.slice(packagePrefix.length);
+        }
+        if (prefix.startsWith(platformPrefix)) {
+          return prefix.slice(platformPrefix.length);
+        }
+        return null;
+      })();
+      if (prefixName == null) {
+        return true;
+      }
+      const [packageName] = prefixName.split('/node_modules/');
+      return packMap.has(packageName);
+    });
+    if (data.length === entries.length) {
+      return null;
+    }
+    const newPackagesObj = Object.fromEntries(data);
+    return {
+      lock: { ...lockJson, packages: newPackagesObj },
+      path: currentPack.path
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+function refreshLock() {
+  const { project, dynamicState = {}, config } = hold.instance().getState();
+  if (config?.core && config?.core !== 'npm') {
+    return;
+  }
+  const { packages = [], platforms = [], workspace } = project?.project || {};
+  if (workspace == null) {
+    return;
+  }
+  const locks = Object.entries(dynamicState)
+    .map(([name, value]): { name: string } & DynamicStateUnit => ({
+      name,
+      ...value
+    }))
+    .filter(d => d.hasLockFile);
+  const packs = [...packages, ...platforms, workspace];
+  locks.forEach(lock => {
+    const { name, lockContent, lockFileName } = lock;
+    const res = checkLock(name, lockContent || '', packs);
+    if (res == null) {
+      return;
+    }
+    const { path: p, lock: lockObj } = res;
+    task.write(p, lockFileName, lockObj);
+  });
+}
+
 export async function refresh(option?: {
   force?: boolean;
   install?: string;
@@ -493,6 +573,7 @@ export async function refresh(option?: {
   refreshWorkspace();
   const { packs: changes } = hold.instance().diffDepsPackages(force);
   refreshChangePackages(changes);
+  refreshLock();
   const changeRoots = changes.filter(
     p => p.type === 'workspace' || p.packageJson.pmnps?.ownRoot
   );
