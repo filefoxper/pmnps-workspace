@@ -18,6 +18,13 @@ export const getPluginState = (required?: Promise<any>) => {
       }
       return config;
     },
+    getLockState: () => {
+      const dynamicState = hold.instance().getState().dynamicState;
+      if (dynamicState == null) {
+        throw new Error('Config should not be null.');
+      }
+      return dynamicState;
+    },
     task,
     cwd: () => path.cwd(),
     reader: {
@@ -47,6 +54,13 @@ export const getPluginRequireState = () => {
         throw new Error('Config should not be null.');
       }
       return config;
+    },
+    getLockState: () => {
+      const dynamicState = hold.instance().getState().dynamicState;
+      if (dynamicState == null) {
+        throw new Error('Config should not be null.');
+      }
+      return dynamicState;
     },
     cwd: () => path.cwd(),
     reader: {

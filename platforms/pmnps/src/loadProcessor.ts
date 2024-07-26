@@ -1,15 +1,18 @@
 import { file, path } from '@/libs';
 import { projectSupport } from '@/support';
 import { groupBy, orderBy, partition } from '@/libs/polyfill';
-import type { PackageJson, Package, Project } from '@pmnps/tools';
-import type { DynamicStateUnit, State } from '@/types';
+import type {
+  PackageJson,
+  Package,
+  Project,
+  PackageLockInfo
+} from '@pmnps/tools';
+import type { State } from '@/types';
 
 async function readProject(
   cwd: string,
   core?: 'npm' | 'yarn' | 'yarn2'
-): Promise<
-  [undefined | Project, Record<string, DynamicStateUnit> | undefined]
-> {
+): Promise<[undefined | Project, Record<string, PackageLockInfo> | undefined]> {
   const lockFileName = (function computeLockFileName() {
     if (core === 'yarn' || core === 'yarn2') {
       return 'yarn.lock';
@@ -48,7 +51,7 @@ async function readProject(
     }
   ];
   const dynamicState = Object.fromEntries(
-    dynamicStateArray.map((d): [string, DynamicStateUnit] => [d.name, d])
+    dynamicStateArray.map((d): [string, PackageLockInfo] => [d.name, d])
   );
   const [pks, pls] = partition(children, c => c.type === 'package');
   const packages = orderBy(pks, ['name'], ['desc']);

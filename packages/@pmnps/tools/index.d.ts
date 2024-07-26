@@ -138,9 +138,17 @@ declare type Writer = {
   writeJson(locationPath: string, json: Record<string, any>): Promise<string>;
 };
 
+export declare type PackageLockInfo = {
+  hasLockFile: boolean;
+  hasNodeModules: boolean;
+  lockContent?: string | null;
+  lockFileName: string;
+};
+
 export declare type ActionState = {
   getProject: () => Project;
   getConfig: () => Config;
+  getLockState: () => Record<string, PackageLockInfo>;
   task: Task;
   cwd: () => string;
   required?: Promise<any>;
@@ -151,6 +159,7 @@ export declare type ActionState = {
 export declare type ActionRequiredState = {
   getProject: () => Project;
   getConfig: () => Config;
+  getLockState: () => Record<string, PackageLockInfo>;
   reader: Reader;
   writer: Writer;
   cwd: () => string;

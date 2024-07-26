@@ -14,9 +14,13 @@ import {
 import { projectSupport } from '@/support';
 import { message, path } from '@/libs';
 import { getPluginState } from '@/plugin';
-import type { DynamicStateUnit } from '@/types';
 import type { ActionMessage } from '@/actions/task/type';
-import type { PackageJson, Package, Command } from '@pmnps/tools';
+import type {
+  PackageJson,
+  Package,
+  Command,
+  PackageLockInfo
+} from '@pmnps/tools';
 
 function differ(
   source: Record<string, any> | undefined,
@@ -463,114 +467,6 @@ function installOwnRootPackage(
   );
 }
 
-function checkLock(name: string, lockContent: string, packs: Package[]) {
-  const packMap = keyBy(packs, 'name');
-  const currentPack = packMap.get(name);
-  if (currentPack == null || currentPack.packageJson == null) {
-    return null;
-  }
-  try {
-    const lockJson = JSON.parse(lockContent || '');
-    const packagesObj = lockJson.packages;
-    if (!packagesObj) {
-      return null;
-    }
-    const entries = Object.entries(packagesObj);
-    const data = entries.filter(([prefix, value]) => {
-      const prefixName = (function computeName() {
-        const independentPackagePrefix = '../../packages/';
-        const independentPlatformPrefix = '../../platforms/';
-        const packagePrefix = 'packages/';
-        const platformPrefix = 'platforms/';
-        if (prefix.startsWith(independentPackagePrefix)) {
-          return prefix.slice(independentPackagePrefix.length);
-        }
-        if (prefix.startsWith(independentPlatformPrefix)) {
-          return prefix.slice(independentPlatformPrefix.length);
-        }
-        if (prefix.startsWith(packagePrefix)) {
-          return prefix.slice(packagePrefix.length);
-        }
-        if (prefix.startsWith(platformPrefix)) {
-          return prefix.slice(platformPrefix.length);
-        }
-        return null;
-      })();
-      if (prefixName == null) {
-        return true;
-      }
-      const [packageName, packageDepName] = prefixName.split('/node_modules/');
-      const pack = packMap.get(packageName);
-      if (!pack) {
-        return false;
-      }
-      if (packageDepName == null) {
-        return true;
-      }
-      const { dependencies = {}, devDependencies = {} } = pack.packageJson;
-      const deps = { ...dependencies, ...devDependencies };
-      const expectedVersionRange = deps[packageDepName];
-      const lockedVersion: string = (value as Record<string, any>).version;
-      if (expectedVersionRange == null) {
-        return true;
-      }
-      return versions.satisfies(lockedVersion, expectedVersionRange);
-    });
-    if (data.length === entries.length) {
-      return null;
-    }
-    const secondKeySet = new Set(
-      data
-        .filter(([k]) => {
-          return k.split('/node_modules/').length === 2;
-        })
-        .map(([k]) => k)
-    );
-    const clean = data.filter(([k]) => {
-      const parts = k.split('/node_modules/');
-      if (parts.length <= 2) {
-        return true;
-      }
-      const [f, s] = parts;
-      return secondKeySet.has([f, s].join('/node_modules'));
-    });
-    const newPackagesObj = Object.fromEntries(clean);
-    return {
-      lock: { ...lockJson, packages: newPackagesObj },
-      path: currentPack.path
-    };
-  } catch (e) {
-    return null;
-  }
-}
-
-function refreshLock() {
-  const { project, dynamicState = {}, config } = hold.instance().getState();
-  if (config?.core && config?.core !== 'npm') {
-    return;
-  }
-  const { packages = [], platforms = [], workspace } = project?.project || {};
-  if (workspace == null) {
-    return;
-  }
-  const locks = Object.entries(dynamicState)
-    .map(([name, value]): { name: string } & DynamicStateUnit => ({
-      name,
-      ...value
-    }))
-    .filter(d => d.hasLockFile);
-  const packs = [...packages, ...platforms, workspace];
-  locks.forEach(lock => {
-    const { name, lockContent, lockFileName } = lock;
-    const res = checkLock(name, lockContent || '', packs);
-    if (res == null) {
-      return;
-    }
-    const { path: p, lock: lockObj } = res;
-    task.write(p, lockFileName, lockObj);
-  });
-}
-
 export async function refresh(option?: {
   force?: boolean;
   install?: string;
@@ -602,7 +498,6 @@ export async function refresh(option?: {
   refreshWorkspace();
   const { packs: changes } = hold.instance().diffDepsPackages(force);
   refreshChangePackages(changes);
-  refreshLock();
   const changeRoots = changes.filter(
     p => p.type === 'workspace' || p.packageJson.pmnps?.ownRoot
   );
