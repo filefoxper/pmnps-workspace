@@ -241,7 +241,7 @@ export async function configAction(): Promise<ActionMessage> {
     type: 'workspace'
   });
   return {
-    content: 'Config success...',
+    content: 'Config pmnps success...',
     type: 'success'
   };
 }

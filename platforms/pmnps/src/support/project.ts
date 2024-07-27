@@ -1,5 +1,5 @@
 import { file, path } from '@/libs';
-import { equal, keyBy, mapValues, omit } from '@/libs/polyfill';
+import { equal, keyBy, mapValues, omit, omitBy } from '@/libs/polyfill';
 import type { PackageItem, PackageWithDynamicState } from '@/support/type';
 import type {
   PackageType,
@@ -204,7 +204,9 @@ function serial(project: Project): ProjectSerial {
         const { packages } = s;
         return { ...s, packages: packages.map(p => p.name) };
       });
-  const newContent = { ...content, scopes: newScopes };
+  const newContent = omitBy({ ...content, scopes: newScopes }, (value, key) => {
+    return value == null || (Array.isArray(value) && !value.length);
+  });
   return { ...project, packageMap: newPackageMap, project: newContent };
 }
 
@@ -232,10 +234,15 @@ function parse(serial: ProjectSerial): Project {
   return {
     ...serial,
     packageMap: newPackageMap,
-    project: {
-      ...project,
-      scopes: newScopes
-    }
+    project: omitBy(
+      {
+        ...project,
+        scopes: newScopes
+      },
+      (value, key) => {
+        return value == null || (Array.isArray(value) && !value.length);
+      }
+    )
   };
 }
 

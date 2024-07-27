@@ -1,20 +1,25 @@
 import fs from 'fs';
 import { file, path } from '@/libs';
 import { projectSupport } from '@/support';
-import { groupBy, orderBy, partition } from '@/libs/polyfill';
+import { groupBy, omitBy, orderBy, partition } from '@/libs/polyfill';
 import type {
   PackageJson,
   Package,
   Project,
-  PackageLockInfo
+  PackageLockInfo,
+  Config
 } from '@pmnps/tools';
 import type { State } from '@/types';
 
 async function readProject(
   cwd: string,
-  core?: 'npm' | 'yarn' | 'yarn2',
-  performanceFirst?: boolean
+  config?: Config
 ): Promise<[undefined | Project, Record<string, PackageLockInfo> | undefined]> {
+  const {
+    core,
+    usePerformanceFirst: performanceFirst,
+    projectType = 'monorepo'
+  } = config ?? {};
   const lockFileName = (function computeLockFileName() {
     if (core === 'yarn' || core === 'yarn2') {
       return 'yarn.lock';
@@ -80,23 +85,20 @@ async function readProject(
     {
       name: mainPackage.name,
       path: cwd,
-      type: 'monorepo',
+      type: projectType,
       packageMap: { [cwd]: mainPackage, ...childMap },
-      project: { workspace: mainPackage, packages, platforms, scopes: sps }
+      project: omitBy(
+        { workspace: mainPackage, packages, platforms, scopes: sps },
+        (value, key) => {
+          return value == null || (Array.isArray(value) && !value.length);
+        }
+      )
     },
     dynamicState
   ];
 }
 
-export async function loadData(
-  cwd: string,
-  core?: 'npm' | 'yarn' | 'yarn2',
-  performanceFirst?: boolean
-) {
-  const [project, dynamicState] = await readProject(
-    cwd,
-    core,
-    performanceFirst
-  );
+export async function loadData(cwd: string, config?: Config) {
+  const [project, dynamicState] = await readProject(cwd, config);
   return { project, dynamicState } as State;
 }
