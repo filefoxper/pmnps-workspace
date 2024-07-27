@@ -276,12 +276,12 @@ function mergeProject() {
 }
 
 function analyzePackagePaths() {
-  const { project, config } = hold.instance().getState();
+  const { project } = hold.instance().getState();
   if (project == null) {
     return [];
   }
   const content = project?.project;
-  if (content == null || !config || config.usePerformanceFirst) {
+  if (content == null) {
     return [];
   }
   return projectSupport.checkProjectLoops(project);
@@ -571,22 +571,23 @@ export async function refreshProject(option?: {
   parameters?: string;
 }): Promise<ActionMessage> {
   const pluginState = getPluginState();
-  async function runCommand(cmds: Command[]): Promise<'failed' | undefined> {
+  async function runCommand(
+    cmds: Command[],
+    result: ActionMessage[]
+  ): Promise<ActionMessage[]> {
     const [cmd, ...rest] = cmds;
     if (cmd == null) {
-      return undefined;
+      return result;
     }
     const re = await cmd.action(
       { ...pluginState, required: cmd.required },
       undefined
     );
-    if (re.type === 'failed') {
-      return 'failed';
-    }
+    const nextResult = [...result, re];
     if (!rest.length) {
-      return undefined;
+      return nextResult;
     }
-    return runCommand(rest);
+    return runCommand(rest, nextResult);
   }
   const commands = hold.instance().getCommands();
   const refreshes = commands.filter(
@@ -594,10 +595,8 @@ export async function refreshProject(option?: {
   );
   const res = await refresh(option);
   if (res.type === 'success') {
-    const re = await runCommand(refreshes);
-    if (re === 'failed') {
-      return { type: 'failed', content: 'Refresh failed...' };
-    }
+    const subRes = await runCommand(refreshes, []);
+    return { ...res, children: subRes };
   }
   return res;
 }

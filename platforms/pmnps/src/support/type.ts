@@ -12,4 +12,5 @@ export interface PackageWithDynamicState extends Package {
   hasLockFile: boolean;
   hasNodeModules: boolean;
   lockContent?: string | null;
+  lockFileName: string;
 }

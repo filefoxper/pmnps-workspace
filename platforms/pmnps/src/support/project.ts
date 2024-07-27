@@ -14,6 +14,7 @@ import type { ProjectSerial } from '@/types';
 async function collectPackages(
   filePath: string,
   lockFileName: string,
+  performanceFirst: boolean | undefined,
   state: { type: PackageType; level: number; dirnames: string[] } = {
     type: 'workspace',
     level: 0,
@@ -40,7 +41,9 @@ async function collectPackages(
   if (packageJsonFile && state.type !== 'workspace') {
     const [packageJson, lockContent] = await Promise.all([
       file.readJson<PackageJson>(path.join(filePath, packageJsonFile)),
-      file.readFile(path.join(filePath, lockFileName))
+      performanceFirst
+        ? Promise.resolve('')
+        : file.readFile(path.join(filePath, lockFileName))
     ]);
     if (!packageJson) {
       return [];
@@ -53,6 +56,7 @@ async function collectPackages(
       packageJson,
       packageJsonFileName: packageJsonFile,
       lockContent,
+      lockFileName,
       hasLockFile,
       hasNodeModules,
       type: state.type
@@ -86,6 +90,7 @@ async function collectPackages(
       return collectPackages(
         path.join(filePath, currentName),
         lockFileName,
+        performanceFirst,
         nextState
       );
     })
@@ -94,15 +99,20 @@ async function collectPackages(
   return results.flat();
 }
 
-async function loadPackages(cwd: string, lockFileName: string) {
-  const packs = await collectPackages(cwd, lockFileName);
+async function loadPackages(
+  cwd: string,
+  lockFileName: string,
+  performanceFirst?: boolean
+) {
+  const packs = await collectPackages(cwd, lockFileName, performanceFirst);
   const ps = packs.map((p): Package => {
-    const { hasLockFile, hasNodeModules, lockContent, ...rest } = p;
+    const { hasLockFile, hasNodeModules, lockContent, lockFileName, ...rest } =
+      p;
     return rest;
   });
   const dynamicStates = packs.map(p => {
-    const { name, hasNodeModules, hasLockFile, lockContent } = p;
-    return { name, hasNodeModules, hasLockFile, lockContent };
+    const { name, hasNodeModules, hasLockFile, lockContent, lockFileName } = p;
+    return { name, hasNodeModules, hasLockFile, lockContent, lockFileName };
   });
   return { packs: ps, dynamicStates };
 }

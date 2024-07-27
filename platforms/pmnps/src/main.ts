@@ -5,7 +5,7 @@ import { hold } from '@/state';
 import { configAction } from '@/actions/config';
 import { refreshAction } from '@/actions/refresh';
 import { createAction } from '@/actions/create';
-import { useCommand } from '@/actions/task';
+import { executeAction, useCommand } from '@/actions/task';
 import { runAction, startAction } from '@/actions/run';
 import { getPluginState } from '@/plugin';
 import {
@@ -274,7 +274,9 @@ export async function startup(isDevelopment?: boolean) {
   }
   const config = hold.instance().getState().config;
   if (config == null) {
-    await configAction();
+    const configActionMessage = await configAction();
+    await executeAction(configActionMessage, true);
+    return;
   }
   const systemCommands = getCommands();
   const customizedCommands = getCustomizedCommands();

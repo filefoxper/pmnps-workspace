@@ -5,8 +5,13 @@ import { message } from '../message';
 import type { transform } from 'esbuild';
 
 function load(pathname: string) {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  return require(pathname);
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require(pathname);
+  } catch (e) {
+    message.warn(`Load module "${pathname}" failed...`);
+    return null;
+  }
 }
 
 function read(pathname: string): Promise<string> {
@@ -24,12 +29,7 @@ function read(pathname: string): Promise<string> {
 
 async function loadTs(pathname: string) {
   const content = await read(pathname);
-  let esbuild: { transform: typeof transform } | null = null;
-  try {
-    esbuild = load('esbuild');
-  } catch (e) {
-    esbuild = null;
-  }
+  const esbuild: { transform: typeof transform } | null = load('esbuild');
   if (esbuild == null) {
     message.warn('Please install "esbuild" for building a ts plugin...');
     return null;
@@ -54,7 +54,7 @@ async function loadTs(pathname: string) {
   }
 }
 
-export function requireFactory(cwd: string) {
+export function requireFactory(cwd: string, onlyJsModule?: boolean) {
   return {
     require: async (
       pathname: string
@@ -84,12 +84,19 @@ export function requireFactory(cwd: string) {
         return null;
       })();
       if (requiredPathname == null) {
+        message.warn(`Load module "${pathname}" failed...`);
         return { pathname, module: null };
       }
       if (requiredPathname.endsWith('.js')) {
         return { pathname, module: load(requiredPathname) };
       }
       if (requiredPathname.endsWith('.ts')) {
+        if (onlyJsModule) {
+          message.warn(
+            `Can not load a ts module "${pathname}" for pmnps is working in a performance first mode...`
+          );
+          return { pathname, module: null };
+        }
         const m = await loadTs(requiredPathname);
         return { pathname, module: m };
       }

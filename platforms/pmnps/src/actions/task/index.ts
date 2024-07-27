@@ -341,7 +341,7 @@ export const task = {
                 };
                 writePackageToState(cwd, packageData);
               }
-              return r == null ? r ?? null : formatPackageJson(r);
+              return r == null ? (r ?? null) : formatPackageJson(r);
             }
         : omitNullOfPackageJson(packageJson);
     })();
@@ -447,7 +447,7 @@ async function executeTasks(requireRefresh: boolean, level?: number) {
   }
 }
 
-async function executeAction(
+export async function executeAction(
   actionMessage: ActionMessage | null,
   requireRefresh: boolean
 ) {
@@ -457,7 +457,14 @@ async function executeAction(
       requireRefresh || (actionMessage?.requireRefresh ?? false)
     );
   }
-  message.result(error ?? actionMessage);
+  const result = error ?? actionMessage;
+  const childActionMessages = result?.children;
+  if (childActionMessages && childActionMessages.length) {
+    childActionMessages.forEach(a => {
+      message.result({ ...a, content: `[plugin]: ${a.content}` });
+    });
+  }
+  message.result(result);
   process.exit(0);
 }
 

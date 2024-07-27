@@ -2,15 +2,10 @@ import type {
   Command,
   Config,
   Package,
+  PackageLockInfo,
   Project,
   ProjectType
 } from '@pmnps/tools';
-
-export interface DynamicStateUnit {
-  hasLockFile: boolean;
-  hasNodeModules: boolean;
-  lockContent?: string | null;
-}
 
 export type ScopeSerial = {
   name: string;
@@ -36,7 +31,7 @@ export interface State {
   project?: Project;
   cacheProject?: Project;
   commands?: Record<string, Record<string, any>>;
-  dynamicState?: Record<string, DynamicStateUnit>;
+  dynamicState?: Record<string, PackageLockInfo>;
 }
 
 export interface Template {

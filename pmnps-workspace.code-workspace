@@ -7,6 +7,10 @@
       "path": "packages/@pmnps/plugin-vscode-workspace"
     },
     {
+      "name": "@pmnps/plugin-refresh-package-lock",
+      "path": "packages/@pmnps/plugin-refresh-package-lock"
+    },
+    {
       "name": "@pmnps/plugin-publish",
       "path": "packages/@pmnps/plugin-publish"
     },

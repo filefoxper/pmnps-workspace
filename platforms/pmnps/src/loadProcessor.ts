@@ -1,15 +1,20 @@
+import fs from 'fs';
 import { file, path } from '@/libs';
 import { projectSupport } from '@/support';
 import { groupBy, orderBy, partition } from '@/libs/polyfill';
-import type { PackageJson, Package, Project } from '@pmnps/tools';
-import type { DynamicStateUnit, State } from '@/types';
+import type {
+  PackageJson,
+  Package,
+  Project,
+  PackageLockInfo
+} from '@pmnps/tools';
+import type { State } from '@/types';
 
 async function readProject(
   cwd: string,
-  core?: 'npm' | 'yarn' | 'yarn2'
-): Promise<
-  [undefined | Project, Record<string, DynamicStateUnit> | undefined]
-> {
+  core?: 'npm' | 'yarn' | 'yarn2',
+  performanceFirst?: boolean
+): Promise<[undefined | Project, Record<string, PackageLockInfo> | undefined]> {
   const lockFileName = (function computeLockFileName() {
     if (core === 'yarn' || core === 'yarn2') {
       return 'yarn.lock';
@@ -18,7 +23,15 @@ async function readProject(
   })();
   const [mainPackageJson, lockContent, hasNodeModules] = await Promise.all([
     file.readJson<PackageJson>(path.join(cwd, 'package.json')),
-    file.readFile(path.join(cwd, lockFileName)),
+    performanceFirst
+      ? (new Promise(resolve => {
+          if (fs.existsSync(path.join(cwd, lockFileName))) {
+            resolve('');
+          } else {
+            resolve(null);
+          }
+        }) as Promise<string | null>)
+      : file.readFile(path.join(cwd, lockFileName)),
     file.isDirectory(path.join(cwd, 'node_modules'))
   ]);
   if (!mainPackageJson) {
@@ -33,7 +46,7 @@ async function readProject(
     type: 'workspace'
   };
   const [packsInfo, scopes] = await Promise.all([
-    projectSupport.loadPackages(cwd, lockFileName),
+    projectSupport.loadPackages(cwd, lockFileName, performanceFirst),
     projectSupport.loadScopes(cwd)
   ]);
   const { packs: children, dynamicStates } = packsInfo;
@@ -41,13 +54,14 @@ async function readProject(
     ...dynamicStates,
     {
       name: mainPackage.name,
-      hasLockFile: !!lockContent,
+      hasLockFile: lockContent != null,
       hasNodeModules,
-      lockContent
+      lockContent: lockContent || '',
+      lockFileName
     }
   ];
   const dynamicState = Object.fromEntries(
-    dynamicStateArray.map((d): [string, DynamicStateUnit] => [d.name, d])
+    dynamicStateArray.map((d): [string, PackageLockInfo] => [d.name, d])
   );
   const [pks, pls] = partition(children, c => c.type === 'package');
   const packages = orderBy(pks, ['name'], ['desc']);
@@ -74,7 +88,15 @@ async function readProject(
   ];
 }
 
-export async function loadData(cwd: string, core?: 'npm' | 'yarn' | 'yarn2') {
-  const [project, dynamicState] = await readProject(cwd, core);
+export async function loadData(
+  cwd: string,
+  core?: 'npm' | 'yarn' | 'yarn2',
+  performanceFirst?: boolean
+) {
+  const [project, dynamicState] = await readProject(
+    cwd,
+    core,
+    performanceFirst
+  );
   return { project, dynamicState } as State;
 }
