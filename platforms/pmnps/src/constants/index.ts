@@ -5,7 +5,7 @@ export const CONF_NAME = '.pmnpsrc.json';
 
 export const DEV_DEPS = {
   prettier: '3.0.3',
-  'prettier-package-json': '^2.8.0'
+  pmnps: 'latest'
 };
 
 export const DEFAULT_REGISTRY = 'https://registry.npmjs.org/';

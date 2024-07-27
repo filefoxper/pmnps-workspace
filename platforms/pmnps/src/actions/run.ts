@@ -10,6 +10,20 @@ function getProject() {
   return project;
 }
 
+function parseToPackageNames(command: 'start' | 'run', names: string[]) {
+  const commands = hold.instance().getState().commands ?? {};
+  const current = commands[command] || {};
+  const { groups = [] } = current;
+  const nameSet = new Set(names);
+  return (groups as { name: string; selected: string[] }[])
+    .filter(g => nameSet.has(g.name))
+    .flatMap(g => g.selected ?? []);
+}
+
+function uniq(names: string[]) {
+  return [...new Set(names)];
+}
+
 export async function startAction(options?: {
   all?: boolean;
   group?: string;
@@ -48,7 +62,13 @@ export async function startAction(options?: {
   const preSetNames = all
     ? names
     : argumentNames
-      ? names.filter(n => argumentNames.has(n))
+      ? uniq([
+          ...parseToPackageNames(
+            'start',
+            argumentNames ? [...argumentNames] : []
+          ),
+          ...names.filter(n => argumentNames.has(n))
+        ])
       : null;
   if (!packages.length || (preSetNames && !preSetNames.length)) {
     return {
@@ -92,19 +112,31 @@ export async function startAction(options?: {
           ...workspaces.map(p => p.name)
         ]
       : [];
-    const { starts } = await inquirer.prompt([
-      {
-        name: 'starts',
-        type: 'checkbox',
-        message: 'Choose packages or platforms to start.',
-        choices: [
-          ...groupNames,
-          ...packageNames,
-          ...platformNames,
-          ...workspaceNames
-        ]
-      }
-    ]);
+    const combine = [
+      ...packs.map(p => p.name),
+      ...platforms.map(p => p.name),
+      ...workspaces.map(p => p.name)
+    ];
+    let starts = [];
+    if (combine.length === 1) {
+      starts = combine;
+    } else {
+      const { starts: promptStarts } = await inquirer.prompt([
+        {
+          name: 'starts',
+          type: 'checkbox',
+          message: 'Choose packages or platforms to start.',
+          choices: [
+            ...groupNames,
+            ...packageNames,
+            ...platformNames,
+            ...workspaceNames
+          ]
+        }
+      ]);
+      starts = promptStarts;
+    }
+
     const results = starts as string[];
     const [selectedGroups, selectedOthers] = partition(results, n =>
       groupNameMap.has(n)
@@ -217,7 +249,13 @@ export async function runAction(
   const preSetNames = all
     ? names
     : argumentNames
-      ? names.filter(n => argumentNames.has(n))
+      ? uniq([
+          ...parseToPackageNames(
+            'run',
+            argumentNames ? [...argumentNames] : []
+          ),
+          ...names.filter(n => argumentNames.has(n))
+        ])
       : null;
   if (!packages.length || (preSetNames && !preSetNames.length)) {
     return {
@@ -261,19 +299,30 @@ export async function runAction(
           ...workspaces.map(p => p.name)
         ]
       : [];
-    const { runner } = await inquirer.prompt([
-      {
-        name: 'runner',
-        type: 'checkbox',
-        message: 'Choose packages or platforms to run.',
-        choices: [
-          ...groupNames,
-          ...packageNames,
-          ...platformNames,
-          ...workspaceNames
-        ]
-      }
-    ]);
+    const combine = [
+      ...packs.map(p => p.name),
+      ...platforms.map(p => p.name),
+      ...workspaces.map(p => p.name)
+    ];
+    let runner = [];
+    if (combine.length === 1) {
+      runner = combine;
+    } else {
+      const { runner: promptRunner } = await inquirer.prompt([
+        {
+          name: 'runner',
+          type: 'checkbox',
+          message: 'Choose packages or platforms to run.',
+          choices: [
+            ...groupNames,
+            ...packageNames,
+            ...platformNames,
+            ...workspaceNames
+          ]
+        }
+      ]);
+      runner = promptRunner;
+    }
     const results = runner as string[];
     const [selectedGroups, selectedOthers] = partition(results, n =>
       groupNameMap.has(n)

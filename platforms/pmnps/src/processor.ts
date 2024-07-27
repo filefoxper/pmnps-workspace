@@ -26,12 +26,12 @@ export async function loadProject(withCache?: boolean) {
   const { config } = hold.instance().getState();
   if (withCache) {
     const [projectState, cacheProjectState] = await Promise.all([
-      loadData(cwd, config?.core, config?.usePerformanceFirst),
+      loadData(cwd, config),
       loadCacheData(cwd)
     ]);
     return { ...projectState, ...cacheProjectState };
   }
-  return loadData(cwd, config?.core, config?.usePerformanceFirst);
+  return loadData(cwd, config);
 }
 
 async function loadPlugins(

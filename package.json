@@ -7,10 +7,10 @@
     "start": "ts-node ./platforms/pmnps/src/index.ts"
   },
   "workspaces": [
+    "packages/*",
     "platforms/pmnpx",
     "platforms/pmnps",
-    "packages/@pmnps/*",
-    "packages/*"
+    "packages/@pmnps/*"
   ],
   "dependencies": {
     "prettier": "^3.0.3",
