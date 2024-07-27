@@ -64,13 +64,13 @@ const refreshVscodeWorkspace: Plugin<Query> = function refreshVscodeWorkspace(
       if (stale && JSON.stringify(stale) === JSON.stringify(result)) {
         return {
           type: 'success',
-          content: 'Vscode workspace refresh success...'
+          content: 'Refresh vscode workspace success...'
         };
       }
       task.write(state.cwd(), vscodeWorkspaceName, result);
       return {
         type: 'success',
-        content: 'Vscode workspace refresh success...'
+        content: 'Refresh vscode workspace success...'
       };
     });
 };

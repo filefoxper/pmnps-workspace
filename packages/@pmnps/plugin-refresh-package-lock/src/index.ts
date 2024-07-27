@@ -138,7 +138,7 @@ const refreshPackageLock: Plugin<Query> = function refreshPackageLock(
     });
     return {
       type: 'success',
-      content: 'Refresh package-locks success.'
+      content: 'Refresh package-locks success...'
     };
   });
 };

@@ -50,4 +50,5 @@ export type ActionMessage<P = unknown> = {
   content: string;
   payload?: P;
   requireRefresh?: boolean;
+  children?: ActionMessage<any>[];
 };

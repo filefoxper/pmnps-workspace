@@ -199,7 +199,7 @@ export async function configAction(): Promise<ActionMessage> {
       config: omitBy(
         {
           ...cf,
-          name: name == null ? cf?.name ?? 'project' : name,
+          name: name == null ? (cf?.name ?? 'project') : name,
           ...configDetail,
           ...configSetting
         },
@@ -240,5 +240,8 @@ export async function configAction(): Promise<ActionMessage> {
     },
     type: 'workspace'
   });
-  return { content: 'Config success...', type: 'success' };
+  return {
+    content: 'Config success...',
+    type: 'success'
+  };
 }

@@ -8,7 +8,7 @@
   "registry": "https://registry.npmmirror.com",
   "plugins": [
     "@pmnps/plugin-vscode-workspace",
-    ["@pmnps/plugin-refresh-package-lock", {"lockfileVersion": 1}],
+    ["@pmnps/plugin-refresh-package-lock"],
     ["@pmnps/plugin-publish", { "registry": "https://registry.npmjs.org" }]
   ],
   "useCommandHelp": true,

@@ -8,3 +8,4 @@ If you want to learn how to use it, please go [pmnps](https://github.com/filefox
 * [@pmnps/tools](https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/tools)
 * [@pmnps/plugin-publish](https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-publish)
 * [@pmnps/plugin-vscode-workspace](https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-vscode-workspace)
+* [@pmnps/plugin-refresh-package-lock](https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-refresh-package-lock)

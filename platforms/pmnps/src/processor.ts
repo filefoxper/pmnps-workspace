@@ -26,19 +26,20 @@ export async function loadProject(withCache?: boolean) {
   const { config } = hold.instance().getState();
   if (withCache) {
     const [projectState, cacheProjectState] = await Promise.all([
-      loadData(cwd, config?.core),
+      loadData(cwd, config?.core, config?.usePerformanceFirst),
       loadCacheData(cwd)
     ]);
     return { ...projectState, ...cacheProjectState };
   }
-  return loadData(cwd);
+  return loadData(cwd, config?.core, config?.usePerformanceFirst);
 }
 
 async function loadPlugins(
   cwd: string,
-  plugins: (string | [string, Record<string, any>])[]
+  plugins: (string | [string, Record<string, any>])[],
+  performanceFirst: boolean | undefined
 ) {
-  const factory = requireFactory(cwd);
+  const factory = requireFactory(cwd, performanceFirst);
   return Promise.all(
     plugins.map(async pluginSetting => {
       const name =
@@ -55,25 +56,39 @@ async function loadPlugins(
   );
 }
 
-function loadTemplates(cwd: string, templates: string[]) {
-  return templates.map(name => {
-    const names = name.split('/');
-    const requiredPathname = path.join(cwd, 'node_modules', ...names);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const temp = require(requiredPathname).default as Template;
-    return { ...temp, name };
-  });
+function loadTemplates(
+  cwd: string,
+  templates: string[],
+  performanceFirst: boolean | undefined
+) {
+  const factory = requireFactory(cwd, performanceFirst);
+  return Promise.all(
+    templates.map(async name => {
+      const names = name.split('/');
+      const requiredPathname = path.join(cwd, 'node_modules', ...names);
+      const { module: templateModule } =
+        await factory.require(requiredPathname);
+      if (!templateModule || !templateModule.default) {
+        return null;
+      }
+      const temp = templateModule.default as Template;
+      return { ...temp, name };
+    })
+  );
 }
 
 async function loadConfig() {
   const cwd = path.cwd();
   const config = await configure.readConfig(cwd);
   const { templates = [], plugins = [] } = config ?? {};
-  const commands = await loadPlugins(cwd, plugins);
+  const [temps, commands] = await Promise.all([
+    loadTemplates(cwd, templates, config?.usePerformanceFirst),
+    loadPlugins(cwd, plugins, config?.usePerformanceFirst)
+  ]);
   return {
     config,
     resources: {
-      templates: loadTemplates(cwd, templates),
+      templates: temps.filter((c): c is Template => !!c),
       commands: commands.filter((c): c is Command => !!c)
     }
   };

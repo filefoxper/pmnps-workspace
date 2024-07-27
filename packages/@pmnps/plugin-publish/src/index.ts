@@ -394,13 +394,13 @@ const publishPlugin: Plugin<Query> = function publishPlugin(query?: Query) {
           });
           return {
             type: 'success',
-            content: 'Publish success...'
+            content: 'Publish packages success...'
           };
         }
         await publishOneByOne(core, reg, sortedPacks, publishOtp);
         return {
           type: 'success',
-          content: 'Publish success...'
+          content: 'Publish packages success...'
         };
       }
     );

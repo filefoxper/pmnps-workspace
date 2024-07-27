@@ -1,9 +1,6 @@
-# @pmnps/plugin-vscode-workspace
+# @pmnps/plugin-refresh-package-lock
 
-You might be troubled by the problem about `can not find tsconfig` in projects, when using [pmnps](https://www.npmjs.com/package/pmnps). 
-This plugin will run in refresh command, it creates a `.code-workspace` file, so, we can use [pmnps](https://www.npmjs.com/package/pmnps) more better in vscode, and resolve the `can not find tsconfig` problem.
-
-If you are not familiy with `vscode multi workspace`, please take this [reference](https://code.visualstudio.com/docs/editor/multi-root-workspaces).
+The monorepo manage tool [pmnps](https://www.npmjs.com/package/pmnps) watches changes of `package.json` files for building a useful monorepo package workspaces. It handles the `lock` file process out to plugins. This pmnps plugin can refresh `package-lock.json` files when `pmnps refresh` is running. 
 
 ## Usage
 
@@ -13,23 +10,25 @@ Config the `.pmnpsrc.json`:
 {
     ...,
     "plugins":[
-        "@pmnps/plugin-vscode-workspace"
+        "@pmnps/plugin-refresh-package-lock"
     ]
 }
 ```
 
-If you want to exclude the folders which you don't want to show in vscode workspace, use `query` config:
+It refreshes `package-lock.json` file by using `lockfileVersion: 2`, If you are using another `lockfileVersion`, use `query` config to point it out:
 
 ```
 {
     ...,
     "plugins":[
         [
-            "@pmnps/plugin-vscode-workspace",
+            "@pmnps/plugin-refresh-package-lock",
             {
-                "excludes":["root","packages/@template"]
+                "lockfileVersion": 2
             }
         ]
     ]
 }
 ```
+
+**Note: This plugin supports `lockfileVersion>=2`, so it can not refresh  package-lock.json file with `lockfileVersion: 1` currently.**

@@ -255,7 +255,10 @@ export declare const execution: {
   killChildProcess([pid, process]: [number, execa.ExecaChildProcess]): void;
 };
 
-export declare function requireFactory(cwd: string): {
+export declare function requireFactory(
+  cwd: string,
+  onlyJsModule?: boolean
+): {
   require: (pathname: string) => Promise<{ pathname: string; module: any }>;
 };
 
