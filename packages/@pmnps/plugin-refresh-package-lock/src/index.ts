@@ -107,6 +107,12 @@ const refreshPackageLock: Plugin<Query> = function refreshPackageLock(
         content: 'This plugin only support npm core manager.'
       };
     }
+    if (config?.usePerformanceFirst) {
+      return {
+        type: 'warning',
+        content: 'This plugin can not work in a performance first mode.'
+      };
+    }
     if (query?.lockfileVersion != null && query?.lockfileVersion !== 2) {
       return {
         type: 'warning',
