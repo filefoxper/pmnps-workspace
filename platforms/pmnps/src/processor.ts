@@ -64,10 +64,8 @@ function loadTemplates(
   const factory = requireFactory(cwd, performanceFirst);
   return Promise.all(
     templates.map(async name => {
-      const names = name.split('/');
-      const requiredPathname = path.join(cwd, 'node_modules', ...names);
       const { module: templateModule } =
-        await factory.require(requiredPathname);
+        await factory.require(name);
       if (!templateModule || !templateModule.default) {
         return null;
       }
