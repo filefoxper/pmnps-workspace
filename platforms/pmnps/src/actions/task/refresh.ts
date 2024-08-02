@@ -80,11 +80,22 @@ function addSettingToWorkspace(workspace: Package) {
   return newWorkspace;
 }
 
-function mergeWorkspace(workspace: Package, packs: Package[]) {
+function computeShouldRemovePackNames(packs: Package[], cachePacks: Package[]) {
+  const packageMap = keyBy(packs, 'path');
+  return cachePacks
+    .filter(p => packageMap.get(p.path) == null)
+    .map(p => p.name);
+}
+
+function mergeWorkspace(
+  workspace: Package,
+  packs: Package[],
+  cachePacks: Package[]
+) {
   if (!packs.length) {
     return workspace;
   }
-  const packsMap = keyBy(packs, 'name');
+  const packsMap = keyBy(packs.concat(cachePacks), 'name');
   const excludePackDeps = function excludePackDeps(
     data: Record<string, any> | undefined
   ) {
@@ -162,9 +173,16 @@ function mergeDeps(
   return { ...deps, ...differ };
 }
 
-function mergePacks(packs: Package[], workspace: Package) {
+function mergePacks(
+  packs: Package[],
+  cachePacks: Package[],
+  workspace: Package
+) {
   const packVersionMap = new Map(
     packs.map(p => [p.name, p.packageJson.version])
+  );
+  const shouldRemovePackNameSet = new Set(
+    computeShouldRemovePackNames(packs, cachePacks)
   );
   const updateWorkspacePackVersion = function updateWorkspacePackVersion(
     pjs: PackageJson
@@ -188,20 +206,31 @@ function mergePacks(packs: Package[], workspace: Package) {
         shouldUpdates.map(k => [k, packVersionMap.get(k)])
       );
     }
+    function checkHasRemoves(dep: Record<string, string> | undefined) {
+      if (dep == null) {
+        return false;
+      }
+      return Object.keys(dep).some(k => shouldRemovePackNameSet.has(k));
+    }
     const { dependencies, devDependencies } = pjs;
     const collectedDep = collectChangeWorkspacePackDeps(dependencies);
     const collectedDevDep = collectChangeWorkspacePackDeps(devDependencies);
-    if (!collectedDep && !collectedDevDep) {
+    const hasRemoves = checkHasRemoves({ ...dependencies, ...devDependencies });
+    if (!collectedDep && !collectedDevDep && !hasRemoves) {
       return { packageJson: pjs, hasChanges: false };
     }
     const nextPjs = {
       ...pjs,
       dependencies: !dependencies
         ? dependencies
-        : { ...dependencies, ...collectedDep },
+        : omitBy({ ...dependencies, ...collectedDep }, (value, key) =>
+            shouldRemovePackNameSet.has(key as string)
+          ),
       devDependencies: !devDependencies
         ? devDependencies
-        : { ...devDependencies, ...collectedDevDep }
+        : omitBy({ ...devDependencies, ...collectedDevDep }, (value, key) =>
+            shouldRemovePackNameSet.has(key as string)
+          )
     };
     return {
       packageJson: omitBy(nextPjs, value => value == null) as PackageJson,
@@ -259,7 +288,7 @@ function mergeSettings() {
 }
 
 function mergeProject() {
-  const { project } = hold.instance().getState();
+  const { project, cacheProject } = hold.instance().getState();
   const content = project?.project;
   if (content == null) {
     return;
@@ -271,7 +300,14 @@ function mergeProject() {
   const list = (platforms ?? []).concat(packages ?? []).concat(workspace);
   const packOrRoots = list.filter(p => p.type !== 'workspace');
   const packs = packOrRoots.filter(p => !p.packageJson.pmnps?.ownRoot);
-  mergePacks(packOrRoots, mergeWorkspace(workspace, packs));
+  const { packages: cachePackages = [], platforms: cachePlatforms = [] } =
+    cacheProject?.project ?? {};
+  const cachePacks = [...cachePackages, ...cachePlatforms];
+  mergePacks(
+    packOrRoots,
+    cachePacks,
+    mergeWorkspace(workspace, packs, cachePacks)
+  );
   mergeSettings();
 }
 
@@ -462,6 +498,41 @@ function installOwnRootPackage(
   );
 }
 
+function cleanRemovedPacks() {
+  const { project, cacheProject } = hold.instance().getState();
+  const { packages: cachePackages = [], platforms: cachePlatforms = [] } =
+    cacheProject?.project ?? {};
+  const cachePacks = [...cachePackages, ...cachePlatforms];
+  if (project == null || project.project == null || !cachePacks.length) {
+    return;
+  }
+  const { workspace, packages = [], platforms = [] } = project.project;
+  const allPacks = [workspace, ...packages, ...platforms].filter(
+    (p): p is Package => !!p
+  );
+  const shouldRemovePackNames = computeShouldRemovePackNames(
+    allPacks,
+    cachePacks
+  );
+  const nodeModulesOwners = allPacks.filter(p => {
+    const { type, packageJson } = p;
+    const ownRoot = packageJson.pmnps?.ownRoot;
+    return (
+      type === 'workspace' || ownRoot === true || ownRoot === 'independent'
+    );
+  });
+  const shouldRemovePathnames = nodeModulesOwners.flatMap(p => {
+    const packPath = p.path;
+    return shouldRemovePackNames.map(name => {
+      const nameParts = name.split('/');
+      return path.join(packPath, 'node_modules', ...nameParts);
+    });
+  });
+  shouldRemovePathnames.forEach(pathname => {
+    task.remove(pathname);
+  });
+}
+
 export async function refresh(option?: {
   force?: boolean;
   install?: string;
@@ -490,6 +561,7 @@ export async function refresh(option?: {
         return d.trim();
       }) as ('package' | 'platform' | 'workspace')[])
     : undefined;
+  cleanRemovedPacks();
   refreshWorkspace();
   const { packs: changes } = hold.instance().diffDepsPackages(force);
   refreshChangePackages(changes);

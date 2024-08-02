@@ -14,5 +14,9 @@ export const SystemFormatter = {
   json: (c: string | null) =>
     Promise.resolve(format(c ?? '{}', { parser: 'json' })),
   packageJson: (c: string | null) =>
-    Promise.resolve(formatPackageJson(JSON.parse(c ?? '{}')))
+    Promise.resolve(formatPackageJson(JSON.parse(c ?? '{}'))),
+  packageLockJson: (c: string | null) =>
+    Promise.resolve(
+      formatPackageJson(JSON.parse(c ?? '{}'), { keyOrder: () => 0 })
+    )
 };

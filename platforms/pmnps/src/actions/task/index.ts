@@ -6,6 +6,7 @@ import { equal, omitBy, orderBy, partition } from '@/libs/polyfill';
 import { CONF_NAME, SystemFormatter } from '@/constants';
 import { projectSupport } from '@/support';
 import { SystemCommands } from '@/cmds';
+import { remove } from '@/actions/task/remove';
 import { executeSystemOrders } from './exec';
 import { refreshProject } from './refresh';
 import { write } from './write';
@@ -213,16 +214,30 @@ export const task = {
       formatter?: 'json' | ((c: string) => Promise<string>);
     }
   ) {
-    const formatter =
-      !config?.formatter &&
-      (fileName.endsWith('.json') ||
+    function computeFormatter() {
+      const configFormatter = config?.formatter;
+      if (configFormatter) {
+        return configFormatter === 'json'
+          ? SystemFormatter.json
+          : configFormatter;
+      }
+      if (fileName === 'package.json') {
+        return SystemFormatter.packageJson;
+      }
+      if (fileName === 'package-lock.json') {
+        return SystemFormatter.packageLockJson;
+      }
+      if (
+        fileName.endsWith('.json') ||
         (content != null &&
           typeof content !== 'string' &&
-          typeof content !== 'function'))
-        ? SystemFormatter.json
-        : config?.formatter === 'json'
-          ? SystemFormatter.json
-          : config?.formatter;
+          typeof content !== 'function')
+      ) {
+        return SystemFormatter.json;
+      }
+      return configFormatter;
+    }
+    const formatter = computeFormatter();
     if (content == null) {
       return null;
     }
@@ -377,6 +392,15 @@ export const task = {
     }
     return p;
   },
+  remove(pathname: string) {
+    const t: Task = {
+      type: 'remove',
+      path: pathname,
+      cwd: path.cwd()
+    };
+    hold.instance().pushTask(t);
+    return t;
+  },
   execute(command: CommandSerial, cwd: string, description?: string) {
     const t: Task = {
       type: 'exec',
@@ -418,7 +442,9 @@ async function executeTasks(requireRefresh: boolean, level?: number) {
     if (!level) {
       message.info('process executions...');
     }
-    const [writes, executes] = partition(tasks, t => t.type === 'write');
+    const [writes, others] = partition(tasks, t => t.type === 'write');
+    const [removes, executes] = partition(others, t => t.type === 'remove');
+    await remove(...removes);
     const npxOrders = await write(...writes);
     const orders = npxOrders
       .flat()

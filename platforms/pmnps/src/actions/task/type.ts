@@ -37,13 +37,19 @@ export interface ExecuteTask {
   description?: string;
 }
 
+export interface RemoveTask {
+  type: 'remove';
+  cwd?: string;
+  path: string;
+}
+
 export interface Execution {
   command: CommandSerial;
   cwd?: string;
   description?: string;
 }
 
-export type Task = WriteTask | ExecuteTask | PackageTask;
+export type Task = WriteTask | ExecuteTask | PackageTask | RemoveTask;
 
 export type ActionMessage<P = unknown> = {
   type: 'success' | 'failed' | 'warning';

@@ -103,9 +103,42 @@ async function createFile(filePath: string, content = ''): Promise<string> {
   return writeFile(filePath, content);
 }
 
+function isSymlink(filePath: string): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    fs.lstat(filePath, (err, stats) => {
+      if (err) {
+        resolve(false);
+        return;
+      }
+      resolve(stats.isSymbolicLink());
+    });
+  });
+}
+
+function isInvalidSymlink(filePath: string): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    fs.lstat(filePath, (err, stats) => {
+      if (err) {
+        resolve(false);
+        return;
+      }
+      const ifSymlink = stats.isSymbolicLink();
+      if (!ifSymlink) {
+        resolve(false);
+        return;
+      }
+      const exist = fs.existsSync(fs.realpathSync(filePath));
+      resolve(!exist);
+    });
+  });
+}
+
 async function unlink(filePath: string): Promise<boolean> {
-  const file = await isFile(filePath);
-  if (!file) {
+  const [file, symlink] = await Promise.all([
+    isFile(filePath),
+    isSymlink(filePath)
+  ]);
+  if (!file && !symlink) {
     return false;
   }
   return new Promise((resolve, reject) => {
@@ -289,6 +322,8 @@ export const file = {
   unlink,
   isFile,
   isDirectory,
+  isSymlink,
+  isInvalidSymlink,
   rmdir,
   rename
 };
