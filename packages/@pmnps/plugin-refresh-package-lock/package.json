@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "@pmnps/plugin-refresh-package-lock",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "This is a pmnps plugin for refreshing package-lock.json file.",
   "author": "Jimmy.Harding",
   "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-refresh-package-lock",

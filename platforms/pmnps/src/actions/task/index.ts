@@ -24,7 +24,6 @@ import type {
   ExecuteTask,
   Execution,
   PackageTask,
-  RemoveTask,
   Task
 } from '@/actions/task/type';
 import type { Command } from 'commander';
@@ -222,8 +221,11 @@ export const task = {
           ? SystemFormatter.json
           : configFormatter;
       }
-      if (fileName === 'package.json' || fileName === 'package-lock.json') {
+      if (fileName === 'package.json') {
         return SystemFormatter.packageJson;
+      }
+      if (fileName === 'package-lock.json') {
+        return SystemFormatter.packageLockJson;
       }
       if (
         fileName.endsWith('.json') ||
