@@ -64,7 +64,7 @@ export interface ConfigDetail {
 
 export interface ConfigSetting {
   registry?: string;
-  core?: 'npm' | 'yarn' | 'yarn2';
+  core?: 'npm' | 'yarn' | 'yarn2' | 'pnpm';
   installParameters?: string;
 }
 
@@ -143,6 +143,9 @@ export declare type PackageLockInfo = {
   hasNodeModules: boolean;
   lockContent?: string | null;
   lockFileName: string;
+  payload?: {
+    pnpmWorkspace?: { packages: string[] };
+  };
 };
 
 export declare type ActionState = {

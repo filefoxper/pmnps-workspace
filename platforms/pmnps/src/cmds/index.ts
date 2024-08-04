@@ -13,12 +13,18 @@ export const SystemCommands = {
     if (core === 'yarn' || core === 'yarn2') {
       return ['yarn', 'run', 'start'];
     }
+    if (core === 'pnpm') {
+      return ['pnpm', 'start'];
+    }
     return ['npm', 'start'];
   },
   run: () => {
     const { core = 'npm' } = hold.instance().getState().config ?? {};
     if (core === 'yarn' || core === 'yarn2') {
       return ['yarn', 'run'];
+    }
+    if (core === 'pnpm') {
+      return ['pnpm', 'run'];
     }
     return ['npm', 'run'];
   },
@@ -46,6 +52,11 @@ export const SystemCommands = {
       return isPoint && useRefreshAfterInstall
         ? ['yarn', 'install', '--ignore-scripts', ...ps]
         : ['yarn', 'install', ...ps];
+    }
+    if (core === 'pnpm') {
+      return isPoint && useRefreshAfterInstall
+        ? ['pnpm', 'install', '--ignore-scripts', ...ps]
+        : ['pnpm', 'install', ...ps];
     }
     if (useNpmCi && !hasNodeModules && hasLockFile) {
       return isPoint && useRefreshAfterInstall

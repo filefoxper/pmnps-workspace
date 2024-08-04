@@ -116,7 +116,7 @@ export async function configAction(): Promise<ActionMessage> {
         name: 'manager',
         type: 'list',
         message: 'Please choose a package manager.',
-        choices: ['npm', 'yarn', 'yarn2'],
+        choices: ['npm', 'yarn', 'yarn2', 'pnpm'],
         default: core
       },
       {
