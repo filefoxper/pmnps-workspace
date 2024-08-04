@@ -33,6 +33,7 @@ declare global {
     isDevelopment?: boolean;
     px?: boolean;
     platform?: NodeJS.Platform;
+    coreChanged: boolean;
   };
 }
 
@@ -263,7 +264,8 @@ export async function startup(isDevelopment?: boolean) {
     tasks: [],
     px,
     platform,
-    isDevelopment
+    isDevelopment,
+    coreChanged: false
   };
   if (env.isDevelopment) {
     await file.mkdirIfNotExist(path.cwd());

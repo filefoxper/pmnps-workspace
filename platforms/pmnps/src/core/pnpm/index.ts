@@ -75,7 +75,7 @@ function rewriteRegistry(content: string | null, registry: string | undefined) {
   return (content ?? '').concat('\n' + `registry=${registry}`);
 }
 
-function refreshPackages() {
+function refreshPackageWorkspaces() {
   const { config, dynamicState, project } = hold.instance().getState();
   const { packages = [], platforms = [], scopes = [] } = project?.project ?? {};
   const scopeWorkspaces = scopes.map(s => `../../packages/${s.name}/*`);
@@ -224,6 +224,12 @@ function cleanRemovedPacks() {
   });
 }
 
+function refreshChanges(changes: Package[]) {
+  changes.forEach(p => {
+    task.writePackage(p);
+  });
+}
+
 export async function refreshByPnpm(option?: {
   force?: boolean;
   install?: string;
@@ -239,8 +245,9 @@ export async function refreshByPnpm(option?: {
     : undefined;
   cleanRemovedPacks();
   refreshWorkspace();
-  refreshPackages();
+  refreshPackageWorkspaces();
   const { packs: changes } = hold.instance().diffDepsPackages(force);
+  refreshChanges(changes);
   const changeRoots = changes.filter(
     p => p.type === 'workspace' || p.packageJson.pmnps?.ownRoot
   );

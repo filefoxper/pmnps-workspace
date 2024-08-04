@@ -82,6 +82,7 @@ function refreshChangePackages(changes: Package[]) {
   const scopeWorkspaces = scopes.map(s => `../../packages/${s.name}/*`);
   const workspaces = ['../../packages/*', ...scopeWorkspaces];
   const packs = changes.filter(p => p.type !== 'workspace');
+  const workspaceChanges = changes.filter(p => p.type === 'workspace');
   const [ownRoots, parts] = partition(
     packs,
     p =>
@@ -93,11 +94,10 @@ function refreshChangePackages(changes: Package[]) {
       return;
     }
     task.write(p.path, '.npmrc', content =>
-      rewriteRegistry(content, 'https://invalid.npm.com')
+      content == null
+        ? rewriteRegistry(content, 'https://invalid.npm.com')
+        : null
     );
-    if (!p.packageJson.workspaces) {
-      return;
-    }
     task.writePackage({
       ...p,
       packageJson: omit(p.packageJson, 'workspaces') as PackageJson
@@ -110,10 +110,11 @@ function refreshChangePackages(changes: Package[]) {
     }
     task.write(p.path, '.npmrc', content => rewriteRegistry(content, registry));
     const pj = p.packageJson;
-    if (pj.workspaces && pj.workspaces.join(';') === workspaces.join(';')) {
-      return;
-    }
     task.writePackage({ ...p, packageJson: { ...pj, workspaces } });
+  });
+
+  workspaceChanges.forEach(p => {
+    task.writePackage(p);
   });
 }
 
@@ -157,7 +158,6 @@ function installOwnRootPackage(
     withoutWorkspaceDepPackDeps,
     withoutWorkspaceDepCachePackDeps
   );
-  message.debug('add', newDepKeys, allInWorkspaces);
   if (allInWorkspaces && isBasicDepEqual) {
     const additionPackages = newDepKeys
       .map(k => packageMap.get(k))

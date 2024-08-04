@@ -220,18 +220,16 @@ export async function configAction(): Promise<ActionMessage> {
   if (!nextConfig.usePerformanceFirst || !equal(nextConfig, config)) {
     task.write(cwd, CONF_NAME, JSON.stringify(nextConfig));
   }
+  if (config && nextConfig.core !== config.core) {
+    hold.instance().setCoreChanged();
+  }
   task.writePackage({
     paths: null,
     packageJson: (json: PackageJson | null) => {
       const sourceJson: PackageJson = (json || {}) as PackageJson;
-      const workspaces =
-        nextConfig.projectType === 'monorepo'
-          ? [...new Set(['packages/*', ...(sourceJson.workspaces ?? [])])]
-          : undefined;
       const result = packageJson(nextConfig.name, 'workspace', {
         ...sourceJson,
-        ...projectDetail,
-        workspaces
+        ...projectDetail
       });
       if (equal(result, json)) {
         return null;
