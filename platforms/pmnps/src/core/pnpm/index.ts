@@ -55,7 +55,7 @@ function refreshWorkspace() {
   task.write(
     workspace.path,
     'pnpm-workspace.yaml',
-    jsyaml.dump({ packages: workspaces })
+    jsyaml.dump({ ...pnpmWorkspace, packages: workspaces })
   );
 }
 
@@ -116,7 +116,7 @@ function refreshPackageWorkspaces() {
     task.write(
       p.path,
       'pnpm-workspace.yaml',
-      jsyaml.dump({ packages: workspaces })
+      jsyaml.dump({ ...pnpmWorkspace, packages: workspaces })
     );
   });
 }
@@ -232,6 +232,48 @@ function refreshChanges(changes: Package[]) {
   });
 }
 
+function linkAdditions(changes: Package[]) {
+  const { cacheProject, project } = hold.instance().getState();
+  const cacheMap = cacheProject?.packageMap ?? {};
+  const packages = project?.project?.packages || [];
+  const packageNames = packages.map(n => n.name);
+  const packageMap = new Map(packages.map(p => [p.name, p] as const));
+  changes.forEach(pack => {
+    const cachePack = cacheMap[pack.path];
+    const cachePackDeps = {
+      ...cachePack.packageJson.dependencies,
+      ...cachePack.packageJson.devDependencies
+    };
+    const packDeps = {
+      ...pack.packageJson.dependencies,
+      ...pack.packageJson.devDependencies
+    };
+    const newDepKeys = Object.keys(packDeps).filter(k => !cachePackDeps[k]);
+    const withoutWorkspaceDepPackDeps = omit(packDeps, ...packageNames);
+    const withoutWorkspaceDepCachePackDeps = omit(
+      cachePackDeps,
+      ...packageNames
+    );
+    const allInWorkspaces = newDepKeys.every(k => packageMap.has(k));
+    const isBasicDepEqual = equal(
+      withoutWorkspaceDepPackDeps,
+      withoutWorkspaceDepCachePackDeps
+    );
+    if (allInWorkspaces && isBasicDepEqual) {
+      const additionPackages = newDepKeys
+        .map(k => packageMap.get(k))
+        .filter((p): p is Package => !!p);
+      additionPackages.forEach(p => {
+        task.execute(
+          SystemCommands.link(p, pack),
+          path.cwd(),
+          `link ${p.name} to own root: "${pack.name}"`
+        );
+      });
+    }
+  });
+}
+
 export async function refreshByPnpm(option?: {
   force?: boolean;
   install?: string;
@@ -250,8 +292,9 @@ export async function refreshByPnpm(option?: {
   refreshPackageWorkspaces();
   const { packs: changes } = hold.instance().diffDepsPackages(force);
   refreshChanges(changes);
-  const changeRoots = changes.filter(
-    p => p.type === 'workspace' || p.packageJson.pmnps?.ownRoot
+  const [changeRoots, otherChanges] = partition(
+    changes,
+    p => p.type === 'workspace' || !!p.packageJson.pmnps?.ownRoot
   );
   const [workspaceRoots, ownRoots] = partition(
     changeRoots,
@@ -309,15 +352,6 @@ export async function refreshByPnpm(option?: {
   if (workRoots.length) {
     return { content: 'Refresh success...', type: 'success' };
   }
-  const additionPackages = extractAdditionPackages();
-  if (additionPackages.length && workspace) {
-    additionPackages.forEach(p => {
-      task.execute(
-        SystemCommands.link(p, workspace),
-        path.cwd(),
-        `link ${p.name} to workspace`
-      );
-    });
-  }
+  linkAdditions(otherChanges);
   return { content: 'Refresh success...', type: 'success' };
 }
