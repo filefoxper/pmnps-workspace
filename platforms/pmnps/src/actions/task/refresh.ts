@@ -89,6 +89,8 @@ function mergeWorkspace(
   if (!packs.length) {
     return workspace;
   }
+  const { core } = hold.instance().getState().config ?? {};
+  const purePacksMap = keyBy(packs, 'name');
   const packsMap = keyBy(packs.concat(cachePacks), 'name');
   const excludePackDeps = function excludePackDeps(
     data: Record<string, any> | undefined
@@ -96,7 +98,11 @@ function mergeWorkspace(
     if (data == null) {
       return data;
     }
-    return omitBy(data, (value, key) => packsMap.has(key));
+    return omitBy(data, (value, key) =>
+      core === 'pnpm'
+        ? packsMap.has(key) && !purePacksMap.has(key)
+        : packsMap.has(key)
+    );
   };
   const { packageJson } = workspace;
   const result = packs.reduce((result, current) => {

@@ -7,14 +7,6 @@ import { path } from '@/libs';
 import type { ActionMessage } from '@/actions/task/type';
 import type { Package } from '@pmnps/tools';
 
-function extractAdditionPackages() {
-  const { project, cacheProject } = hold.instance().getState();
-  const packages = project?.project?.packages ?? [];
-  const cachePackages = cacheProject?.project?.packages ?? [];
-  const cachePackageNameSet = new Set(cachePackages.map(p => p.name));
-  return packages.filter(n => !cachePackageNameSet.has(n.name));
-}
-
 function refreshWorkspace() {
   const { project, config, dynamicState } = hold.instance().getState();
   const { workspace, platforms = [], scopes = [] } = project?.project ?? {};
