@@ -74,8 +74,6 @@ export interface ConfigDetail {
   useGit: boolean;
   useCommandHelp: boolean;
   usePerformanceFirst: boolean;
-  useRefreshAfterInstall: boolean;
-  useNpmCi?: boolean;
 }
 
 export interface ConfigSetting {

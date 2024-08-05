@@ -2,23 +2,22 @@ import { inquirer, path } from '@/libs';
 import { hold } from '@/state';
 import { CONF_NAME, DEFAULT_REGISTRY } from '@/constants';
 import { packageJson } from '@/resource';
-import { equal, omitBy } from '@/libs/polyfill';
+import { equal, omit, omitBy, pick } from '@/libs/polyfill';
 import { task } from './task';
 import type { ActionMessage } from '@/actions/task/type';
-import type { PackageJson, ConfigDetail, Config } from '@pmnps/tools';
+import type {
+  PackageJson,
+  ConfigDetail,
+  Config,
+  ConfigSetting
+} from '@pmnps/tools';
 
 const configRange: Array<[string, keyof ConfigDetail]> = [
   ['allow publish to npm', 'private'],
   ['use monorepo', 'projectType'],
   ['use git', 'useGit'],
   ['use command help', 'useCommandHelp'],
-  ['use performance first', 'usePerformanceFirst'],
-  [
-    'use workspace package install freedom',
-    'useWorkspacePackageInstallFreedom'
-  ],
-  ['use refresh after install (not recommend)', 'useRefreshAfterInstall'],
-  ['use npm ci to instead npm install intelligently', 'useNpmCi']
+  ['use performance first', 'usePerformanceFirst']
 ];
 
 function decodeConfig(config: Config | undefined) {
@@ -27,10 +26,7 @@ function decodeConfig(config: Config | undefined) {
     private: false,
     useGit: true,
     useCommandHelp: true,
-    usePerformanceFirst: true,
-    useRefreshAfterInstall: true,
-    useWorkspacePackageInstallFreedom: true,
-    useNpmCi: true
+    usePerformanceFirst: true
   };
   const conf =
     config ??
@@ -40,10 +36,7 @@ function decodeConfig(config: Config | undefined) {
       private: true,
       useGit: false,
       useCommandHelp: false,
-      usePerformanceFirst: false,
-      useRefreshAfterInstall: false,
-      useWorkspacePackageInstallFreedom: true,
-      useNpmCi: false
+      usePerformanceFirst: false
     } as Config);
   return configRange
     .map(([desc, value]) => {
@@ -58,20 +51,14 @@ function encodeConfig(detail: string[]): ConfigDetail {
     private: false,
     useGit: true,
     useCommandHelp: true,
-    usePerformanceFirst: true,
-    useRefreshAfterInstall: true,
-    useWorkspacePackageInstallFreedom: true,
-    useNpmCi: true
+    usePerformanceFirst: true
   };
   const allUncheckedConfig = {
     projectType: 'classify',
     private: true,
     useGit: false,
     useCommandHelp: false,
-    usePerformanceFirst: false,
-    useRefreshAfterInstall: false,
-    useWorkspacePackageInstallFreedom: false,
-    useNpmCi: false
+    usePerformanceFirst: false
   };
   const set = new Set(detail);
   const e = configRange.map(([desc, key]) => {
@@ -83,6 +70,14 @@ function encodeConfig(detail: string[]): ConfigDetail {
   });
   return Object.fromEntries(e) as unknown as ConfigDetail;
 }
+
+const installFeatures = new Map<string, keyof ConfigSetting>([
+  ['auto refresh after install', 'refreshAfterInstall'],
+  ['forbidden workspace package install', 'forbiddenWorkspacePackageInstall'],
+  ['list package dependencies in workspace project', 'listPackageDependencies'],
+  ['set install parameters', 'installParameters'],
+  ['install with npm ci command first', 'npmCiFirst']
+]);
 
 export async function configAction(): Promise<ActionMessage> {
   const { config, project } = hold.instance().getState();
@@ -116,10 +111,20 @@ export async function configAction(): Promise<ActionMessage> {
   );
   name = firstSetName;
   let core = config?.core || 'npm';
-  let confirmSetInstallParameters = false;
+  let confirmSetInstallFeatures = false;
   let installParameters = config?.installParameters;
+  const coreFeatures =
+    config == null
+      ? {}
+      : pick(
+          config,
+          'forbiddenWorkspacePackageInstall',
+          'refreshAfterInstall',
+          'listPackageDependencies',
+          'npmCiFirst'
+        );
   if (detail.includes('set package manager')) {
-    const { manager, confirmSetParameters } = await inquirer.prompt([
+    const { manager, confirmSetFeatures } = await inquirer.prompt([
       {
         name: 'manager',
         type: 'list',
@@ -128,24 +133,53 @@ export async function configAction(): Promise<ActionMessage> {
         default: core
       },
       {
-        name: 'confirmSetParameters',
+        name: 'confirmSetFeatures',
         type: 'confirm',
-        message: 'Do you want to set a global install parameters?',
+        message: 'Do you want to set package manager features?',
         default: true
       }
     ]);
     core = manager;
-    confirmSetInstallParameters = confirmSetParameters;
+    confirmSetInstallFeatures = confirmSetFeatures;
   }
-  if (confirmSetInstallParameters) {
-    const { installParam } = await inquirer.prompt([
+  if (confirmSetInstallFeatures) {
+    const keys = [...installFeatures.keys()];
+    const revertInstallFeatures = new Map(
+      [...installFeatures].map(([k, v]) => [v, k] as const)
+    );
+    const { features } = await inquirer.prompt([
       {
-        name: 'installParam',
-        type: 'input',
-        message: `Please enter the global install parameters for "${core}".`
+        name: 'features',
+        type: 'checkbox',
+        choices: core !== 'npm' ? keys.slice(0, 4) : keys,
+        message: `Please choose the features you want to set for "${core}".`,
+        default: Object.entries(coreFeatures)
+          .filter(([k, v]) => !!v)
+          .map(([k]) => revertInstallFeatures.get(k as keyof ConfigSetting))
+          .filter((n): n is string => !!n)
       }
     ]);
-    installParameters = installParam;
+    const featureSet = new Set(features);
+    const featureSetting = Object.fromEntries(
+      keys.map(f => {
+        return [
+          installFeatures.get(f) as keyof ConfigSetting,
+          featureSet.has(f)
+        ] as const;
+      })
+    ) as Record<keyof Partial<ConfigSetting>, boolean>;
+    if (featureSetting.installParameters) {
+      const { installParam } = await inquirer.prompt([
+        {
+          name: 'installParam',
+          type: 'input',
+          message: `Please enter the global install parameters for "${core}".`
+        }
+      ]);
+      installParameters = installParam;
+    }
+    const fs = omit(featureSetting, 'installParameters') as Partial<any>;
+    Object.assign(coreFeatures, fs);
   }
   if (detail.includes('set workspace name')) {
     const { name: workspaceName } = await inquirer.prompt([
@@ -173,7 +207,8 @@ export async function configAction(): Promise<ActionMessage> {
   const configSetting = {
     registry: registry.trim() || DEFAULT_REGISTRY,
     core: core.trim() as 'npm' | 'yarn' | 'yarn2' | undefined,
-    installParameters
+    installParameters,
+    ...coreFeatures
   };
   const projectDetail = {};
   if (detail.includes('set project detail')) {

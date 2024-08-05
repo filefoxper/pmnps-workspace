@@ -72,7 +72,7 @@ function refreshPackageWorkspaces() {
   const { packages = [], platforms = [], scopes = [] } = project?.project ?? {};
   const scopeWorkspaces = scopes.map(s => `../../packages/${s.name}/*`);
   const changes = [...packages, ...platforms];
-  const { registry, useWorkspacePackageInstallFreedom } = config ?? {};
+  const { registry, forbiddenWorkspacePackageInstall } = config ?? {};
   const workspaces = ['../../packages/*', ...scopeWorkspaces];
   const packs = changes.filter(p => p.type !== 'workspace');
   const [ownRoots, parts] = partition(
@@ -82,7 +82,7 @@ function refreshPackageWorkspaces() {
       p.packageJson.pmnps?.ownRoot === 'independent'
   );
   parts.forEach(p => {
-    if (!useWorkspacePackageInstallFreedom) {
+    if (forbiddenWorkspacePackageInstall) {
       task.write(p.path, '.npmrc', content =>
         rewriteRegistry(content, 'https://invalid.npm.com')
       );

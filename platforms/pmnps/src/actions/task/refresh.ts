@@ -32,10 +32,10 @@ const refreshAfterWorkspaceInstallCommand = 'pmnps refresh -i package,platform';
 
 function addSettingToWorkspace(workspace: Package) {
   const { config } = hold.instance().getState();
-  const { useRefreshAfterInstall } = config ?? {};
+  const { refreshAfterInstall } = config ?? {};
   const packageJson = workspace.packageJson;
   const { scripts } = packageJson;
-  if (!useRefreshAfterInstall) {
+  if (!refreshAfterInstall) {
     if (
       scripts &&
       scripts['postinstall'] === refreshAfterWorkspaceInstallCommand
@@ -81,6 +81,29 @@ function computeShouldRemovePackNames(packs: Package[], cachePacks: Package[]) {
     .map(p => p.name);
 }
 
+function listPackageDependencies(
+  workspacePackageJson: PackageJson,
+  packs: Package[]
+) {
+  const { listPackageDependencies } = hold.instance().getState().config ?? {};
+  if (!listPackageDependencies) {
+    return workspacePackageJson;
+  }
+  const packages = packs.filter(p => p.type === 'package');
+  return packages.reduce((res, current) => {
+    const { dependencies, devDependencies } = res;
+    const allDeps = { ...dependencies, ...devDependencies };
+    const { name, packageJson } = current;
+    if (allDeps[name] || packageJson == null || packageJson.version == null) {
+      return res;
+    }
+    return {
+      ...res,
+      dependencies: { ...dependencies, [name]: packageJson.version }
+    };
+  }, workspacePackageJson);
+}
+
 function mergeWorkspace(
   workspace: Package,
   packs: Package[],
@@ -89,8 +112,6 @@ function mergeWorkspace(
   if (!packs.length) {
     return workspace;
   }
-  const { core } = hold.instance().getState().config ?? {};
-  const purePacksMap = keyBy(packs, 'name');
   const packsMap = keyBy(packs.concat(cachePacks), 'name');
   const excludePackDeps = function excludePackDeps(
     data: Record<string, any> | undefined
@@ -98,11 +119,7 @@ function mergeWorkspace(
     if (data == null) {
       return data;
     }
-    return omitBy(data, (value, key) =>
-      core === 'pnpm'
-        ? packsMap.has(key) && !purePacksMap.has(key)
-        : packsMap.has(key)
-    );
+    return omitBy(data, (value, key) => packsMap.has(key));
   };
   const { packageJson } = workspace;
   const result = packs.reduce((result, current) => {
@@ -137,12 +154,15 @@ function mergeWorkspace(
       )
     };
   }, packageJson);
-  const nextPackageJson = omitBy(result, (value, key) => {
-    if (!['dependencies', 'devDependencies'].includes(key)) {
-      return false;
+  const nextPackageJson = omitBy(
+    listPackageDependencies(result, packs),
+    (value, key) => {
+      if (!['dependencies', 'devDependencies'].includes(key)) {
+        return false;
+      }
+      return value == null || !Object.keys(value).length;
     }
-    return value == null || !Object.keys(value).length;
-  }) as PackageJson;
+  ) as PackageJson;
   if (equal(packageJson, nextPackageJson)) {
     return workspace;
   }

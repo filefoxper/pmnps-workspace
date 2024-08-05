@@ -58,15 +58,16 @@ export interface ConfigDetail {
   useGit: boolean;
   useCommandHelp: boolean;
   usePerformanceFirst: boolean;
-  useRefreshAfterInstall: boolean;
-  useWorkspacePackageInstallFreedom?: boolean;
-  useNpmCi?: boolean;
 }
 
 export interface ConfigSetting {
   registry?: string;
   core?: 'npm' | 'yarn' | 'yarn2' | 'pnpm';
   installParameters?: string;
+  refreshAfterInstall?: boolean;
+  forbiddenWorkspacePackageInstall?: boolean;
+  listPackageDependencies?: boolean;
+  npmCiFirst?: boolean;
 }
 
 export interface ConfigPlugins {

@@ -116,7 +116,7 @@ function levelPackages(packs: Package[]): Package[][] {
 }
 
 async function publishOneByOne(
-  manager: 'npm' | 'yarn' | 'yarn2',
+  manager: 'npm' | 'yarn' | 'yarn2' | 'pnpm',
   registry: string | null | undefined,
   packs: Package[],
   otp?: string
@@ -162,6 +162,8 @@ async function publishOneByOne(
         stdio: 'inherit'
       }
     );
+  } else if (manager === 'pnpm') {
+    return;
   } else {
     await execution.exec(
       'npm',
@@ -368,6 +370,9 @@ const publishPlugin: Plugin<Query> = function publishPlugin(query?: Query) {
                   stdin: 'inherit'
                 }
               );
+            }
+            if (core === 'pnpm') {
+              return Promise.resolve(undefined);
             }
             return execution.exec(
               'npm',

@@ -19,7 +19,7 @@
   },
   "typings": "index.d.ts",
   "dependencies": {
-    "@pmnps/tools": "^4.2.1"
+    "@pmnps/tools": "4.3.0"
   },
   "devDependencies": {
     "typescript": "4.9.5"
@@ -28,8 +28,8 @@
     "js",
     "monorepo",
     "npm workspaces",
+    "package-lock",
     "pmnps",
-    "pmnps plugin",
-    "package-lock"
+    "pmnps plugin"
   ]
 }

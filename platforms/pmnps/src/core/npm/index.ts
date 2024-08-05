@@ -77,7 +77,7 @@ function rewriteRegistry(content: string | null, registry: string | undefined) {
 }
 
 function refreshChangePackages(changes: Package[]) {
-  const { registry, useWorkspacePackageInstallFreedom } =
+  const { registry, forbiddenWorkspacePackageInstall } =
     hold.instance().getState().config ?? {};
   const { scopes = [] } = hold.instance().getState().project?.project ?? {};
   const scopeWorkspaces = scopes.map(s => `../../packages/${s.name}/*`);
@@ -91,7 +91,7 @@ function refreshChangePackages(changes: Package[]) {
       p.packageJson.pmnps?.ownRoot === 'independent'
   );
   parts.forEach(p => {
-    if (!useWorkspacePackageInstallFreedom) {
+    if (forbiddenWorkspacePackageInstall) {
       task.write(p.path, '.npmrc', content =>
         content == null
           ? rewriteRegistry(content, 'https://invalid.npm.com')
