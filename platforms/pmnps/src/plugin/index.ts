@@ -25,6 +25,7 @@ export const getPluginState = (required?: Promise<any>) => {
       }
       return dynamicState;
     },
+    isCoreChanged: () => hold.instance().isCoreChanged(),
     task,
     cwd: () => path.cwd(),
     reader: {

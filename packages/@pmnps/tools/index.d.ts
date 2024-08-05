@@ -59,6 +59,7 @@ export interface ConfigDetail {
   useCommandHelp: boolean;
   usePerformanceFirst: boolean;
   useRefreshAfterInstall: boolean;
+  useWorkspacePackageInstallFreedom?: boolean;
   useNpmCi?: boolean;
 }
 
@@ -151,6 +152,7 @@ export declare type PackageLockInfo = {
 export declare type ActionState = {
   getProject: () => Project;
   getConfig: () => Config;
+  isCoreChanged: () => boolean;
   getLockState: () => Record<string, PackageLockInfo>;
   task: Task;
   cwd: () => string;

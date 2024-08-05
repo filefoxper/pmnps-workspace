@@ -13,6 +13,10 @@ const configRange: Array<[string, keyof ConfigDetail]> = [
   ['use git', 'useGit'],
   ['use command help', 'useCommandHelp'],
   ['use performance first', 'usePerformanceFirst'],
+  [
+    'use workspace package install freedom',
+    'useWorkspacePackageInstallFreedom'
+  ],
   ['use refresh after install (not recommend)', 'useRefreshAfterInstall'],
   ['use npm ci to instead npm install intelligently', 'useNpmCi']
 ];
@@ -25,6 +29,7 @@ function decodeConfig(config: Config | undefined) {
     useCommandHelp: true,
     usePerformanceFirst: true,
     useRefreshAfterInstall: true,
+    useWorkspacePackageInstallFreedom: true,
     useNpmCi: true
   };
   const conf =
@@ -37,6 +42,7 @@ function decodeConfig(config: Config | undefined) {
       useCommandHelp: false,
       usePerformanceFirst: false,
       useRefreshAfterInstall: false,
+      useWorkspacePackageInstallFreedom: true,
       useNpmCi: false
     } as Config);
   return configRange
@@ -54,6 +60,7 @@ function encodeConfig(detail: string[]): ConfigDetail {
     useCommandHelp: true,
     usePerformanceFirst: true,
     useRefreshAfterInstall: true,
+    useWorkspacePackageInstallFreedom: true,
     useNpmCi: true
   };
   const allUncheckedConfig = {
@@ -63,6 +70,7 @@ function encodeConfig(detail: string[]): ConfigDetail {
     useCommandHelp: false,
     usePerformanceFirst: false,
     useRefreshAfterInstall: false,
+    useWorkspacePackageInstallFreedom: false,
     useNpmCi: false
   };
   const set = new Set(detail);

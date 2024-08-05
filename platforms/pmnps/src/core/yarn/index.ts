@@ -2,7 +2,7 @@ import { equal, keyBy, omit, orderBy, partition } from '@/libs/polyfill';
 import { hold } from '@/state';
 import { task } from '@/actions/task';
 import { SystemCommands } from '@/cmds';
-import { message, path } from '@/libs';
+import { path } from '@/libs';
 import type { ActionMessage } from '@/actions/task/type';
 import type { Package, PackageJson } from '@pmnps/tools';
 
@@ -77,7 +77,8 @@ function rewriteRegistry(content: string | null, registry: string | undefined) {
 }
 
 function refreshChangePackages(changes: Package[]) {
-  const { registry } = hold.instance().getState().config ?? {};
+  const { registry, useWorkspacePackageInstallFreedom } =
+    hold.instance().getState().config ?? {};
   const { scopes = [] } = hold.instance().getState().project?.project ?? {};
   const scopeWorkspaces = scopes.map(s => `../../packages/${s.name}/*`);
   const workspaces = ['../../packages/*', ...scopeWorkspaces];
@@ -93,11 +94,13 @@ function refreshChangePackages(changes: Package[]) {
     if (!p.packageJson.private) {
       return;
     }
-    task.write(p.path, '.npmrc', content =>
-      content == null
-        ? rewriteRegistry(content, 'https://invalid.npm.com')
-        : null
-    );
+    if (!useWorkspacePackageInstallFreedom) {
+      task.write(p.path, '.npmrc', content =>
+        content == null
+          ? rewriteRegistry(content, 'https://invalid.npm.com')
+          : null
+      );
+    }
     task.writePackage({
       ...p,
       packageJson: omit(p.packageJson, 'workspaces') as PackageJson

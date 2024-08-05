@@ -77,7 +77,8 @@ function rewriteRegistry(content: string | null, registry: string | undefined) {
 }
 
 function refreshChangePackages(changes: Package[]) {
-  const { registry } = hold.instance().getState().config ?? {};
+  const { registry, useWorkspacePackageInstallFreedom } =
+    hold.instance().getState().config ?? {};
   const { scopes = [] } = hold.instance().getState().project?.project ?? {};
   const scopeWorkspaces = scopes.map(s => `../../packages/${s.name}/*`);
   const workspaces = ['../../packages/*', ...scopeWorkspaces];
@@ -90,11 +91,13 @@ function refreshChangePackages(changes: Package[]) {
       p.packageJson.pmnps?.ownRoot === 'independent'
   );
   parts.forEach(p => {
-    task.write(p.path, '.npmrc', content =>
-      content == null
-        ? rewriteRegistry(content, 'https://invalid.npm.com')
-        : null
-    );
+    if (!useWorkspacePackageInstallFreedom) {
+      task.write(p.path, '.npmrc', content =>
+        content == null
+          ? rewriteRegistry(content, 'https://invalid.npm.com')
+          : null
+      );
+    }
     task.writePackage({
       ...p,
       packageJson: omit(p.packageJson, 'workspaces') as PackageJson
