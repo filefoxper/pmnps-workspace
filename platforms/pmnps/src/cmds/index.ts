@@ -13,12 +13,18 @@ export const SystemCommands = {
     if (core === 'yarn' || core === 'yarn2') {
       return ['yarn', 'run', 'start'];
     }
+    if (core === 'pnpm') {
+      return ['pnpm', 'start'];
+    }
     return ['npm', 'start'];
   },
   run: () => {
     const { core = 'npm' } = hold.instance().getState().config ?? {};
     if (core === 'yarn' || core === 'yarn2') {
       return ['yarn', 'run'];
+    }
+    if (core === 'pnpm') {
+      return ['pnpm', 'run'];
     }
     return ['npm', 'run'];
   },
@@ -29,9 +35,9 @@ export const SystemCommands = {
     parameters?: string;
   }) => {
     const {
-      useNpmCi,
+      npmCiFirst,
       core = 'npm',
-      useRefreshAfterInstall,
+      refreshAfterInstall,
       installParameters = ''
     } = hold.instance().getState().config ?? {};
     const { hasLockFile, hasNodeModules, isPoint, parameters = '' } = opt ?? {};
@@ -43,16 +49,21 @@ export const SystemCommands = {
       .split(' ')
       .filter(d => d.trim());
     if (core === 'yarn' || core === 'yarn2') {
-      return isPoint && useRefreshAfterInstall
+      return isPoint && refreshAfterInstall
         ? ['yarn', 'install', '--ignore-scripts', ...ps]
         : ['yarn', 'install', ...ps];
     }
-    if (useNpmCi && !hasNodeModules && hasLockFile) {
-      return isPoint && useRefreshAfterInstall
+    if (core === 'pnpm') {
+      return isPoint && refreshAfterInstall
+        ? ['pnpm', 'install', '--ignore-scripts', ...ps]
+        : ['pnpm', 'install', ...ps];
+    }
+    if (npmCiFirst && !hasNodeModules && hasLockFile) {
+      return isPoint && refreshAfterInstall
         ? ['npm', 'ci', '--ignore-scripts', ...ps]
         : ['npm', 'ci', ...ps];
     }
-    return isPoint && useRefreshAfterInstall
+    return isPoint && refreshAfterInstall
       ? ['npm', 'install', '--ignore-scripts', ...ps]
       : ['npm', 'install', ...ps];
   },

@@ -1,4 +1,5 @@
 import fs from 'fs';
+import jsyaml from 'js-yaml';
 import { path } from '../path';
 
 async function stat(pathname: string): Promise<fs.Stats> {
@@ -188,6 +189,29 @@ async function createFileIfNotExist(
   }
 }
 
+async function readYaml<T extends Record<string, any>>(
+  locationPath: string
+): Promise<T | undefined> {
+  const file = await isFile(locationPath);
+  if (!file) {
+    return undefined;
+  }
+  return new Promise<T>((resolve, reject) => {
+    fs.readFile(locationPath, (err, data) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      const content = data.toString('utf-8');
+      if (!content.trim()) {
+        resolve({} as T);
+        return;
+      }
+      resolve(jsyaml.load(content) as T);
+    });
+  });
+}
+
 async function readJson<T extends Record<string, any>>(
   locationPath: string
 ): Promise<T | undefined> {
@@ -243,6 +267,13 @@ async function symlink(source: string, target: string) {
       resolve(true);
     });
   });
+}
+
+async function writeYaml(
+  locationPath: string,
+  json: Record<string, any>
+): Promise<string> {
+  return writeFile(locationPath, jsyaml.dump(json));
 }
 
 async function writeJson(
@@ -315,6 +346,8 @@ export const file = {
   writeFile,
   readJson,
   writeJson,
+  readYaml,
+  writeYaml,
   createFile,
   createFileIfNotExist,
   createFileIntoDirIfNotExist,

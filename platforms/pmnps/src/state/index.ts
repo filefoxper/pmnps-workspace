@@ -6,6 +6,12 @@ import type { Resource, State, Template } from '@/types';
 export function hold() {
   const listeners: (() => void)[] = [];
   return {
+    isCoreChanged() {
+      return global.pmnps.coreChanged;
+    },
+    setCoreChanged() {
+      global.pmnps.coreChanged = true;
+    },
     getState() {
       return global.pmnps.state;
     },

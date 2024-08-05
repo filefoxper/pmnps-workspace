@@ -39,11 +39,16 @@ async function collectPackages(
     c => c.trim().toLocaleLowerCase() === 'node_modules'
   );
   if (packageJsonFile && state.type !== 'workspace') {
-    const [packageJson, lockContent] = await Promise.all([
+    const [packageJson, lockContent, pnpmWorkspace] = await Promise.all([
       file.readJson<PackageJson>(path.join(filePath, packageJsonFile)),
       performanceFirst
         ? Promise.resolve('')
-        : file.readFile(path.join(filePath, lockFileName))
+        : file.readFile(path.join(filePath, lockFileName)),
+      lockFileName.endsWith('.yaml')
+        ? file.readYaml<{ packages: string[] }>(
+            path.join(filePath, 'pnpm-workspace.yaml')
+          )
+        : Promise.resolve(undefined)
     ]);
     if (!packageJson) {
       return [];
@@ -56,6 +61,7 @@ async function collectPackages(
       packageJson,
       packageJsonFileName: packageJsonFile,
       lockContent,
+      payload: { pnpmWorkspace },
       lockFileName,
       hasLockFile,
       hasNodeModules,
@@ -106,13 +112,33 @@ async function loadPackages(
 ) {
   const packs = await collectPackages(cwd, lockFileName, performanceFirst);
   const ps = packs.map((p): Package => {
-    const { hasLockFile, hasNodeModules, lockContent, lockFileName, ...rest } =
-      p;
+    const {
+      hasLockFile,
+      hasNodeModules,
+      lockContent,
+      lockFileName,
+      payload,
+      ...rest
+    } = p;
     return rest;
   });
   const dynamicStates = packs.map(p => {
-    const { name, hasNodeModules, hasLockFile, lockContent, lockFileName } = p;
-    return { name, hasNodeModules, hasLockFile, lockContent, lockFileName };
+    const {
+      name,
+      hasNodeModules,
+      hasLockFile,
+      lockContent,
+      lockFileName,
+      payload
+    } = p;
+    return {
+      name,
+      hasNodeModules,
+      hasLockFile,
+      lockContent,
+      lockFileName,
+      payload
+    };
   });
   return { packs: ps, dynamicStates };
 }

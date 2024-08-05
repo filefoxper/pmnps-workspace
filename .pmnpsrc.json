@@ -4,7 +4,6 @@
   "projectType": "monorepo",
   "useGit": true,
   "usePerformanceFirst": false,
-  "useRefreshAfterInstall": false,
   "registry": "https://registry.npmmirror.com",
   "plugins": [
     "@pmnps/plugin-vscode-workspace",
@@ -12,6 +11,9 @@
     ["@pmnps/plugin-publish", { "registry": "https://registry.npmjs.org" }]
   ],
   "useCommandHelp": true,
-  "useNpmCi": false,
-  "core": "npm"
+  "core": "npm",
+  "forbiddenWorkspacePackageInstall": false,
+  "refreshAfterInstall": false,
+  "listPackageDependencies": false,
+  "npmCiFirst": true
 }

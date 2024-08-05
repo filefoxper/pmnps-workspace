@@ -24,21 +24,30 @@ async function readProject(
     if (core === 'yarn' || core === 'yarn2') {
       return 'yarn.lock';
     }
+    if (core === 'pnpm') {
+      return 'pnpm-lock.yaml';
+    }
     return 'package-lock.json';
   })();
-  const [mainPackageJson, lockContent, hasNodeModules] = await Promise.all([
-    file.readJson<PackageJson>(path.join(cwd, 'package.json')),
-    performanceFirst
-      ? (new Promise(resolve => {
-          if (fs.existsSync(path.join(cwd, lockFileName))) {
-            resolve('');
-          } else {
-            resolve(null);
-          }
-        }) as Promise<string | null>)
-      : file.readFile(path.join(cwd, lockFileName)),
-    file.isDirectory(path.join(cwd, 'node_modules'))
-  ]);
+  const [mainPackageJson, lockContent, hasNodeModules, pnpmWorkspace] =
+    await Promise.all([
+      file.readJson<PackageJson>(path.join(cwd, 'package.json')),
+      performanceFirst
+        ? (new Promise(resolve => {
+            if (fs.existsSync(path.join(cwd, lockFileName))) {
+              resolve('');
+            } else {
+              resolve(null);
+            }
+          }) as Promise<string | null>)
+        : file.readFile(path.join(cwd, lockFileName)),
+      file.isDirectory(path.join(cwd, 'node_modules')),
+      core === 'pnpm'
+        ? file.readYaml<{ packages: string[] }>(
+            path.join(cwd, 'pnpm-workspace.yaml')
+          )
+        : Promise.resolve(undefined)
+    ]);
   if (!mainPackageJson) {
     return [undefined, undefined];
   }
@@ -62,7 +71,8 @@ async function readProject(
       hasLockFile: lockContent != null,
       hasNodeModules,
       lockContent: lockContent || '',
-      lockFileName
+      lockFileName,
+      payload: { pnpmWorkspace }
     }
   ];
   const dynamicState = Object.fromEntries(

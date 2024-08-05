@@ -19,7 +19,7 @@
   },
   "typings": "index.d.ts",
   "dependencies": {
-    "@pmnps/tools": "^4.2.0"
+    "@pmnps/tools": "4.3.0"
   },
   "devDependencies": {
     "typescript": "4.9.5"
@@ -27,9 +27,9 @@
   "keywords": [
     "js",
     "monorepo",
+    "npm publish",
     "npm workspaces",
     "pmnps",
-    "pmnps plugin",
-    "npm publish"
+    "pmnps plugin"
   ]
 }

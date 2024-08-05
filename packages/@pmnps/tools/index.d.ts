@@ -58,14 +58,16 @@ export interface ConfigDetail {
   useGit: boolean;
   useCommandHelp: boolean;
   usePerformanceFirst: boolean;
-  useRefreshAfterInstall: boolean;
-  useNpmCi?: boolean;
 }
 
 export interface ConfigSetting {
   registry?: string;
-  core?: 'npm' | 'yarn' | 'yarn2';
+  core?: 'npm' | 'yarn' | 'yarn2' | 'pnpm';
   installParameters?: string;
+  refreshAfterInstall?: boolean;
+  forbiddenWorkspacePackageInstall?: boolean;
+  listPackageDependencies?: boolean;
+  npmCiFirst?: boolean;
 }
 
 export interface ConfigPlugins {
@@ -143,11 +145,15 @@ export declare type PackageLockInfo = {
   hasNodeModules: boolean;
   lockContent?: string | null;
   lockFileName: string;
+  payload?: {
+    pnpmWorkspace?: { packages: string[] };
+  };
 };
 
 export declare type ActionState = {
   getProject: () => Project;
   getConfig: () => Config;
+  isCoreChanged: () => boolean;
   getLockState: () => Record<string, PackageLockInfo>;
   task: Task;
   cwd: () => string;

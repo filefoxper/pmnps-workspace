@@ -402,12 +402,24 @@ export const task = {
     return t;
   },
   execute(command: CommandSerial, cwd: string, description?: string) {
+    function ifInstallLike() {
+      const [first, second] = command;
+      return first === 'symlink' || second === 'install' || second === 'ci';
+    }
+    const isInstallLike = ifInstallLike();
+    const isCoreChanged = hold.instance().isCoreChanged();
     const t: Task = {
       type: 'exec',
       command,
       cwd,
       description
     };
+    if (isCoreChanged && isInstallLike) {
+      message.warn(
+        'The pkg manage core is changed, please remove node_modules folders manually.'
+      );
+      return t;
+    }
     hold.instance().pushTask(t);
     return t;
   }

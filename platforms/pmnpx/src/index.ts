@@ -55,5 +55,9 @@ if (founddPmnpsPathname) {
 } else if (fs.existsSync(innerPmnpsLocation)) {
   require(innerPmnpsLocation);
 } else {
-  console.warn('Can not find pmnps dependent...');
+  try {
+    require('pmnps');
+  } catch (e) {
+    console.warn('Can not find pmnps dependent...');
+  }
 }
