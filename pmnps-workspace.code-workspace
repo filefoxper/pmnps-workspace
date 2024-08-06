@@ -14,6 +14,10 @@
       "name": "@pmnps/plugin-publish",
       "path": "packages/@pmnps/plugin-publish"
     },
+    {
+      "name": "@pmnps/plugin-clean-node-modules",
+      "path": "packages/@pmnps/plugin-clean-node-modules"
+    },
     { "name": "pmnpx", "path": "platforms/pmnpx" },
     { "name": "pmnps", "path": "platforms/pmnps" },
     { "name": "package.json", "path": "package.json" },

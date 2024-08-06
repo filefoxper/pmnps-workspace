@@ -128,6 +128,7 @@ declare type Task = {
     type: PackageType;
   }): any;
   execute(command: CommandSerial, cwd: string, description?: string): any;
+  remove(pathname: string, opt?: { fileType?: 'file' | 'dir' }): any;
 };
 
 declare type Reader = {
