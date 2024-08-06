@@ -392,11 +392,13 @@ export const task = {
     }
     return p;
   },
-  remove(pathname: string) {
+  remove(pathname: string, opt?: { fileType?: 'file' | 'dir' }) {
+    const { fileType } = opt ?? {};
     const t: Task = {
       type: 'remove',
       path: pathname,
-      cwd: path.cwd()
+      cwd: path.cwd(),
+      fileType
     };
     hold.instance().pushTask(t);
     return t;

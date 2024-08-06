@@ -1,13 +1,13 @@
 {
   "private": false,
-  "name": "@pmnps/plugin-vscode-workspace",
+  "name": "@pmnps/plugin-clean-node-modules",
   "version": "4.3.0",
-  "description": "This is a pmnps plugin for refreshing vscode-workspace file.",
+  "description": "This is a pmnps plugin for cleaning node_modules in packages when the pkg manager is changed.",
   "author": "Jimmy.Harding",
-  "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-vscode-workspace",
+  "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-clean-node-modules",
   "repository": {
     "type": "git",
-    "url": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-vscode-workspace"
+    "url": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-clean-node-modules"
   },
   "main": "dist/index.js",
   "files": [
@@ -28,8 +28,9 @@
     "js",
     "monorepo",
     "npm workspaces",
+    "node_modules",
+    "clean",
     "pmnps",
-    "pmnps plugin",
-    "vscode workspace"
+    "pmnps plugin"
   ]
 }

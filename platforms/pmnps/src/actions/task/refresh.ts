@@ -229,8 +229,8 @@ function mergePacks(
         shouldUpdates.map(k => [
           k,
           dep[k] && dep[k].startsWith('workspace:')
-            ? `workspace:${packVersionMap.get(k)}`
-            : packVersionMap.get(k)
+            ? `workspace:^${packVersionMap.get(k)}`
+            : `^${packVersionMap.get(k)}`
         ])
       );
     }

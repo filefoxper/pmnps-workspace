@@ -39,6 +39,7 @@ export interface ExecuteTask {
 
 export interface RemoveTask {
   type: 'remove';
+  fileType?: 'file' | 'dir';
   cwd?: string;
   path: string;
 }
