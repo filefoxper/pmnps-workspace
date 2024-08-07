@@ -7,10 +7,10 @@
     "start": "ts-node ./platforms/pmnps/src/index.ts"
   },
   "workspaces": [
-    "packages/*",
     "platforms/pmnpx",
     "platforms/pmnps",
-    "packages/@pmnps/*"
+    "packages/@pmnps/*",
+    "packages/*"
   ],
   "dependencies": {
     "js-yaml": "4.1.0",

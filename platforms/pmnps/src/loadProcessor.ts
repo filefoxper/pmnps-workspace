@@ -78,8 +78,10 @@ async function readProject(
   const dynamicState = Object.fromEntries(
     dynamicStateArray.map((d): [string, PackageLockInfo] => [d.name, d])
   );
-  const [pks, pls] = partition(children, c => c.type === 'package');
+  const [allPks, pls] = partition(children, c => c.type !== 'platform');
+  const [pks, fks] = partition(allPks, c => c.type === 'package');
   const packages = orderBy(pks, ['name'], ['desc']);
+  const forks = orderBy(fks, ['name'], ['desc']);
   const platforms = orderBy(pls, ['name'], ['desc']);
   const childMap = Object.fromEntries(children.map(c => [c.path, c]));
   const scopePackageGroup = groupBy(packages, p => {
@@ -88,8 +90,8 @@ async function readProject(
   });
   const sps = orderBy(scopes, ['name'], ['desc']).map(scope => {
     const { name } = scope;
-    const packages = scopePackageGroup.get(name) ?? [];
-    return { ...scope, packages };
+    const packagesInScope = scopePackageGroup.get(name) ?? [];
+    return { ...scope, packages: packagesInScope };
   });
   return [
     {
@@ -98,7 +100,7 @@ async function readProject(
       type: projectType,
       packageMap: { [cwd]: mainPackage, ...childMap },
       project: omitBy(
-        { workspace: mainPackage, packages, platforms, scopes: sps },
+        { workspace: mainPackage, packages, forks, platforms, scopes: sps },
         (value, key) => {
           return value == null || (Array.isArray(value) && !value.length);
         }

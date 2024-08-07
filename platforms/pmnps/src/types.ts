@@ -22,6 +22,7 @@ export interface ProjectSerial {
     workspace?: Package;
     scopes?: ScopeSerial[];
     packages?: Package[];
+    forks?: Package[];
     platforms?: Package[];
   };
 }

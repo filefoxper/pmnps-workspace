@@ -20,7 +20,7 @@ export interface PackageJson {
   scripts?: Record<string, string>;
 }
 
-export type PackageType = 'package' | 'platform' | 'workspace';
+export type PackageType = 'package' | 'fork' | 'platform' | 'workspace';
 
 export interface Package {
   path: string;
@@ -48,6 +48,7 @@ export interface Project {
     workspace?: Package;
     scopes?: Scope[];
     packages?: Package[];
+    forks?: Package[];
     platforms?: Package[];
   };
 }

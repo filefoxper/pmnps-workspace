@@ -16,7 +16,12 @@ function extractAdditionPackages() {
 
 function refreshWorkspace() {
   const { project, config } = hold.instance().getState();
-  const { scopes = [], workspace, platforms = [] } = project?.project ?? {};
+  const {
+    scopes = [],
+    workspace,
+    platforms = [],
+    forks
+  } = project?.project ?? {};
   const { projectType, core = 'npm' } = config ?? {};
   const workspacePackageJson = workspace?.packageJson;
   if (workspacePackageJson == null) {
@@ -41,8 +46,10 @@ function refreshWorkspace() {
       .map(p => `platforms/${p.name}`);
   }
   const scopeWorkspaces = scopes.map(s => `packages/${s.name}/*`);
+  const forksWorkspaces = forks && forks.length ? ['forks/*'] : [];
   const workspaceSet = new Set([
     'packages/*',
+    ...forksWorkspaces,
     ...scopeWorkspaces,
     ...buildPlatformWorkspaces()
   ]);
@@ -79,9 +86,15 @@ function rewriteRegistry(content: string | null, registry: string | undefined) {
 function refreshChangePackages(changes: Package[]) {
   const { registry, forbiddenWorkspacePackageInstall } =
     hold.instance().getState().config ?? {};
-  const { scopes = [] } = hold.instance().getState().project?.project ?? {};
+  const { scopes = [], forks } =
+    hold.instance().getState().project?.project ?? {};
   const scopeWorkspaces = scopes.map(s => `../../packages/${s.name}/*`);
-  const workspaces = ['../../packages/*', ...scopeWorkspaces];
+  const forksWorkspaces = forks && forks.length ? ['../../forks/*'] : [];
+  const workspaces = [
+    '../../packages/*',
+    ...forksWorkspaces,
+    ...scopeWorkspaces
+  ];
   const packs = changes.filter(p => p.type !== 'workspace');
   const workspaceChanges = changes.filter(p => p.type === 'workspace');
   const [ownRoots, parts] = partition(
@@ -184,6 +197,47 @@ function installOwnRootPackage(
   );
 }
 
+function refreshWithForkChanges(parameters?: string) {
+  const { project, dynamicState = {} } = hold.instance().getState();
+  const { workspace, platforms = [] } = project?.project ?? {};
+  const ownRootPlatforms = platforms.filter(
+    p =>
+      p.packageJson.pmnps?.ownRoot === true ||
+      p.packageJson.pmnps?.ownRoot === 'independent'
+  );
+  if (workspace) {
+    const ds = dynamicState[workspace.name];
+    task.execute(
+      SystemCommands.install({ ...ds, isPoint: false, parameters }),
+      workspace.path,
+      'install workspace'
+    );
+  }
+  if (ownRootPlatforms.length) {
+    ownRootPlatforms.forEach(p => {
+      const ds = dynamicState[p.name];
+      installOwnRootPackage(p, { ...ds, isPoint: false, parameters }, true);
+    });
+  }
+}
+
+function hasForksChange() {
+  const { project, cacheProject } = hold.instance().getState();
+  const forks = project?.project?.forks ?? [];
+  const forkNames = orderBy(
+    forks.map(p => p.name),
+    [n => n],
+    ['desc']
+  );
+  const cacheForks = cacheProject?.project?.forks ?? [];
+  const cacheForkNames = orderBy(
+    cacheForks.map(p => p.name),
+    [n => n],
+    ['desc']
+  );
+  return forkNames.join() !== cacheForkNames.join();
+}
+
 function computeShouldRemovePackNames(packs: Package[], cachePacks: Package[]) {
   const packageMap = keyBy(packs, 'path');
   return cachePacks
@@ -193,14 +247,22 @@ function computeShouldRemovePackNames(packs: Package[], cachePacks: Package[]) {
 
 function cleanRemovedPacks() {
   const { project, cacheProject } = hold.instance().getState();
-  const { packages: cachePackages = [], platforms: cachePlatforms = [] } =
-    cacheProject?.project ?? {};
-  const cachePacks = [...cachePackages, ...cachePlatforms];
+  const {
+    packages: cachePackages = [],
+    platforms: cachePlatforms = [],
+    forks: cacheForks = []
+  } = cacheProject?.project ?? {};
+  const cachePacks = [...cachePackages, ...cacheForks, ...cachePlatforms];
   if (project == null || project.project == null || !cachePacks.length) {
     return;
   }
-  const { workspace, packages = [], platforms = [] } = project.project;
-  const allPacks = [workspace, ...packages, ...platforms].filter(
+  const {
+    workspace,
+    packages = [],
+    forks = [],
+    platforms = []
+  } = project.project;
+  const allPacks = [workspace, ...packages, ...forks, ...platforms].filter(
     (p): p is Package => !!p
   );
   const shouldRemovePackNames = computeShouldRemovePackNames(
@@ -298,6 +360,10 @@ export async function refreshByYarn(option?: {
         force
       );
     });
+  }
+  if (hasForksChange() && workspace) {
+    refreshWithForkChanges(parameters);
+    return { content: 'Refresh success...', type: 'success' };
   }
   if (workRoots.length) {
     return { content: 'Refresh success...', type: 'success' };

@@ -82,6 +82,9 @@ async function collectPackages(
         if (currentName === 'platforms') {
           return 'platform';
         }
+        if (currentName === 'forks') {
+          return 'fork';
+        }
         return state.type;
       })();
       const nextState = {
@@ -238,8 +241,14 @@ function serial(project: Project): ProjectSerial {
 
 function parse(serial: ProjectSerial): Project {
   const { packageMap, project } = serial;
-  const { workspace, packages = [], platforms = [], scopes = [] } = project;
-  const packs = [workspace, ...packages, ...platforms].filter(
+  const {
+    workspace,
+    packages = [],
+    platforms = [],
+    forks = [],
+    scopes = []
+  } = project;
+  const packs = [workspace, ...packages, ...forks, ...platforms].filter(
     (p): p is Package => !!p
   );
   const packageRecord = keyBy(packs, 'name');

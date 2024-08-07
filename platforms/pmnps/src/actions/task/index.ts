@@ -1,6 +1,6 @@
 import process from 'process';
 import { format as formatPackageJson } from 'prettier-package-json';
-import { message, path } from '@/libs';
+import { file, message, path } from '@/libs';
 import { hold } from '@/state';
 import { equal, omitBy, orderBy, partition } from '@/libs/polyfill';
 import { CONF_NAME, SystemFormatter } from '@/constants';
@@ -154,6 +154,17 @@ function writePackageToState(cwd: string, packageData: Package) {
   project.packageMap[pathname] = packageData;
   if (packageType === 'workspace') {
     project.project.workspace = packageData;
+  } else if (packageType === 'fork') {
+    project.project.forks = project.project.forks || [];
+    const p = project.project.forks.find(p => p.path === pathname);
+    if (p == null) {
+      project.project.forks = orderBy(
+        [...project.project.forks, packageData],
+        ['name'],
+        ['desc']
+      );
+      Object.assign(project.packageMap, { [packageData.path]: packageData });
+    }
   } else if (packageType === 'package') {
     project.project.packages = project.project.packages || [];
     const p = project.project.packages.find(p => p.path === pathname);
@@ -391,6 +402,49 @@ export const task = {
       writePackageToState(cwd, packageData);
     }
     return p;
+  },
+  fork(
+    p: Array<string>,
+    config?: {
+      relative?: boolean;
+      source?: string;
+      command?: CommandSerial[];
+    }
+  ) {
+    const cwd = path.cwd();
+    const { command, source } = config ?? {};
+    const pathname = path.join(cwd, ...p);
+    const t: Task = {
+      type: 'write',
+      fileType: 'dir',
+      file: pathname,
+      path: pathname,
+      content: pathname,
+      dirSource: source,
+      option: omitBy(
+        {
+          command,
+          onFinish: async () => {
+            const packagePath = path.join(pathname, 'package.json');
+            const packageJson = await file.readJson<PackageJson>(packagePath);
+            if (packageJson == null) {
+              return;
+            }
+            writePackageToState(cwd, {
+              name: packageJson.name || '',
+              paths: p,
+              path: pathname,
+              type: 'fork',
+              packageJsonFileName: 'package.json',
+              packageJson
+            });
+          }
+        },
+        value => value == null
+      )
+    };
+    hold.instance().pushTask(t);
+    return t;
   },
   remove(pathname: string, opt?: { fileType?: 'file' | 'dir' }) {
     const { fileType } = opt ?? {};

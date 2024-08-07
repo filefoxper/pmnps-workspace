@@ -22,6 +22,7 @@ export interface WriteTask {
     formatter?: (content: string) => Promise<string>;
     skipIfExist?: true;
     command?: CommandSerial[];
+    onFinish?: () => Promise<any>;
   };
 }
 

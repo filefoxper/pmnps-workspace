@@ -14,6 +14,7 @@ import {
   setPackageAction,
   setPlatformAction
 } from '@/actions/set';
+import { forkAction } from '@/actions/fork';
 import { env, file, path, inquirer, message } from './libs';
 import { initialize, loadProject } from './processor';
 import type { Command, CommandOption } from '@pmnps/tools';
@@ -117,7 +118,13 @@ const noListCommands = [
     .describe('Set platform detail.')
     .list(false)
     .args('platform name', 'Enter a platform name for setting')
-    .action((state, argument) => setPlatformAction(argument))
+    .action((state, argument) => setPlatformAction(argument)),
+  createPluginCommand('fork')
+    .describe('Fork a package out')
+    .list(false)
+    .requireRefresh()
+    .args('package name', 'Enter a package name in node_modules for forking')
+    .action((state, argument) => forkAction(argument))
 ];
 
 const setAliasCommand = createPluginCommand('set:alias')

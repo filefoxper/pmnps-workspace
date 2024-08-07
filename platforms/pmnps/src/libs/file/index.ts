@@ -305,7 +305,13 @@ async function copyFolder(
     fs.cp(
       sourceDirPath,
       targetDirPath,
-      { recursive: true, force: false },
+      {
+        recursive: true,
+        force: false,
+        filter(source: string): boolean | Promise<boolean> {
+          return source !== 'node_modules';
+        }
+      },
       err => {
         if (err) {
           reject(err);

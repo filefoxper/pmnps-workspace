@@ -116,19 +116,6 @@ async function readSystemProfile(file: string) {
   };
 }
 
-function parseCommandAlias(args: string) {
-  const data = args
-    .trim()
-    .split('=')
-    .map(a => a.trim())
-    .filter(a => a);
-  if (data.length !== 2) {
-    return null;
-  }
-  const [alias, command] = data;
-  return [alias, command] as [string, string];
-}
-
 export async function setAliasAction(
   argument?: string | null
 ): Promise<ActionMessage> {
