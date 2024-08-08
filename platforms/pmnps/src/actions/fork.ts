@@ -27,10 +27,17 @@ export async function forkAction(args?: string | null): Promise<ActionMessage> {
     .trim()
     .split('/')
     .map(p => p.trim());
-  const nameParts = pathname.split('node_modules/');
-  const targetName = nameParts[nameParts.length - 1];
   const source = path.join(cwd, ...pathParts);
-  task.fork(['forks', ...targetName.split('/')], { source });
+  task.fork(
+    [
+      'forks',
+      pathname
+        .split('/')
+        .filter(s => s.trim())
+        .join('.')
+    ],
+    { source }
+  );
   return {
     type: 'success',
     content: `Fork package "${pathname}" success`

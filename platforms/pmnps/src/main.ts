@@ -108,6 +108,12 @@ const setCommand = createPluginCommand('set')
   .args('package|platform', 'Enter a target type for setting')
   .action((state, argument) => setAction(argument));
 
+const forkCommand = createPluginCommand('fork')
+  .describe('Fork a package out')
+  .requireRefresh()
+  .args('package name', 'Enter a package name in node_modules for forking')
+  .action((state, argument) => forkAction(argument));
+
 const noListCommands = [
   createPluginCommand('set:package')
     .describe('Set package detail.')
@@ -118,13 +124,7 @@ const noListCommands = [
     .describe('Set platform detail.')
     .list(false)
     .args('platform name', 'Enter a platform name for setting')
-    .action((state, argument) => setPlatformAction(argument)),
-  createPluginCommand('fork')
-    .describe('Fork a package out')
-    .list(false)
-    .requireRefresh()
-    .args('package name', 'Enter a package name in node_modules for forking')
-    .action((state, argument) => forkAction(argument))
+    .action((state, argument) => setPlatformAction(argument))
 ];
 
 const setAliasCommand = createPluginCommand('set:alias')
@@ -161,9 +161,11 @@ function actCommands(cmds: Command[]) {
 }
 
 const getCommands = () => {
-  const { projectType = 'monorepo' } = hold.instance().getState().config ?? {};
+  const { projectType = 'monorepo', core = 'npm' } =
+    hold.instance().getState().config ?? {};
   const canUseAlias = !!global.pmnps.px && global.pmnps.platform === 'darwin';
   const pmnpxCommands = canUseAlias ? [setAliasCommand] : [];
+  const coreCommands = core === 'npm' ? [forkCommand] : [];
   return actCommands(
     projectType === 'monorepo'
       ? ([
@@ -173,6 +175,7 @@ const getCommands = () => {
           createCommand,
           configCommand,
           setCommand,
+          ...coreCommands,
           ...noListCommands,
           ...pmnpxCommands
         ] as Command[])

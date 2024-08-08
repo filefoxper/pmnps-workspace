@@ -13,6 +13,7 @@ export interface PackageWithDynamicState extends Package {
   hasNodeModules: boolean;
   lockContent?: string | null;
   lockFileName: string;
+  forkLockContent?: string | null;
   payload?: {
     pnpmWorkspace?: { packages: string[] };
   };

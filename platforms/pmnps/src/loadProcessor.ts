@@ -29,25 +29,33 @@ async function readProject(
     }
     return 'package-lock.json';
   })();
-  const [mainPackageJson, lockContent, hasNodeModules, pnpmWorkspace] =
-    await Promise.all([
-      file.readJson<PackageJson>(path.join(cwd, 'package.json')),
-      performanceFirst
-        ? (new Promise(resolve => {
-            if (fs.existsSync(path.join(cwd, lockFileName))) {
-              resolve('');
-            } else {
-              resolve(null);
-            }
-          }) as Promise<string | null>)
-        : file.readFile(path.join(cwd, lockFileName)),
-      file.isDirectory(path.join(cwd, 'node_modules')),
-      core === 'pnpm'
-        ? file.readYaml<{ packages: string[] }>(
-            path.join(cwd, 'pnpm-workspace.yaml')
-          )
-        : Promise.resolve(undefined)
-    ]);
+  const [
+    mainPackageJson,
+    lockContent,
+    hasNodeModules,
+    pnpmWorkspace,
+    forkLockContent
+  ] = await Promise.all([
+    file.readJson<PackageJson>(path.join(cwd, 'package.json')),
+    performanceFirst
+      ? (new Promise(resolve => {
+          if (fs.existsSync(path.join(cwd, lockFileName))) {
+            resolve('');
+          } else {
+            resolve(null);
+          }
+        }) as Promise<string | null>)
+      : file.readFile(path.join(cwd, lockFileName)),
+    file.isDirectory(path.join(cwd, 'node_modules')),
+    core === 'pnpm'
+      ? file.readYaml<{ packages: string[] }>(
+          path.join(cwd, 'pnpm-workspace.yaml')
+        )
+      : Promise.resolve(undefined),
+    performanceFirst
+      ? Promise.resolve(undefined)
+      : file.readFile(path.join(cwd, 'fork-lock.json'))
+  ]);
   if (!mainPackageJson) {
     return [undefined, undefined];
   }
@@ -72,6 +80,7 @@ async function readProject(
       hasNodeModules,
       lockContent: lockContent || '',
       lockFileName,
+      forkLockContent,
       payload: { pnpmWorkspace }
     }
   ];

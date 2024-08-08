@@ -1,10 +1,11 @@
+import { packageLock2 } from '@pmnps/lock-resolver';
 import { equal, keyBy, omit, orderBy, partition } from '@/libs/polyfill';
 import { hold } from '@/state';
 import { task } from '@/actions/task';
 import { SystemCommands } from '@/cmds';
 import { message, path } from '@/libs';
 import type { ActionMessage } from '@/actions/task/type';
-import type { Package, PackageJson } from '@pmnps/tools';
+import type { Package, PackageJson, PackageLockInfo } from '@pmnps/tools';
 
 function installOwnRootPackage(
   pack: Package,
@@ -283,6 +284,55 @@ function cleanRemovedPacks() {
   });
 }
 
+function refreshPackageLock() {
+  const { dynamicState = {}, project, config } = hold.instance().getState();
+  const { packages = [], platforms = [], workspace } = project?.project ?? {};
+  if (project == null || workspace == null) {
+    return;
+  }
+  if (config?.usePerformanceFirst) {
+    message.warn(
+      'Can not refresh package-lock.json file in a performance first mode'
+    );
+    return;
+  }
+
+  const { resolver } = packageLock2;
+  const locks = Object.entries(dynamicState)
+    .map(([name, value]): { name: string } & PackageLockInfo => ({
+      name,
+      ...value
+    }))
+    .filter(d => d.hasLockFile);
+  const packs = [...packages, ...platforms, workspace];
+  const packMap = new Map(packs.map(p => [p.name, p]));
+  locks.forEach(lock => {
+    const { name, lockContent, forkLockContent, hasLockFile, lockFileName } =
+      lock;
+    if (lockContent == null || !hasLockFile) {
+      return;
+    }
+    const current = packMap.get(name);
+    if (current == null) {
+      return;
+    }
+    const { path: pathname } = current;
+    const [res, forkLock] = resolver(lockContent, {
+      project,
+      current,
+      forkLockContent
+    });
+    if (res == null || pathname == null) {
+      return;
+    }
+    task.write(pathname, lockFileName, res);
+    if (forkLock == null) {
+      return;
+    }
+    task.write(pathname, 'fork-lock.json', forkLock);
+  });
+}
+
 export async function refreshByNpm(option?: {
   force?: boolean;
   install?: string;
@@ -356,6 +406,7 @@ export async function refreshByNpm(option?: {
       );
     });
   }
+  refreshPackageLock();
   if (hasForksChange() && workspace) {
     refreshWithForkChanges(parameters);
     return { content: 'Refresh success...', type: 'success' };

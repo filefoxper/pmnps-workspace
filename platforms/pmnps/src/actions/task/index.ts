@@ -414,6 +414,7 @@ export const task = {
     const cwd = path.cwd();
     const { command, source } = config ?? {};
     const pathname = path.join(cwd, ...p);
+    const forkName = p[1];
     const t: Task = {
       type: 'write',
       fileType: 'dir',
@@ -431,7 +432,7 @@ export const task = {
               return;
             }
             writePackageToState(cwd, {
-              name: packageJson.name || '',
+              name: forkName || '',
               paths: p,
               path: pathname,
               type: 'fork',

@@ -3,11 +3,6 @@
     { "name": "<workspaces>", "path": "." },
     { "name": "@pmnps/tools", "path": "packages/@pmnps/tools" },
     {
-      "name": "@pmnps/resolver-package-lock",
-      "path": "packages/@pmnps/resolver-package-lock"
-    },
-    { "name": "@pmnps/resolver", "path": "packages/@pmnps/resolver" },
-    {
       "name": "@pmnps/plugin-vscode-workspace",
       "path": "packages/@pmnps/plugin-vscode-workspace"
     },
@@ -23,6 +18,7 @@
       "name": "@pmnps/plugin-clean-node-modules",
       "path": "packages/@pmnps/plugin-clean-node-modules"
     },
+    { "name": "@pmnps/lock-resolver", "path": "packages/@pmnps/lock-resolver" },
     { "name": "pmnpx", "path": "platforms/pmnpx" },
     { "name": "pmnps", "path": "platforms/pmnps" },
     { "name": "package.json", "path": "package.json" },

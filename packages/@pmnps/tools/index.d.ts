@@ -148,6 +148,7 @@ export declare type PackageLockInfo = {
   hasNodeModules: boolean;
   lockContent?: string | null;
   lockFileName: string;
+  forkLockContent?: string | null;
   payload?: {
     pnpmWorkspace?: { packages: string[] };
   };
@@ -201,13 +202,22 @@ export declare type Plugin<S extends Record<string, any>> = (
   setting?: S
 ) => Command;
 
+export declare type LockResolverState = {
+  project: Project;
+  current: Package;
+  forkLockContent?: string | null;
+};
+
 export declare type LockResolver = {
   core: 'npm' | 'yarn' | 'yarn2' | 'pnpm';
   filename: string;
   lockfileVersion?: number;
   relativePath?: string;
   formatter?: (source: string) => Promise<string>;
-  resolver: (project: Project, lockContent: string) => string | null;
+  resolver: (
+    lockContent: string,
+    info: LockResolverState
+  ) => [string | null, string | null];
 };
 
 declare function prompt<T extends Answers = Answers>(
