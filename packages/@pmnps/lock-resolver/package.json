@@ -1,0 +1,35 @@
+{
+  "private": false,
+  "name": "@pmnps/lock-resolver",
+  "version": "4.3.0",
+  "description": "This is a pmnps lockfile resolver set package.",
+  "author": "Jimmy.Harding",
+  "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-publish",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-publish"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "build": "node ./build.js"
+  },
+  "typings": "index.d.ts",
+  "dependencies": {
+    "@pmnps/tools": "^4.3.1"
+  },
+  "devDependencies": {
+    "typescript": "4.9.5"
+  },
+  "keywords": [
+    "js",
+    "monorepo",
+    "npm publish",
+    "npm workspaces",
+    "pmnps",
+    "pmnps plugin"
+  ]
+}

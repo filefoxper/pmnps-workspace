@@ -6,6 +6,7 @@ export type CommandSerial = string[];
 export interface PmnpsJson {
   ownRoot?: boolean | 'flexible' | 'independent';
   slot?: 'template';
+  forkTo?: string;
 }
 
 export interface PackageJson {
@@ -199,6 +200,15 @@ export declare type Command = {
 export declare type Plugin<S extends Record<string, any>> = (
   setting?: S
 ) => Command;
+
+export declare type LockResolver = {
+  core: 'npm' | 'yarn' | 'yarn2' | 'pnpm';
+  filename: string;
+  lockfileVersion?: number;
+  relativePath?: string;
+  formatter?: (source: string) => Promise<string>;
+  resolver: (project: Project, lockContent: string) => string | null;
+};
 
 declare function prompt<T extends Answers = Answers>(
   questions: QuestionCollection<T>,

@@ -3,6 +3,11 @@
     { "name": "<workspaces>", "path": "." },
     { "name": "@pmnps/tools", "path": "packages/@pmnps/tools" },
     {
+      "name": "@pmnps/resolver-package-lock",
+      "path": "packages/@pmnps/resolver-package-lock"
+    },
+    { "name": "@pmnps/resolver", "path": "packages/@pmnps/resolver" },
+    {
       "name": "@pmnps/plugin-vscode-workspace",
       "path": "packages/@pmnps/plugin-vscode-workspace"
     },
