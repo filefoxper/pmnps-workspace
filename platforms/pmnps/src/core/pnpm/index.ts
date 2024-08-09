@@ -29,21 +29,13 @@ function refreshWorkspace() {
     }
     return;
   }
-  function buildPlatformWorkspaces() {
-    return platforms
-      .filter(p => {
-        const or = p.packageJson?.pmnps?.ownRoot;
-        return !or || or === 'flexible';
-      })
-      .map(p => `platforms/${p.name}`);
-  }
   const scopeWorkspaces = scopes.map(s => `packages/${s.name}/*`);
   const forksWorkspaces = forks && forks.length ? ['forks/*'] : [];
   const workspaceSet = new Set([
     'packages/*',
     ...forksWorkspaces,
     ...scopeWorkspaces,
-    ...buildPlatformWorkspaces()
+    'platforms/*'
   ]);
   const workspaces = orderBy([...workspaceSet], [a => a], ['desc']);
   if (
@@ -57,55 +49,6 @@ function refreshWorkspace() {
     'pnpm-workspace.yaml',
     jsyaml.dump({ ...pnpmWorkspace, packages: workspaces })
   );
-}
-
-function refreshPackageWorkspaces() {
-  const { dynamicState, project } = hold.instance().getState();
-  const {
-    packages = [],
-    platforms = [],
-    scopes = [],
-    forks
-  } = project?.project ?? {};
-  const scopeWorkspaces = scopes.map(s => `../../packages/${s.name}/*`);
-  const forksWorkspaces = forks && forks.length ? ['../../forks/*'] : [];
-  const changes = [...packages, ...platforms];
-  const workspaces = [
-    '../../packages/*',
-    ...forksWorkspaces,
-    ...scopeWorkspaces
-  ];
-  const packs = changes.filter(p => p.type !== 'workspace');
-  const [ownRoots, parts] = partition(
-    packs,
-    p =>
-      p.packageJson.pmnps?.ownRoot === true ||
-      p.packageJson.pmnps?.ownRoot === 'independent'
-  );
-  parts.forEach(p => {
-    const dynamic = (dynamicState ?? {})[p.name];
-    const { pnpmWorkspace } = dynamic?.payload ?? {};
-    if (!pnpmWorkspace) {
-      return;
-    }
-    task.remove(path.join(p.path, 'pnpm-workspace.yaml'));
-  });
-
-  ownRoots.forEach(p => {
-    const dynamic = (dynamicState ?? {})[p.name];
-    const { pnpmWorkspace } = dynamic?.payload ?? {};
-    if (
-      pnpmWorkspace &&
-      pnpmWorkspace.packages.join(';') === workspaces.join(';')
-    ) {
-      return;
-    }
-    task.write(
-      p.path,
-      'pnpm-workspace.yaml',
-      jsyaml.dump({ ...pnpmWorkspace, packages: workspaces })
-    );
-  });
 }
 
 function installOwnRootPackage(
@@ -220,11 +163,7 @@ function computeShouldRemovePackNames(packs: Package[], cachePacks: Package[]) {
 }
 
 function refreshNpmrcByPackage(p: Package) {
-  if (
-    p.type !== 'workspace' &&
-    p.packageJson.pmnps?.ownRoot != true &&
-    p.packageJson.pmnps?.ownRoot != 'independent'
-  ) {
+  if (p.type !== 'workspace') {
     task.remove(path.join(p.path, '.npmrc'));
     return;
   }
@@ -238,12 +177,7 @@ function refreshNpmrcByPackage(p: Package) {
   const { npmrc } = data;
   const contents = (npmrc || '').split('\n');
   const contentSet = new Set(
-    [
-      ...contents,
-      `registry=${registry}`,
-      'link-workspace-packages=true',
-      'prefer-workspace-packages=true'
-    ].filter(r => r.trim())
+    [...contents, `registry=${registry}`].filter(r => r.trim())
   );
   const content = [...contentSet].join('\n');
   if (content === npmrc) {
@@ -368,7 +302,6 @@ export async function refreshByPnpm(option?: {
   refreshNpmrcs();
   cleanRemovedPacks();
   refreshWorkspace();
-  refreshPackageWorkspaces();
   const { packs: changes } = hold.instance().diffDepsPackages(force);
   refreshChanges(changes);
   const [changeRoots, otherChanges] = partition(
