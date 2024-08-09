@@ -1,13 +1,13 @@
 {
   "private": false,
   "name": "@pmnps/lock-resolver",
-  "version": "4.3.0",
+  "version": "4.3.1",
   "description": "This is a pmnps lockfile resolver set package.",
   "author": "Jimmy.Harding",
-  "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-publish",
+  "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/lock-resolver",
   "repository": {
     "type": "git",
-    "url": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-publish"
+    "url": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/lock-resolver"
   },
   "main": "dist/index.js",
   "files": [
