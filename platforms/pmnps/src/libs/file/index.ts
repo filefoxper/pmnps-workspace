@@ -169,6 +169,9 @@ async function rename(
 }
 
 async function rmdir(filePath: string): Promise<boolean> {
+  if(!fs.existsSync(filePath)){
+    return false;
+  }
   return new Promise((resolve, reject) => {
     fs.rm(filePath, { recursive: true }, err => {
       if (err) {

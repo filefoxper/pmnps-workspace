@@ -221,7 +221,7 @@ function mergePacks(
       const depKeys = dep ? Object.keys(dep) : [];
       const shouldUpdates = depKeys.filter(k => {
         const range = dep[k];
-        if (core === 'pnpm') {
+        if (core === 'pnpm' && packVersionMap.has(k)) {
           return range !== 'workspace:*';
         }
         const ve = packVersionMap.get(k);
@@ -233,7 +233,9 @@ function mergePacks(
       return Object.fromEntries(
         shouldUpdates.map(k => [
           k,
-          core === 'pnpm' ? 'workspace:*' : `^${packVersionMap.get(k)}`
+          core === 'pnpm' && packVersionMap.has(k)
+            ? 'workspace:*'
+            : `^${packVersionMap.get(k)}`
         ])
       );
     }

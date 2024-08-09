@@ -9,14 +9,20 @@ export async function remove(...tasks: Task[]) {
   const [cleanFiles, cleanDirs] = partition(cleans, t => t.fileType !== 'dir');
   await Promise.all(
     cleanFiles.map(async v => {
-      message.log(`remove: ${v.path}`);
-      return file.unlink(v.path);
+      const r = await file.unlink(v.path);
+      if (r) {
+        message.log(`remove file: ${v.path}`);
+      }
+      return r;
     })
   );
   await Promise.all(
     cleanDirs.map(async v => {
-      message.log(`remove: ${v.path}`);
-      return file.rmdir(v.path);
+      const r = await file.rmdir(v.path);
+      if (r) {
+        message.log(`remove dir: ${v.path}`);
+      }
+      return r;
     })
   );
 }
