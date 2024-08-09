@@ -42,7 +42,7 @@ async function collectPackages(
     c => c.trim().toLocaleLowerCase() === 'node_modules'
   );
   if (packageJsonFile && state.type !== 'workspace') {
-    const [packageJson, lockContent, pnpmWorkspace, forkLockContent] =
+    const [packageJson, lockContent, pnpmWorkspace, forkLockContent, npmrc] =
       await Promise.all([
         file.readJson<PackageJson>(path.join(filePath, packageJsonFile)),
         performanceFirst
@@ -55,7 +55,8 @@ async function collectPackages(
           : Promise.resolve(undefined),
         hasForkLockFile && !performanceFirst
           ? file.readFile(path.join(filePath, 'fork-lock.json'))
-          : Promise.resolve(undefined)
+          : Promise.resolve(undefined),
+        file.readFile(path.join(filePath, '.npmrc'))
       ]);
     if (!packageJson) {
       return [];
@@ -73,6 +74,7 @@ async function collectPackages(
       hasLockFile,
       hasNodeModules,
       forkLockContent,
+      npmrc,
       type: state.type
     };
     return [pack];
@@ -129,6 +131,7 @@ async function loadPackages(
       lockContent,
       lockFileName,
       forkLockContent,
+      npmrc,
       payload,
       ...rest
     } = p;
@@ -142,6 +145,7 @@ async function loadPackages(
       lockContent,
       lockFileName,
       forkLockContent,
+      npmrc,
       payload
     } = p;
     return {
@@ -151,6 +155,7 @@ async function loadPackages(
       lockContent,
       lockFileName,
       forkLockContent,
+      npmrc,
       payload
     };
   });

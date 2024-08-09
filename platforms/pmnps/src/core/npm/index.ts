@@ -4,6 +4,7 @@ import { hold } from '@/state';
 import { task } from '@/actions/task';
 import { SystemCommands } from '@/cmds';
 import { message, path } from '@/libs';
+import { DEFAULT_REGISTRY, INVALID_REGISTRY } from '@/constants';
 import type { ActionMessage } from '@/actions/task/type';
 import type { Package, PackageJson, PackageLockInfo } from '@pmnps/tools';
 
@@ -173,25 +174,7 @@ function refreshWorkspace() {
   });
 }
 
-function rewriteRegistry(content: string | null, registry: string | undefined) {
-  if (!registry && !content) {
-    return content;
-  }
-  if (!registry) {
-    return (content ?? '').replace(/registry\s*=\s*(.+)/, '');
-  }
-  if (!content) {
-    return `registry=${registry}`;
-  }
-  if (/registry=.*/.test(content)) {
-    return content.replace(/registry\s*=\s*(.+)/, `registry=${registry}`);
-  }
-  return (content ?? '').concat('\n' + `registry=${registry}`);
-}
-
 function refreshChangePackages(changes: Package[]) {
-  const { registry, forbiddenWorkspacePackageInstall } =
-    hold.instance().getState().config ?? {};
   const { scopes = [], forks } =
     hold.instance().getState().project?.project ?? {};
   const scopeWorkspaces = scopes.map(s => `../../packages/${s.name}/*`);
@@ -210,13 +193,6 @@ function refreshChangePackages(changes: Package[]) {
       p.packageJson.pmnps?.ownRoot === 'independent'
   );
   parts.forEach(p => {
-    if (forbiddenWorkspacePackageInstall) {
-      task.write(p.path, '.npmrc', content =>
-        content == null
-          ? rewriteRegistry(content, 'https://invalid.npm.com')
-          : null
-      );
-    }
     task.writePackage({
       ...p,
       packageJson: omit(p.packageJson, 'workspaces') as PackageJson
@@ -224,7 +200,6 @@ function refreshChangePackages(changes: Package[]) {
   });
 
   ownRoots.forEach(p => {
-    task.write(p.path, '.npmrc', content => rewriteRegistry(content, registry));
     const pj = p.packageJson;
     task.writePackage({ ...p, packageJson: { ...pj, workspaces } });
   });
@@ -333,6 +308,49 @@ function refreshPackageLock() {
   });
 }
 
+function refreshNpmrcByPackage(p: Package) {
+  const dynamicState = hold.instance().getState().dynamicState ?? {};
+  const { registry = DEFAULT_REGISTRY, forbiddenWorkspacePackageInstall } =
+    hold.instance().getState().config ?? {};
+  const data = dynamicState[p.name];
+  if (!data) {
+    return;
+  }
+  if (
+    p.type !== 'workspace' &&
+    p.packageJson.pmnps?.ownRoot != true &&
+    p.packageJson.pmnps?.ownRoot != 'independent'
+  ) {
+    if (!forbiddenWorkspacePackageInstall) {
+      task.remove(path.join(p.path, '.npmrc'));
+      return;
+    }
+    if (data.npmrc !== `registry=${INVALID_REGISTRY}`) {
+      task.write(p.path, '.npmrc', `registry=${INVALID_REGISTRY}`);
+    }
+    return;
+  }
+  const { npmrc } = data;
+  const contents = (npmrc || '').split('\n');
+  const contentSet = new Set(
+    [...contents, `registry=${registry}`].filter(r => r.trim())
+  );
+  const content = [...contentSet].join('\n');
+  if (content === npmrc) {
+    return;
+  }
+  task.write(p.path, '.npmrc', content);
+}
+
+function refreshNpmrcs() {
+  const { project } = hold.instance().getState();
+  const { workspace, packages = [], platforms = [] } = project?.project ?? {};
+  if (workspace == null) {
+    return;
+  }
+  [workspace, ...packages, ...platforms].forEach(p => refreshNpmrcByPackage(p));
+}
+
 export async function refreshByNpm(option?: {
   force?: boolean;
   install?: string;
@@ -346,6 +364,7 @@ export async function refreshByNpm(option?: {
         return d.trim();
       }) as ('package' | 'platform' | 'workspace')[])
     : undefined;
+  refreshNpmrcs();
   cleanRemovedPacks();
   refreshWorkspace();
   const { packs: changes } = hold.instance().diffDepsPackages(force);

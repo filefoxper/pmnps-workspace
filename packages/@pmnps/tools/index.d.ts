@@ -149,6 +149,7 @@ export declare type PackageLockInfo = {
   lockContent?: string | null;
   lockFileName: string;
   forkLockContent?: string | null;
+  npmrc?: string | null;
   payload?: {
     pnpmWorkspace?: { packages: string[] };
   };

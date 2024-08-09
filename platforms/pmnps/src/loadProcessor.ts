@@ -34,7 +34,8 @@ async function readProject(
     lockContent,
     hasNodeModules,
     pnpmWorkspace,
-    forkLockContent
+    forkLockContent,
+    npmrc
   ] = await Promise.all([
     file.readJson<PackageJson>(path.join(cwd, 'package.json')),
     performanceFirst
@@ -54,7 +55,8 @@ async function readProject(
       : Promise.resolve(undefined),
     performanceFirst
       ? Promise.resolve(undefined)
-      : file.readFile(path.join(cwd, 'fork-lock.json'))
+      : file.readFile(path.join(cwd, 'fork-lock.json')),
+    file.readFile(path.join(cwd, '.npmrc'))
   ]);
   if (!mainPackageJson) {
     return [undefined, undefined];
@@ -81,6 +83,7 @@ async function readProject(
       lockContent: lockContent || '',
       lockFileName,
       forkLockContent,
+      npmrc,
       payload: { pnpmWorkspace }
     }
   ];
