@@ -85,7 +85,8 @@ function listPackageDependencies(
   workspacePackageJson: PackageJson,
   packs: Package[]
 ) {
-  const { listPackageDependencies } = hold.instance().getState().config ?? {};
+  const { listPackageDependencies, core } =
+    hold.instance().getState().config ?? {};
   if (!listPackageDependencies) {
     return workspacePackageJson;
   }
@@ -99,7 +100,10 @@ function listPackageDependencies(
     }
     return {
       ...res,
-      dependencies: { ...dependencies, [name]: packageJson.version }
+      dependencies: {
+        ...dependencies,
+        [name]: core === 'pnpm' ? 'workspace:*' : packageJson.version
+      }
     };
   }, workspacePackageJson);
 }
@@ -198,6 +202,7 @@ function mergePacks(
   cachePacks: Package[],
   workspace: Package
 ) {
+  const { core } = hold.instance().getState().config ?? {};
   const packVersionMap = new Map(
     packs.map(p => [p.name, p.packageJson.version])
   );
@@ -216,10 +221,10 @@ function mergePacks(
       const depKeys = dep ? Object.keys(dep) : [];
       const shouldUpdates = depKeys.filter(k => {
         const range = dep[k];
-        const ve = packVersionMap.get(k);
-        if (range.startsWith('workspace:')) {
-          return ve && `workspace:${ve}` !== range;
+        if (core === 'pnpm' && packVersionMap.has(k)) {
+          return range !== 'workspace:*';
         }
+        const ve = packVersionMap.get(k);
         return ve && !versions.satisfies(ve, range);
       });
       if (!shouldUpdates.length) {
@@ -228,8 +233,8 @@ function mergePacks(
       return Object.fromEntries(
         shouldUpdates.map(k => [
           k,
-          dep[k] && dep[k].startsWith('workspace:')
-            ? `workspace:^${packVersionMap.get(k)}`
+          core === 'pnpm' && packVersionMap.has(k)
+            ? 'workspace:*'
             : `^${packVersionMap.get(k)}`
         ])
       );

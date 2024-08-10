@@ -35,21 +35,29 @@ async function collectPackages(
   const hasLockFile = children.some(
     c => c.trim().toLocaleLowerCase() === lockFileName
   );
+  const hasForkLockFile = children.some(
+    c => c.trim().toLocaleLowerCase() === 'fork-lock.json'
+  );
   const hasNodeModules = children.some(
     c => c.trim().toLocaleLowerCase() === 'node_modules'
   );
   if (packageJsonFile && state.type !== 'workspace') {
-    const [packageJson, lockContent, pnpmWorkspace] = await Promise.all([
-      file.readJson<PackageJson>(path.join(filePath, packageJsonFile)),
-      performanceFirst
-        ? Promise.resolve('')
-        : file.readFile(path.join(filePath, lockFileName)),
-      lockFileName.endsWith('.yaml')
-        ? file.readYaml<{ packages: string[] }>(
-            path.join(filePath, 'pnpm-workspace.yaml')
-          )
-        : Promise.resolve(undefined)
-    ]);
+    const [packageJson, lockContent, pnpmWorkspace, forkLockContent, npmrc] =
+      await Promise.all([
+        file.readJson<PackageJson>(path.join(filePath, packageJsonFile)),
+        performanceFirst
+          ? Promise.resolve('')
+          : file.readFile(path.join(filePath, lockFileName)),
+        lockFileName.endsWith('.yaml')
+          ? file.readYaml<{ packages: string[] }>(
+              path.join(filePath, 'pnpm-workspace.yaml')
+            )
+          : Promise.resolve(undefined),
+        hasForkLockFile && !performanceFirst
+          ? file.readFile(path.join(filePath, 'fork-lock.json'))
+          : Promise.resolve(undefined),
+        file.readFile(path.join(filePath, '.npmrc'))
+      ]);
     if (!packageJson) {
       return [];
     }
@@ -65,6 +73,8 @@ async function collectPackages(
       lockFileName,
       hasLockFile,
       hasNodeModules,
+      forkLockContent,
+      npmrc,
       type: state.type
     };
     return [pack];
@@ -81,6 +91,9 @@ async function collectPackages(
         }
         if (currentName === 'platforms') {
           return 'platform';
+        }
+        if (currentName === 'forks') {
+          return 'fork';
         }
         return state.type;
       })();
@@ -117,6 +130,8 @@ async function loadPackages(
       hasNodeModules,
       lockContent,
       lockFileName,
+      forkLockContent,
+      npmrc,
       payload,
       ...rest
     } = p;
@@ -129,6 +144,8 @@ async function loadPackages(
       hasLockFile,
       lockContent,
       lockFileName,
+      forkLockContent,
+      npmrc,
       payload
     } = p;
     return {
@@ -137,6 +154,8 @@ async function loadPackages(
       hasLockFile,
       lockContent,
       lockFileName,
+      forkLockContent,
+      npmrc,
       payload
     };
   });
@@ -238,8 +257,14 @@ function serial(project: Project): ProjectSerial {
 
 function parse(serial: ProjectSerial): Project {
   const { packageMap, project } = serial;
-  const { workspace, packages = [], platforms = [], scopes = [] } = project;
-  const packs = [workspace, ...packages, ...platforms].filter(
+  const {
+    workspace,
+    packages = [],
+    platforms = [],
+    forks = [],
+    scopes = []
+  } = project;
+  const packs = [workspace, ...packages, ...forks, ...platforms].filter(
     (p): p is Package => !!p
   );
   const packageRecord = keyBy(packs, 'name');

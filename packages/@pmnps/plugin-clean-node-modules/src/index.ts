@@ -15,15 +15,16 @@ const cleanNodeModules: Plugin<any> = function cleanNodeModules() {
     const { project } = state.getProject();
     const { workspace, platforms = [], packages = [] } = project;
     const packs = workspace ? [...packages, ...platforms, workspace] : [];
-    const map = new Map(packs.map(p => [p.name, p.path]));
+    const map = new Map(packs.map(p => [p.name, p]));
     const lockState = state.getLockState();
     Object.entries(lockState)
       .filter(([, v]) => v.hasNodeModules)
       .forEach(([k]) => {
-        const pathname = map.get(k);
-        if (!pathname) {
+        const pk = map.get(k);
+        if (!pk || pk.type === 'workspace') {
           return;
         }
+        const pathname = pk.path;
         state.task.remove(path.join(pathname, 'node_modules'), {
           fileType: 'dir'
         });

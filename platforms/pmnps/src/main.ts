@@ -14,6 +14,7 @@ import {
   setPackageAction,
   setPlatformAction
 } from '@/actions/set';
+import { forkAction } from '@/actions/fork';
 import { env, file, path, inquirer, message } from './libs';
 import { initialize, loadProject } from './processor';
 import type { Command, CommandOption } from '@pmnps/tools';
@@ -107,6 +108,16 @@ const setCommand = createPluginCommand('set')
   .args('package|platform', 'Enter a target type for setting')
   .action((state, argument) => setAction(argument));
 
+const forkCommand = createPluginCommand('fork')
+  .describe('Fork a package out')
+  .requireRefresh()
+  .args('package name', 'Enter a package name in node_modules for forking')
+  .option('to', 't', {
+    description: 'Enter a target path for package',
+    inputType: '<target path>'
+  })
+  .action((state, argument, option) => forkAction(argument, option));
+
 const noListCommands = [
   createPluginCommand('set:package')
     .describe('Set package detail.')
@@ -154,9 +165,11 @@ function actCommands(cmds: Command[]) {
 }
 
 const getCommands = () => {
-  const { projectType = 'monorepo' } = hold.instance().getState().config ?? {};
+  const { projectType = 'monorepo', core = 'npm' } =
+    hold.instance().getState().config ?? {};
   const canUseAlias = !!global.pmnps.px && global.pmnps.platform === 'darwin';
   const pmnpxCommands = canUseAlias ? [setAliasCommand] : [];
+  const coreCommands = core === 'npm' ? [forkCommand] : [];
   return actCommands(
     projectType === 'monorepo'
       ? ([
@@ -166,6 +179,7 @@ const getCommands = () => {
           createCommand,
           configCommand,
           setCommand,
+          ...coreCommands,
           ...noListCommands,
           ...pmnpxCommands
         ] as Command[])

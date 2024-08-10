@@ -10,6 +10,8 @@ export const DEV_DEPS = {
 
 export const DEFAULT_REGISTRY = 'https://registry.npmjs.org/';
 
+export const INVALID_REGISTRY = 'https://invalid.npm.com';
+
 export const SystemFormatter = {
   json: (c: string | null) =>
     Promise.resolve(format(c ?? '{}', { parser: 'json' })),

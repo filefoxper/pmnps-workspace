@@ -257,9 +257,6 @@ export async function configAction(): Promise<ActionMessage> {
     };
   }
   const cwd = path.cwd();
-  if (nextConfig.registry !== config?.registry) {
-    task.write(cwd, '.npmrc', `registry=${nextConfig.registry}`);
-  }
   if (!nextConfig.usePerformanceFirst || !equal(nextConfig, config)) {
     task.write(cwd, CONF_NAME, JSON.stringify(nextConfig));
   }

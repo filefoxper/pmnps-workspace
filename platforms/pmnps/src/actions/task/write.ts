@@ -42,13 +42,16 @@ async function copydirs(tasks: WriteTask[]) {
   const [copyTasks, createTasks] = partition(tasks, t => !!t.dirSource);
   const map = new Map(copyTasks.map(t => [t.path, t]));
   await Promise.all(
-    [...map.keys()].map(p => {
+    [...map.keys()].map(async p => {
       const t = map.get(p);
       if (!t || !t.dirSource) {
-        return Promise.resolve(undefined);
+        return undefined;
       }
-      const { dirSource } = t;
-      return file.copyFolder(dirSource, t.path);
+      const { dirSource, option } = t;
+      const r = await file.copyFolder(dirSource, t.path);
+      const finish = option?.onFinish ?? (() => Promise.resolve(undefined));
+      await finish();
+      return r;
     })
   );
   return createTasks.filter(t => !map.has(t.path));
