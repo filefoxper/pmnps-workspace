@@ -112,6 +112,10 @@ const forkCommand = createPluginCommand('fork')
   .describe('Fork a package out')
   .requireRefresh()
   .args('package name', 'Enter a package name in node_modules for forking')
+  .option('to', 't', {
+    description: 'Enter a target path for package',
+    inputType: '<target path>'
+  })
   .action((state, argument) => forkAction(argument));
 
 const noListCommands = [
