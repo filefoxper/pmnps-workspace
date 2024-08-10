@@ -162,15 +162,23 @@ function resolveForks(
   if (!newForks.length && !staleForkNames.length) {
     return { lockJson, change: false };
   }
-  const newForkMap = new Map(newForks.map(f => [pathForkName(f.name), f]));
+  const newForkMap = new Map(
+    newForks.map(f => [
+      (function getForkTo() {
+        const { packageJson } = f;
+        return packageJson.pmnps?.forkTo;
+      })(),
+      f
+    ])
+  );
   const entries = Object.entries(packagesObj);
   const processes = entries.map(
-    ([k, v]): [string, { value: any; removed?: boolean }] => {
+    ([k, v]): [string, { value: any; removed?: string }] => {
       const fork = newForkMap.get(k);
       if (!fork) {
         return [k, { value: v }];
       }
-      return [k, { value: v, removed: true }];
+      return [k, { value: v, removed: fork.name }];
     }
   );
   const newEntries = processes
@@ -183,14 +191,20 @@ function resolveForks(
       return [workName, independentName];
     })
   );
+  const forkLockEntries = Object.entries(forkLockObj);
+  const forkBakMap = new Map(
+    forkLockEntries.map(([k, v]): [string, any] => {
+      const [forkName, actualKey] = k.split(':');
+      return [forkName, { [actualKey]: v }];
+    })
+  );
   const backLockEntries = staleForkNames
     .map(name => {
-      const bakKey = pathForkName(name);
-      const bakValue = forkLockObj[bakKey];
+      const bakValue = forkBakMap.get(name);
       if (bakValue == null) {
         return undefined;
       }
-      return [bakKey, bakValue];
+      return [name, bakValue];
     })
     .filter((e): e is [string, any] => !!e);
   const processedEntries = newEntries
@@ -204,7 +218,7 @@ function resolveForks(
   const newPackages = Object.fromEntries(processedEntries);
   const removedEntries = processes
     .filter(([k, v]) => v.removed)
-    .map(([k, v]) => [k, v.value]);
+    .map(([k, v]) => [`${v.removed}:${k}`, v.value]);
   return {
     lockJson: {
       ...lockJson,

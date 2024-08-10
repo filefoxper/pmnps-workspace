@@ -5,9 +5,9 @@ import type { ActionMessage } from '@/actions/task/type';
 
 export async function forkAction(
   args?: string | null,
-  options?: { to?: string }
+  options?: { to?: string; omits?: string }
 ): Promise<ActionMessage> {
-  const { to } = options ?? {};
+  const { to, omits } = options ?? {};
   let pathname = args;
   if (pathname == null) {
     const { pack } = await inquirer.prompt([
@@ -54,14 +54,8 @@ export async function forkAction(
     .map(p => p.trim());
   const source = path.join(cwd, ...pathParts);
   task.fork(
-    [
-      'forks',
-      targetPathname
-        .split('/')
-        .filter(s => s.trim())
-        .join('.')
-    ],
-    { source }
+    targetPathname.split('/').filter(s => s.trim()),
+    { source, omits: omits ? omits.split(',') : undefined }
   );
   return {
     type: 'success',

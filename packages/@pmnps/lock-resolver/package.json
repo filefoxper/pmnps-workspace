@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "@pmnps/lock-resolver",
-  "version": "4.3.1",
+  "version": "4.3.2",
   "description": "This is a pmnps lockfile resolver set package.",
   "author": "Jimmy.Harding",
   "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/lock-resolver",

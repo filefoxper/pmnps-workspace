@@ -2,7 +2,7 @@ import process from 'process';
 import { format as formatPackageJson } from 'prettier-package-json';
 import { file, message, path } from '@/libs';
 import { hold } from '@/state';
-import { equal, omitBy, orderBy, partition } from '@/libs/polyfill';
+import { equal, omit, omitBy, orderBy, partition } from '@/libs/polyfill';
 import { CONF_NAME, SystemFormatter } from '@/constants';
 import { projectSupport } from '@/support';
 import { SystemCommands } from '@/cmds';
@@ -409,12 +409,15 @@ export const task = {
       relative?: boolean;
       source?: string;
       command?: CommandSerial[];
+      omits?: string[];
     }
   ) {
     const cwd = path.cwd();
-    const { command, source } = config ?? {};
-    const pathname = path.join(cwd, ...p);
-    const forkName = p[1];
+    const { command, source, omits: ot = ['devDependencies'] } = config ?? {};
+    const ends = p.slice(p.length - 2);
+    const packageName = ends[0].startsWith('@') ? ends.join('/') : ends[1];
+    const pathname = path.join(cwd, 'forks', ...packageName.split('/'));
+    const pmnpsForkTo = p.join('/');
     const t: Task = {
       type: 'write',
       fileType: 'dir',
@@ -426,18 +429,38 @@ export const task = {
         {
           command,
           onFinish: async () => {
+            const pmnps = { forkTo: pmnpsForkTo };
             const packagePath = path.join(pathname, 'package.json');
+            task.write(pathname, 'package.json', d => {
+              if (d == null) {
+                return null;
+              }
+              const pjData = JSON.parse(d);
+              const pjDataWithPmnps = { ...pjData, pmnps };
+              if (ot.length) {
+                return JSON.stringify(omit(pjDataWithPmnps, ...ot));
+              }
+              return JSON.stringify(pjDataWithPmnps);
+            });
             const packageJson = await file.readJson<PackageJson>(packagePath);
             if (packageJson == null) {
               return;
             }
+            const pjdWithOmit = ot
+              ? omit(packageJson, ...(ot as 'devDependencies'[]))
+              : packageJson;
+            const pjdWithPmnps = { ...pjdWithOmit, pmnps };
+            const content = await SystemFormatter.packageJson(
+              JSON.stringify(pjdWithOmit)
+            );
+            await file.writeFile(packagePath, content);
             writePackageToState(cwd, {
-              name: forkName || '',
+              name: packageName || '',
               paths: p,
               path: pathname,
               type: 'fork',
               packageJsonFileName: 'package.json',
-              packageJson
+              packageJson: pjdWithPmnps
             });
           }
         },
