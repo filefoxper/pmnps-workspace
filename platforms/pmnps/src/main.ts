@@ -116,7 +116,7 @@ const forkCommand = createPluginCommand('fork')
     description: 'Enter a target path for package',
     inputType: '<target path>'
   })
-  .action((state, argument) => forkAction(argument));
+  .action((state, argument, option) => forkAction(argument, option));
 
 const noListCommands = [
   createPluginCommand('set:package')
