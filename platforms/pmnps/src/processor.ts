@@ -24,14 +24,18 @@ function checkRuntimeEnv(): string | null {
 export async function loadProject(withCache?: boolean) {
   const cwd = path.cwd();
   const { config } = hold.instance().getState();
+  const commands = hold.instance().getCommands();
+  const spaces = commands
+    .map(c => c.requireSpace)
+    .filter((s): s is string => !!s);
   if (withCache) {
     const [projectState, cacheProjectState] = await Promise.all([
-      loadData(cwd, config),
+      loadData(cwd, spaces, config),
       loadCacheData(cwd)
     ]);
     return { ...projectState, ...cacheProjectState };
   }
-  return loadData(cwd, config);
+  return loadData(cwd, spaces, config);
 }
 
 async function loadPlugins(

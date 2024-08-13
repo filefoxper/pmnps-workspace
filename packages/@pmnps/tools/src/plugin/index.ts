@@ -6,6 +6,7 @@ export function createPluginCommand(name: string) {
     name: string;
     lockResolver?: LockResolver;
     requireRefresh?: boolean;
+    requireSpace?: string;
     require: RequireFn | undefined;
     required: Promise<any> | undefined;
     options: CommandOption[];
@@ -40,6 +41,10 @@ export function createPluginCommand(name: string) {
     },
     requireRefresh() {
       command.requireRefresh = true;
+      return pluginSlot;
+    },
+    requireSpace(space: string) {
+      command.requireSpace = space;
       return pluginSlot;
     },
     option(

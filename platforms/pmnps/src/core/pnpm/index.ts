@@ -167,9 +167,9 @@ function cleanRemovedPacks() {
   const {
     packages: cachePackages = [],
     platforms: cachePlatforms = [],
-    customized: cacheForks = []
+    customized: cacheCustomized = []
   } = cacheProject?.project ?? {};
-  const cachePacks = [...cachePackages, ...cacheForks, ...cachePlatforms];
+  const cachePacks = [...cachePackages, ...cacheCustomized, ...cachePlatforms];
   if (project == null || project.project == null || !cachePacks.length) {
     return;
   }

@@ -85,6 +85,7 @@ export type Command = {
   name: string;
   list?: boolean;
   requireRefresh?: boolean;
+  requireSpace?: string;
   lockResolver?: LockResolver;
   require?: RequireFn;
   options?: CommandOption[];

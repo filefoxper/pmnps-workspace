@@ -95,7 +95,7 @@ export declare type CommandOption = {
 export declare type LockResolverState = {
   project: Project;
   current: Package;
-  lockBak?: LockBak;
+  lockBak?: LockBak | null;
 };
 
 export declare type LockBak = Record<string, any>;
@@ -178,6 +178,7 @@ export declare type PackageLockInfo = {
   npmrc?: string | null;
   payload?: {
     pnpmWorkspace?: { packages: string[] };
+    lockBak?: LockBak | null;
   };
 };
 
@@ -224,6 +225,7 @@ export declare type Command = {
   lockResolver?: LockResolver;
   args?: { param: string; description: string };
   requireRefresh?: boolean;
+  requireSpace?: string;
   filter?: (config: Config) => boolean;
 };
 
@@ -243,6 +245,7 @@ declare type PluginSlot = {
   list(l: boolean): PluginSlot;
   args(param: string, description: string): PluginSlot;
   requireRefresh(): PluginSlot;
+  requireSpace(space: string): PluginSlot;
   resolveLock(resolver: LockResolver): PluginSlot;
   option(
     optionName: string,

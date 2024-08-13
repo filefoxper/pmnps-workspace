@@ -199,6 +199,8 @@ const fork: Plugin<any> = function fork() {
       return core == null || core === 'npm';
     })
     .resolveLock(lockResolver)
+    .requireRefresh()
+    .requireSpace('forks')
     .args(
       '<package location>',
       'Enter the source package location for forking.'
@@ -267,8 +269,7 @@ const fork: Plugin<any> = function fork() {
       );
       return {
         type: 'success',
-        content: `Fork package "${pathname}" success`,
-        requireRefresh: true
+        content: `Fork package "${pathname}" success`
       };
     });
 };

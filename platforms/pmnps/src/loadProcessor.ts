@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { file, path } from '@/libs';
-import { projectSupport } from '@/support';
+import { getLockBakName, getLockName, projectSupport } from '@/support';
 import { groupBy, omitBy, orderBy, partition } from '@/libs/polyfill';
 import type {
   PackageJson,
@@ -13,6 +13,7 @@ import type { State } from '@/types';
 
 async function readProject(
   cwd: string,
+  spaces: string[],
   config?: Config
 ): Promise<[undefined | Project, Record<string, PackageLockInfo> | undefined]> {
   const {
@@ -20,35 +21,35 @@ async function readProject(
     usePerformanceFirst: performanceFirst,
     projectType = 'monorepo'
   } = config ?? {};
-  const lockFileName = (function computeLockFileName() {
-    if (core === 'yarn' || core === 'yarn2') {
-      return 'yarn.lock';
-    }
-    if (core === 'pnpm') {
-      return 'pnpm-lock.yaml';
-    }
-    return 'package-lock.json';
-  })();
-  const [mainPackageJson, lockContent, hasNodeModules, pnpmWorkspace, npmrc] =
-    await Promise.all([
-      file.readJson<PackageJson>(path.join(cwd, 'package.json')),
-      performanceFirst
-        ? (new Promise(resolve => {
-            if (fs.existsSync(path.join(cwd, lockFileName))) {
-              resolve('');
-            } else {
-              resolve(null);
-            }
-          }) as Promise<string | null>)
-        : file.readFile(path.join(cwd, lockFileName)),
-      file.isDirectory(path.join(cwd, 'node_modules')),
-      core === 'pnpm'
-        ? file.readYaml<{ packages: string[] }>(
-            path.join(cwd, 'pnpm-workspace.yaml')
-          )
-        : Promise.resolve(undefined),
-      file.readFile(path.join(cwd, '.npmrc'))
-    ]);
+  const spaceSet = new Set(spaces);
+  const lockFileName = getLockName(core);
+  const [
+    mainPackageJson,
+    lockContent,
+    hasNodeModules,
+    pnpmWorkspace,
+    npmrc,
+    lockBak
+  ] = await Promise.all([
+    file.readJson<PackageJson>(path.join(cwd, 'package.json')),
+    performanceFirst
+      ? (new Promise(resolve => {
+          if (fs.existsSync(path.join(cwd, lockFileName))) {
+            resolve('');
+          } else {
+            resolve(null);
+          }
+        }) as Promise<string | null>)
+      : file.readFile(path.join(cwd, lockFileName)),
+    file.isDirectory(path.join(cwd, 'node_modules')),
+    core === 'pnpm'
+      ? file.readYaml<{ packages: string[] }>(
+          path.join(cwd, 'pnpm-workspace.yaml')
+        )
+      : Promise.resolve(undefined),
+    file.readFile(path.join(cwd, '.npmrc')),
+    file.readJson(path.join(cwd, getLockBakName(core)))
+  ]);
   if (!mainPackageJson) {
     return [undefined, undefined];
   }
@@ -62,7 +63,7 @@ async function readProject(
     type: 'workspace'
   };
   const [packsInfo, scopes] = await Promise.all([
-    projectSupport.loadPackages(cwd, lockFileName, performanceFirst),
+    projectSupport.loadPackages(cwd, core, spaceSet, performanceFirst),
     projectSupport.loadScopes(cwd)
   ]);
   const { packs: children, dynamicStates } = packsInfo;
@@ -75,7 +76,7 @@ async function readProject(
       lockContent: lockContent || '',
       lockFileName,
       npmrc,
-      payload: { pnpmWorkspace }
+      payload: { pnpmWorkspace, lockBak }
     }
   ];
   const dynamicState = Object.fromEntries(
@@ -119,7 +120,7 @@ async function readProject(
   ];
 }
 
-export async function loadData(cwd: string, config?: Config) {
-  const [project, dynamicState] = await readProject(cwd, config);
+export async function loadData(cwd: string, spaces: string[], config?: Config) {
+  const [project, dynamicState] = await readProject(cwd, spaces, config);
   return { project, dynamicState } as State;
 }

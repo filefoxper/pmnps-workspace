@@ -7,13 +7,35 @@ import type {
   Package,
   PackageJson,
   Scope,
-  ProjectType
+  ProjectType,
+  Config
 } from '@pmnps/tools';
 import type { ProjectSerial } from '@/types';
 
+export const getLockBakName = function getLockBakName(core: Config['core']) {
+  if (core === 'yarn' || core === 'yarn2') {
+    return 'yarn-lock-bak.json';
+  }
+  if (core === 'pnpm') {
+    return 'pnpm-lock-bak.json';
+  }
+  return 'package-lock-bak.json';
+};
+
+export function getLockName(core: Config['core']) {
+  if (core === 'yarn' || core === 'yarn2') {
+    return 'yarn.lock';
+  }
+  if (core === 'pnpm') {
+    return 'pnpm-lock.yaml';
+  }
+  return 'package-lock.json';
+}
+
 async function collectPackages(
   filePath: string,
-  lockFileName: string,
+  core: Config['core'],
+  spaceSet: Set<string>,
   performanceFirst: boolean | undefined,
   state: {
     type: PackageType;
@@ -27,6 +49,7 @@ async function collectPackages(
     dirnames: []
   }
 ) {
+  const lockFileName = getLockName(core);
   if (state.level >= 4) {
     return [];
   }
@@ -41,25 +64,24 @@ async function collectPackages(
   const hasLockFile = children.some(
     c => c.trim().toLocaleLowerCase() === lockFileName
   );
-  const hasForkLockFile = children.some(
-    c => c.trim().toLocaleLowerCase() === 'fork-lock.json'
-  );
   const hasNodeModules = children.some(
     c => c.trim().toLocaleLowerCase() === 'node_modules'
   );
   if (packageJsonFile && state.type !== 'workspace') {
-    const [packageJson, lockContent, pnpmWorkspace, npmrc] = await Promise.all([
-      file.readJson<PackageJson>(path.join(filePath, packageJsonFile)),
-      performanceFirst
-        ? Promise.resolve('')
-        : file.readFile(path.join(filePath, lockFileName)),
-      lockFileName.endsWith('.yaml')
-        ? file.readYaml<{ packages: string[] }>(
-            path.join(filePath, 'pnpm-workspace.yaml')
-          )
-        : Promise.resolve(undefined),
-      file.readFile(path.join(filePath, '.npmrc'))
-    ]);
+    const [packageJson, lockContent, pnpmWorkspace, npmrc, lockBak] =
+      await Promise.all([
+        file.readJson<PackageJson>(path.join(filePath, packageJsonFile)),
+        performanceFirst
+          ? Promise.resolve('')
+          : file.readFile(path.join(filePath, lockFileName)),
+        lockFileName.endsWith('.yaml')
+          ? file.readYaml<{ packages: string[] }>(
+              path.join(filePath, 'pnpm-workspace.yaml')
+            )
+          : Promise.resolve(undefined),
+        file.readFile(path.join(filePath, '.npmrc')),
+        file.readJson(path.join(filePath, getLockBakName(core)))
+      ]);
     if (!packageJson) {
       return [];
     }
@@ -72,7 +94,7 @@ async function collectPackages(
       packageJson,
       packageJsonFileName: packageJsonFile,
       lockContent,
-      payload: { pnpmWorkspace },
+      payload: { pnpmWorkspace, lockBak },
       lockFileName,
       hasLockFile,
       hasNodeModules,
@@ -94,7 +116,10 @@ async function collectPackages(
         if (currentName === 'platforms') {
           return 'platform';
         }
-        return 'customized';
+        if (spaceSet.has(currentName)) {
+          return 'customized';
+        }
+        return state.type;
       })();
       const nextState = {
         ...state,
@@ -103,9 +128,13 @@ async function collectPackages(
         level: state.level + 1,
         dirnames: [...state.dirnames, c]
       };
+      if (nextState.type === 'workspace') {
+        return undefined;
+      }
       return collectPackages(
         path.join(filePath, currentName),
-        lockFileName,
+        core,
+        spaceSet,
         performanceFirst,
         nextState
       );
@@ -117,10 +146,11 @@ async function collectPackages(
 
 async function loadPackages(
   cwd: string,
-  lockFileName: string,
+  core: Config['core'],
+  spaceSet: Set<string>,
   performanceFirst?: boolean
 ) {
-  const packs = await collectPackages(cwd, lockFileName, performanceFirst);
+  const packs = await collectPackages(cwd, core, spaceSet, performanceFirst);
   const ps = packs.map((p): Package => {
     const {
       hasLockFile,
@@ -255,10 +285,10 @@ function parse(serial: ProjectSerial): Project {
     workspace,
     packages = [],
     platforms = [],
-    forks = [],
+    customized = [],
     scopes = []
   } = project;
-  const packs = [workspace, ...packages, ...forks, ...platforms].filter(
+  const packs = [workspace, ...packages, ...customized, ...platforms].filter(
     (p): p is Package => !!p
   );
   const packageRecord = keyBy(packs, 'name');

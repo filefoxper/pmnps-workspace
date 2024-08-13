@@ -3,7 +3,7 @@ import { packageLock2 } from '@pmnps/lock-resolver';
 import { hold } from '@/state';
 import { task } from '@/actions/task';
 import { equal, groupBy, keyBy, omit, omitBy, orderBy } from '@/libs/polyfill';
-import { projectSupport } from '@/support';
+import { getLockBakName, projectSupport } from '@/support';
 import { message } from '@/libs';
 import { getPluginState } from '@/plugin';
 import { refreshByYarn } from '@/core/yarn';
@@ -16,7 +16,8 @@ import type {
   Package,
   Command,
   LockResolver,
-  LockResolverState
+  LockResolverState,
+  LockBak
 } from '@pmnps/tools';
 
 function differ(
@@ -387,16 +388,22 @@ function refreshLock(lockResolvers: LockResolver[], parameters?: string) {
   const lockResolverFn = function lockResolverFn(
     lockContent: string,
     info: LockResolverState
-  ): [string, boolean] {
+  ): [string, null | LockBak[]] {
     const resolverFns = allResolvers.map(r => r.resolver);
-    return resolverFns.reduce(
+    const [data, baks] = resolverFns.reduce(
       (r, currentValue) => {
         const [content, changed] = r;
         const [res, change] = currentValue(content, info);
-        return [res, changed || change] as [string, boolean];
+        const currentBak =
+          change === false ? null : change === true ? [] : [change];
+        return [
+          res,
+          changed ? [...changed, ...(currentBak || [])] : currentBak
+        ] as [string, null | LockBak[]];
       },
-      [lockContent, false] as [string, boolean]
+      [lockContent, null] as [string, null | LockBak[]]
     );
+    return [data, baks];
   };
   const locks = Object.entries(dynamicState)
     .map(([name, value]): { name: string } & PackageLockInfo => ({
@@ -416,20 +423,30 @@ function refreshLock(lockResolvers: LockResolver[], parameters?: string) {
       return;
     }
     const { path: pathname, type, packageJson } = current;
-    const [res, changed] = lockResolverFn(lockContent, {
+    const ds = dynamicState[current.name];
+    const [res, baks] = lockResolverFn(lockContent, {
       project,
-      current
+      current,
+      lockBak: ds.payload?.lockBak
     });
-    if (res == null || pathname == null || !changed) {
+    if (res == null || pathname == null || !baks) {
       return;
     }
     task.write(pathname, lockFileName, res);
+    if (baks.length) {
+      task.write(
+        pathname,
+        getLockBakName(core),
+        baks.reduce((r, c) => {
+          return { ...r, ...c };
+        }, {} as LockBak)
+      );
+    }
     if (
       type === 'workspace' ||
       packageJson.pmnps?.ownRoot === true ||
       packageJson.pmnps?.ownRoot === 'independent'
     ) {
-      const ds = dynamicState[current.name];
       task.execute(
         SystemCommands.install({ ...ds, isPoint: false, parameters }),
         pathname,
