@@ -6,7 +6,8 @@ import type {
   Config,
   ActionState,
   LockResolver,
-  LockResolverState
+  LockResolverState,
+  PackageJson
 } from '@pmnps/tools';
 
 type Query = {
@@ -167,26 +168,30 @@ function writeFork(
     source,
     onFinish: async () => {
       const pmnps = { forkTo: pmnpsForkTo };
-      state.task.write(pathname, 'package.json', d => {
-        if (d == null) {
-          return null;
-        }
-        const pjData = JSON.parse(d);
-        const pjdWithOmit = ot
-          ? omit(pjData, ...(ot as 'devDependencies'[]))
-          : pjData;
-        const pjDataWithPmnps = { ...pjdWithOmit, pmnps };
-        state.task.writePackageToState(cwd, {
-          name: packageName || '',
-          paths: p,
-          path: pathname,
-          type: 'customized',
-          category: 'forks',
-          packageJsonFileName: 'package.json',
-          packageJson: pjDataWithPmnps
-        });
-        return JSON.stringify(pjDataWithPmnps);
+      const pjData = await state.reader.readJson<PackageJson>(
+        path.join(pathname, 'package.json')
+      );
+      if (pjData == null) {
+        return;
+      }
+      const pjdWithOmit = ot
+        ? (omit(pjData, ...(ot as 'devDependencies'[])) as PackageJson)
+        : pjData;
+      const pjDataWithPmnps: PackageJson = { ...pjdWithOmit, pmnps };
+      state.task.writePackageToState(cwd, {
+        name: packageName || '',
+        paths: p,
+        path: pathname,
+        type: 'customized',
+        category: 'forks',
+        packageJsonFileName: 'package.json',
+        packageJson: pjDataWithPmnps
       });
+      state.task.write(
+        pathname,
+        'package.json',
+        JSON.stringify(pjDataWithPmnps)
+      );
     }
   });
 }
@@ -265,7 +270,7 @@ const fork: Plugin<any> = function fork() {
       writeFork(
         state,
         targetPathname.split('/').filter(s => s.trim()),
-        { source, omits: omits ? omits.split(',') : undefined }
+        { source, omits: omits ? omits.split(',') : ['devDependencies'] }
       );
       return {
         type: 'success',
