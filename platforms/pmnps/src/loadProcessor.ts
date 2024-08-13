@@ -29,40 +29,32 @@ async function readProject(
     }
     return 'package-lock.json';
   })();
-  const [
-    mainPackageJson,
-    lockContent,
-    hasNodeModules,
-    pnpmWorkspace,
-    forkLockContent,
-    npmrc
-  ] = await Promise.all([
-    file.readJson<PackageJson>(path.join(cwd, 'package.json')),
-    performanceFirst
-      ? (new Promise(resolve => {
-          if (fs.existsSync(path.join(cwd, lockFileName))) {
-            resolve('');
-          } else {
-            resolve(null);
-          }
-        }) as Promise<string | null>)
-      : file.readFile(path.join(cwd, lockFileName)),
-    file.isDirectory(path.join(cwd, 'node_modules')),
-    core === 'pnpm'
-      ? file.readYaml<{ packages: string[] }>(
-          path.join(cwd, 'pnpm-workspace.yaml')
-        )
-      : Promise.resolve(undefined),
-    performanceFirst
-      ? Promise.resolve(undefined)
-      : file.readFile(path.join(cwd, 'fork-lock.json')),
-    file.readFile(path.join(cwd, '.npmrc'))
-  ]);
+  const [mainPackageJson, lockContent, hasNodeModules, pnpmWorkspace, npmrc] =
+    await Promise.all([
+      file.readJson<PackageJson>(path.join(cwd, 'package.json')),
+      performanceFirst
+        ? (new Promise(resolve => {
+            if (fs.existsSync(path.join(cwd, lockFileName))) {
+              resolve('');
+            } else {
+              resolve(null);
+            }
+          }) as Promise<string | null>)
+        : file.readFile(path.join(cwd, lockFileName)),
+      file.isDirectory(path.join(cwd, 'node_modules')),
+      core === 'pnpm'
+        ? file.readYaml<{ packages: string[] }>(
+            path.join(cwd, 'pnpm-workspace.yaml')
+          )
+        : Promise.resolve(undefined),
+      file.readFile(path.join(cwd, '.npmrc'))
+    ]);
   if (!mainPackageJson) {
     return [undefined, undefined];
   }
   const mainPackage: Package = {
     name: mainPackageJson.name ?? '',
+    category: null,
     path: cwd,
     paths: null,
     packageJson: mainPackageJson,
@@ -82,7 +74,6 @@ async function readProject(
       hasNodeModules,
       lockContent: lockContent || '',
       lockFileName,
-      forkLockContent,
       npmrc,
       payload: { pnpmWorkspace }
     }
@@ -91,9 +82,9 @@ async function readProject(
     dynamicStateArray.map((d): [string, PackageLockInfo] => [d.name, d])
   );
   const [allPks, pls] = partition(children, c => c.type !== 'platform');
-  const [pks, fks] = partition(allPks, c => c.type === 'package');
+  const [pks, cks] = partition(allPks, c => c.type === 'package');
   const packages = orderBy(pks, ['name'], ['desc']);
-  const forks = orderBy(fks, ['name'], ['desc']);
+  const customized = orderBy(cks, ['name'], ['desc']);
   const platforms = orderBy(pls, ['name'], ['desc']);
   const childMap = Object.fromEntries(children.map(c => [c.path, c]));
   const scopePackageGroup = groupBy(packages, p => {
@@ -112,7 +103,13 @@ async function readProject(
       type: projectType,
       packageMap: { [cwd]: mainPackage, ...childMap },
       project: omitBy(
-        { workspace: mainPackage, packages, forks, platforms, scopes: sps },
+        {
+          workspace: mainPackage,
+          packages,
+          customized,
+          platforms,
+          scopes: sps
+        },
         (value, key) => {
           return value == null || (Array.isArray(value) && !value.length);
         }

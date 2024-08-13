@@ -1,4 +1,4 @@
-import type { PackageType } from '@pmnps/tools';
+import type { LockResolver, PackageType } from '@pmnps/tools';
 
 export type CommandFile =
   | 'install'
@@ -57,6 +57,6 @@ export type ActionMessage<P = unknown> = {
   type: 'success' | 'failed' | 'warning';
   content: string;
   payload?: P;
-  requireRefresh?: boolean;
+  requireRefresh?: boolean | LockResolver;
   children?: ActionMessage<any>[];
 };

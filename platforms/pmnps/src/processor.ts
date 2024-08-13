@@ -64,8 +64,7 @@ function loadTemplates(
   const factory = requireFactory(cwd, performanceFirst);
   return Promise.all(
     templates.map(async name => {
-      const { module: templateModule } =
-        await factory.require(name);
+      const { module: templateModule } = await factory.require(name);
       if (!templateModule || !templateModule.default) {
         return null;
       }

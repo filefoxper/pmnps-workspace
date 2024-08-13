@@ -14,6 +14,7 @@
       "name": "@pmnps/plugin-publish",
       "path": "packages/@pmnps/plugin-publish"
     },
+    { "name": "@pmnps/plugin-fork", "path": "packages/@pmnps/plugin-fork" },
     {
       "name": "@pmnps/plugin-clean-node-modules",
       "path": "packages/@pmnps/plugin-clean-node-modules"

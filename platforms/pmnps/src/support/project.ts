@@ -15,8 +15,14 @@ async function collectPackages(
   filePath: string,
   lockFileName: string,
   performanceFirst: boolean | undefined,
-  state: { type: PackageType; level: number; dirnames: string[] } = {
+  state: {
+    type: PackageType;
+    category: string | null;
+    level: number;
+    dirnames: string[];
+  } = {
     type: 'workspace',
+    category: null,
     level: 0,
     dirnames: []
   }
@@ -42,22 +48,18 @@ async function collectPackages(
     c => c.trim().toLocaleLowerCase() === 'node_modules'
   );
   if (packageJsonFile && state.type !== 'workspace') {
-    const [packageJson, lockContent, pnpmWorkspace, forkLockContent, npmrc] =
-      await Promise.all([
-        file.readJson<PackageJson>(path.join(filePath, packageJsonFile)),
-        performanceFirst
-          ? Promise.resolve('')
-          : file.readFile(path.join(filePath, lockFileName)),
-        lockFileName.endsWith('.yaml')
-          ? file.readYaml<{ packages: string[] }>(
-              path.join(filePath, 'pnpm-workspace.yaml')
-            )
-          : Promise.resolve(undefined),
-        hasForkLockFile && !performanceFirst
-          ? file.readFile(path.join(filePath, 'fork-lock.json'))
-          : Promise.resolve(undefined),
-        file.readFile(path.join(filePath, '.npmrc'))
-      ]);
+    const [packageJson, lockContent, pnpmWorkspace, npmrc] = await Promise.all([
+      file.readJson<PackageJson>(path.join(filePath, packageJsonFile)),
+      performanceFirst
+        ? Promise.resolve('')
+        : file.readFile(path.join(filePath, lockFileName)),
+      lockFileName.endsWith('.yaml')
+        ? file.readYaml<{ packages: string[] }>(
+            path.join(filePath, 'pnpm-workspace.yaml')
+          )
+        : Promise.resolve(undefined),
+      file.readFile(path.join(filePath, '.npmrc'))
+    ]);
     if (!packageJson) {
       return [];
     }
@@ -65,6 +67,7 @@ async function collectPackages(
     const pack: PackageWithDynamicState = {
       path: filePath,
       name: packageJson.name ?? '',
+      category: state.category,
       paths,
       packageJson,
       packageJsonFileName: packageJsonFile,
@@ -73,7 +76,6 @@ async function collectPackages(
       lockFileName,
       hasLockFile,
       hasNodeModules,
-      forkLockContent,
       npmrc,
       type: state.type
     };
@@ -92,20 +94,15 @@ async function collectPackages(
         if (currentName === 'platforms') {
           return 'platform';
         }
-        if (currentName === 'forks') {
-          return 'fork';
-        }
-        return state.type;
+        return 'customized';
       })();
       const nextState = {
         ...state,
         type: packageType,
+        category: currentName,
         level: state.level + 1,
         dirnames: [...state.dirnames, c]
       };
-      if (nextState.type === 'workspace') {
-        return undefined;
-      }
       return collectPackages(
         path.join(filePath, currentName),
         lockFileName,
@@ -130,7 +127,6 @@ async function loadPackages(
       hasNodeModules,
       lockContent,
       lockFileName,
-      forkLockContent,
       npmrc,
       payload,
       ...rest
@@ -144,7 +140,6 @@ async function loadPackages(
       hasLockFile,
       lockContent,
       lockFileName,
-      forkLockContent,
       npmrc,
       payload
     } = p;
@@ -154,7 +149,6 @@ async function loadPackages(
       hasLockFile,
       lockContent,
       lockFileName,
-      forkLockContent,
       npmrc,
       payload
     };

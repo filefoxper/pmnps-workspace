@@ -1,4 +1,3 @@
-import { packageLock2 } from '@pmnps/lock-resolver';
 import { equal, keyBy, omit, orderBy, partition } from '@/libs/polyfill';
 import { hold } from '@/state';
 import { task } from '@/actions/task';
@@ -6,7 +5,7 @@ import { SystemCommands } from '@/cmds';
 import { message, path } from '@/libs';
 import { DEFAULT_REGISTRY, INVALID_REGISTRY } from '@/constants';
 import type { ActionMessage } from '@/actions/task/type';
-import type { Package, PackageJson, PackageLockInfo } from '@pmnps/tools';
+import type { Package, PackageJson } from '@pmnps/tools';
 
 function installOwnRootPackage(
   pack: Package,
@@ -48,7 +47,6 @@ function installOwnRootPackage(
     withoutWorkspaceDepPackDeps,
     withoutWorkspaceDepCachePackDeps
   );
-  message.debug('add', newDepKeys, allInWorkspaces);
   if (allInWorkspaces && isBasicDepEqual) {
     const additionPackages = newDepKeys
       .map(k => packageMap.get(k))
@@ -80,53 +78,12 @@ function extractAdditionPackages() {
   return packages.filter(n => !cachePackageNameSet.has(n.name));
 }
 
-function refreshWithForkChanges(parameters?: string) {
-  const { project, dynamicState = {} } = hold.instance().getState();
-  const { workspace, platforms = [] } = project?.project ?? {};
-  const ownRootPlatforms = platforms.filter(
-    p =>
-      p.packageJson.pmnps?.ownRoot === true ||
-      p.packageJson.pmnps?.ownRoot === 'independent'
-  );
-  if (workspace) {
-    const ds = dynamicState[workspace.name];
-    task.execute(
-      SystemCommands.install({ ...ds, isPoint: false, parameters }),
-      workspace.path,
-      'install workspace'
-    );
-  }
-  if (ownRootPlatforms.length) {
-    ownRootPlatforms.forEach(p => {
-      const ds = dynamicState[p.name];
-      installOwnRootPackage(p, { ...ds, isPoint: false, parameters }, true);
-    });
-  }
-}
-
-function hasForksChange() {
-  const { project, cacheProject } = hold.instance().getState();
-  const forks = project?.project?.forks ?? [];
-  const forkNames = orderBy(
-    forks.map(p => p.name),
-    [n => n],
-    ['desc']
-  );
-  const cacheForks = cacheProject?.project?.forks ?? [];
-  const cacheForkNames = orderBy(
-    cacheForks.map(p => p.name),
-    [n => n],
-    ['desc']
-  );
-  return forkNames.join() !== cacheForkNames.join();
-}
-
 function refreshWorkspace() {
   const { project, config } = hold.instance().getState();
   const {
     scopes = [],
     workspace,
-    forks,
+    customized,
     platforms = []
   } = project?.project ?? {};
   const { projectType } = config ?? {};
@@ -153,10 +110,18 @@ function refreshWorkspace() {
       .map(p => `platforms/${p.name}`);
   }
   const scopeWorkspaces = scopes.map(s => `packages/${s.name}/*`);
-  const forksWorkspaces = forks && forks.length ? ['forks/*'] : [];
+  const customizedWorkspaces = (function computeCustomizedWorkspaces() {
+    if (!customized || !customized.length) {
+      return [];
+    }
+    const set = new Set(
+      customized.map(c => c.category).filter((c): c is string => !!c)
+    );
+    return [...set].map(s => `${s}/*`);
+  })();
   const workspaceSet = new Set([
     'packages/*',
-    ...forksWorkspaces,
+    ...customizedWorkspaces,
     ...scopeWorkspaces,
     ...buildPlatformWorkspaces()
   ]);
@@ -175,13 +140,21 @@ function refreshWorkspace() {
 }
 
 function refreshChangePackages(changes: Package[]) {
-  const { scopes = [], forks } =
+  const { scopes = [], customized } =
     hold.instance().getState().project?.project ?? {};
   const scopeWorkspaces = scopes.map(s => `../../packages/${s.name}/*`);
-  const forksWorkspaces = forks && forks.length ? ['../../forks/*'] : [];
+  const customizedWorkspaces = (function computeCustomizedWorkspaces() {
+    if (!customized || !customized.length) {
+      return [];
+    }
+    const set = new Set(
+      customized.map(c => c.category).filter((c): c is string => !!c)
+    );
+    return [...set].map(s => `../../${s}/*`);
+  })();
   const workspaces = [
     '../../packages/*',
-    ...forksWorkspaces,
+    ...customizedWorkspaces,
     ...scopeWorkspaces
   ];
   const packs = changes.filter(p => p.type !== 'workspace');
@@ -221,9 +194,9 @@ function cleanRemovedPacks() {
   const {
     packages: cachePackages = [],
     platforms: cachePlatforms = [],
-    forks: cacheForks = []
+    customized: cacheCustomized = []
   } = cacheProject?.project ?? {};
-  const cachePacks = [...cachePackages, ...cacheForks, ...cachePlatforms];
+  const cachePacks = [...cachePackages, ...cacheCustomized, ...cachePlatforms];
   if (project == null || project.project == null || !cachePacks.length) {
     return;
   }
@@ -231,9 +204,9 @@ function cleanRemovedPacks() {
     workspace,
     packages = [],
     platforms = [],
-    forks = []
+    customized = []
   } = project.project;
-  const allPacks = [workspace, ...packages, ...forks, ...platforms].filter(
+  const allPacks = [workspace, ...packages, ...customized, ...platforms].filter(
     (p): p is Package => !!p
   );
   const shouldRemovePackNames = computeShouldRemovePackNames(
@@ -256,55 +229,6 @@ function cleanRemovedPacks() {
   });
   shouldRemovePathnames.forEach(pathname => {
     task.remove(pathname);
-  });
-}
-
-function refreshPackageLock() {
-  const { dynamicState = {}, project, config } = hold.instance().getState();
-  const { packages = [], platforms = [], workspace } = project?.project ?? {};
-  if (project == null || workspace == null) {
-    return;
-  }
-  if (config?.usePerformanceFirst) {
-    message.warn(
-      'Can not refresh package-lock.json file in a performance first mode'
-    );
-    return;
-  }
-
-  const { resolver } = packageLock2;
-  const locks = Object.entries(dynamicState)
-    .map(([name, value]): { name: string } & PackageLockInfo => ({
-      name,
-      ...value
-    }))
-    .filter(d => d.hasLockFile);
-  const packs = [...packages, ...platforms, workspace];
-  const packMap = new Map(packs.map(p => [p.name, p]));
-  locks.forEach(lock => {
-    const { name, lockContent, forkLockContent, hasLockFile, lockFileName } =
-      lock;
-    if (lockContent == null || !hasLockFile) {
-      return;
-    }
-    const current = packMap.get(name);
-    if (current == null) {
-      return;
-    }
-    const { path: pathname } = current;
-    const [res, forkLock] = resolver(lockContent, {
-      project,
-      current,
-      forkLockContent
-    });
-    if (res == null || pathname == null) {
-      return;
-    }
-    task.write(pathname, lockFileName, res);
-    if (forkLock == null) {
-      return;
-    }
-    task.write(pathname, 'fork-lock.json', forkLock);
   });
 }
 
@@ -424,11 +348,6 @@ export async function refreshByNpm(option?: {
         force
       );
     });
-  }
-  refreshPackageLock();
-  if (hasForksChange() && workspace) {
-    refreshWithForkChanges(parameters);
-    return { content: 'Refresh success...', type: 'success' };
   }
   if (workRoots.length) {
     return { content: 'Refresh success...', type: 'success' };

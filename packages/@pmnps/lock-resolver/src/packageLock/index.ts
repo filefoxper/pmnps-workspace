@@ -110,133 +110,6 @@ function resolvePacks(lockJson: any, { project }: LockResolverState) {
   };
 }
 
-function resolveForks(
-  lockJson: any,
-  { project, current, forkLockContent }: LockResolverState
-) {
-  function pathForkName(name: string) {
-    return name.split('.').join('/');
-  }
-  const forkLockObj = (function computeForkLockObj() {
-    if (!forkLockContent) {
-      return {};
-    }
-    try {
-      return JSON.parse(forkLockContent);
-    } catch (e) {
-      return {};
-    }
-  })();
-  const packagesObj = lockJson.packages;
-  const dependenciesObj = lockJson.dependencies;
-  const { forks = [] } = project.project;
-  const newForks = forks.filter(f => {
-    const forkKeyName = `forks/${f.name}`;
-    const independentForkKeyName = `../../forks/${f.name}`;
-    return (
-      packagesObj[forkKeyName] == null &&
-      packagesObj[independentForkKeyName] == null
-    );
-  });
-  const forkNameSet = new Set(forks.map(f => f.name));
-  const staleForkNames = Object.entries(packagesObj)
-    .map(([prefix, value]) => {
-      const prefixName = (function computeName() {
-        const independentForkPrefix = '../../forks/';
-        const forkPrefix = 'forks/';
-        if (prefix.startsWith(independentForkPrefix)) {
-          return prefix.slice(independentForkPrefix.length);
-        }
-        if (prefix.startsWith(forkPrefix)) {
-          return prefix.slice(forkPrefix.length);
-        }
-        return null;
-      })();
-      if (prefixName == null) {
-        return null;
-      }
-      const [packageName] = prefixName.split('/node_modules/');
-      return forkNameSet.has(packageName) ? null : packageName;
-    })
-    .filter((packageName): packageName is string => packageName != null);
-  if (!newForks.length && !staleForkNames.length) {
-    return { lockJson, change: false };
-  }
-  const newForkMap = new Map(
-    newForks.map(f => [
-      (function getForkTo() {
-        const { packageJson } = f;
-        return packageJson.pmnps?.forkTo;
-      })(),
-      f
-    ])
-  );
-  const entries = Object.entries(packagesObj);
-  const processes = entries.map(
-    ([k, v]): [string, { value: any; removed?: string }] => {
-      const fork = newForkMap.get(k);
-      if (!fork) {
-        return [k, { value: v }];
-      }
-      return [k, { value: v, removed: fork.name }];
-    }
-  );
-  const newEntries = processes
-    .filter(([k, v]) => !v.removed)
-    .map(([k, v]) => [k, v.value]);
-  const staleForkNameSetInLock = new Set(
-    staleForkNames.flatMap(name => {
-      const independentName = `../../forks/${name}`;
-      const workName = `forks/${name}`;
-      return [workName, independentName];
-    })
-  );
-  const forkLockEntries = Object.entries(forkLockObj);
-  const forkBakMap = new Map(
-    forkLockEntries.map(([k, v]): [string, any] => {
-      const [forkName, actualKey] = k.split(':');
-      return [forkName, { [actualKey]: v }];
-    })
-  );
-  const backLockEntries = staleForkNames
-    .map(name => {
-      const bakValue = forkBakMap.get(name);
-      if (bakValue == null) {
-        return undefined;
-      }
-      return [name, bakValue];
-    })
-    .filter((e): e is [string, any] => !!e);
-  const processedEntries = newEntries
-    .map(([k, v]) => {
-      if (staleForkNameSetInLock.has(k)) {
-        return undefined;
-      }
-      return [k, v];
-    })
-    .filter((e): e is [string, any] => !!e);
-  const newPackages = Object.fromEntries(processedEntries);
-  const removedEntries = processes
-    .filter(([k, v]) => v.removed)
-    .map(([k, v]) => [`${v.removed}:${k}`, v.value]);
-  return {
-    lockJson: {
-      ...lockJson,
-      packages: backLockEntries.length
-        ? { ...newPackages, ...Object.fromEntries(backLockEntries) }
-        : newPackages,
-      dependencies: dependenciesObj
-    },
-    forkLock: !removedEntries.length
-      ? null
-      : (function computeForkLock() {
-          const bak = Object.fromEntries(removedEntries);
-          return JSON.stringify({ ...forkLockObj, ...bak });
-        })(),
-    change: true
-  };
-}
-
 export const packageLock2: LockResolver = {
   core: 'npm',
   lockfileVersion: 2,
@@ -245,25 +118,18 @@ export const packageLock2: LockResolver = {
     try {
       const lockJson = JSON.parse(lockContent || '');
       if (lockJson.lockfileVersion !== 2) {
-        return [null, null];
+        return [lockContent, false];
       }
       const packagesObj = lockJson.packages;
       const dependenciesObj = lockJson.dependencies;
       if (!packagesObj || !dependenciesObj) {
-        return [null, null];
+        return [lockContent, false];
       }
       const result = resolvePacks(lockJson, state);
-      const forkResult = resolveForks(result.lockJson, state);
-      if (!result.change && !forkResult.change) {
-        return [null, null] as [null, null];
-      }
-      const locks = JSON.stringify(forkResult.lockJson);
-      if (forkResult.forkLock) {
-        return [locks, forkResult.forkLock] as [string, string];
-      }
-      return [locks, null];
+      const { lockJson: json, change } = result;
+      return [JSON.stringify(json), change];
     } catch (e) {
-      return [null, null];
+      return [lockContent, false];
     }
   }
 };

@@ -1,8 +1,10 @@
 import type { Action, Command, CommandOption, RequireFn } from './type';
+import type { Config, LockResolver } from '../types';
 
 export function createPluginCommand(name: string) {
   const command: {
     name: string;
+    lockResolver?: LockResolver;
     requireRefresh?: boolean;
     require: RequireFn | undefined;
     required: Promise<any> | undefined;
@@ -11,6 +13,7 @@ export function createPluginCommand(name: string) {
     description: string;
     list?: boolean;
     args?: { param: string; description: string };
+    filter?: (config: Config) => boolean;
   } = {
     name,
     requireRefresh: false,
@@ -29,6 +32,10 @@ export function createPluginCommand(name: string) {
     },
     args(param: string, description: string) {
       command.args = { param, description };
+      return pluginSlot;
+    },
+    resolveLock(resolver: LockResolver) {
+      command.lockResolver = resolver;
       return pluginSlot;
     },
     requireRefresh() {
@@ -55,6 +62,10 @@ export function createPluginCommand(name: string) {
         command.required = required;
         return required;
       };
+      return pluginSlot;
+    },
+    filter(callback: (config: Config) => boolean) {
+      command.filter = callback;
       return pluginSlot;
     },
     describe(description: string) {
