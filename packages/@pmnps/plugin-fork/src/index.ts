@@ -103,7 +103,7 @@ const lockResolver: LockResolver = {
         return [workName, independentName];
       })
     );
-    const forkLockEntries = Object.entries(forkLockObj);
+    const forkLockEntries = Object.entries(forkLockObj.packages || {});
     const forkBakMap = new Map(
       forkLockEntries.map(([k, v]): [string, any] => {
         const [forkName, actualKey] = k.split(':');
@@ -111,12 +111,12 @@ const lockResolver: LockResolver = {
       })
     );
     const backLockEntries = staleForkNames
-      .map(name => {
+      .flatMap(name => {
         const bakValue = forkBakMap.get(name);
         if (bakValue == null) {
           return undefined;
         }
-        return [name, bakValue];
+        return Object.entries(bakValue);
       })
       .filter((e): e is [string, any] => !!e);
     const processedEntries = newEntries
@@ -141,8 +141,12 @@ const lockResolver: LockResolver = {
     const bak = !removedEntries.length
       ? true
       : (function computeForkLock() {
-          const bak = Object.fromEntries(removedEntries);
-          return { ...forkLockObj, ...bak };
+          const packagesPart = Object.fromEntries(removedEntries);
+          const bakPackages = { ...forkLockObj.packages, ...packagesPart };
+          return {
+            ...forkLockObj,
+            packages: bakPackages
+          };
         })();
     return [nextLockContent, bak];
   }
