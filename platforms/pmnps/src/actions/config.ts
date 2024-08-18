@@ -91,14 +91,6 @@ const installFeatures = new Map<string, keyof ConfigSetting>([
   ['install with npm ci command first', 'npmCiFirst']
 ]);
 
-async function requireTemplate(
-  name: string,
-  core: 'npm' | 'yarn' | 'yarn2' | 'pnpm',
-  template: string
-) {
-  const config = { ...defaultConfig(), name, core };
-}
-
 export async function configAction(
   template?: string | null
 ): Promise<ActionMessage> {

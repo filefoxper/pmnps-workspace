@@ -4,7 +4,7 @@
     ["@pmnps/plugin-vscode-workspace", { "shortcut": false,"excludes": ["@template"] }]
   ],
   "templates": ["@template/package-web"],
-  "name": "hades-jd",
+  "name": "template-webpack-ts-react",
   "projectType": "monorepo",
   "useGit": true,
   "useCommandHelp": true,

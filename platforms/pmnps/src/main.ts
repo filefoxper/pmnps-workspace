@@ -1,7 +1,7 @@
 import os from 'os';
 import process from 'process';
 import { program } from 'commander';
-import { createPluginCommand, requireFactory } from '@pmnps/tools';
+import { createPluginCommand } from '@pmnps/tools';
 import { hold } from '@/state';
 import { configAction } from '@/actions/config';
 import { refreshAction } from '@/actions/refresh';
@@ -283,13 +283,18 @@ export async function startup(isDevelopment?: boolean) {
   if (config == null) {
     const templatePackage = command === 'init' && template ? template : null;
     const configActionMessage = await configAction(templatePackage);
-    await executeAction(configActionMessage, true);
+    await executeAction(configActionMessage, true, { skipExit: true });
     if (templatePackage) {
       const { config: sourceConfig, project } = hold.instance().getState();
       const { workspace: sourceWorkspace } = project?.project ?? {};
-      const { module } = await requireFactory(path.cwd()).require(template);
+      const modulePath = path.join(
+        path.cwd(),
+        'node_modules',
+        ...template.split('/'),
+        'resource'
+      );
       task.writeDir(path.cwd(), {
-        source: path.join(module.path, 'resource')
+        source: modulePath
       });
       task.write(path.cwd(), CONF_NAME, cfs => {
         if (cfs == null) {
@@ -322,9 +327,10 @@ export async function startup(isDevelopment?: boolean) {
           ) as PackageJson;
         }
       });
-      await executeAction(configActionMessage, false);
+      await executeAction(configActionMessage, false, { skipExit: true });
       const success = await initialize();
       if (!success) {
+        process.exit(0);
         return;
       }
       await executeAction(configActionMessage, true);

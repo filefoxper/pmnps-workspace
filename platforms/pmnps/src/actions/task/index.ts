@@ -515,8 +515,10 @@ async function executeTasks(
 
 export async function executeAction(
   actionMessage: ActionMessage | null,
-  requireRefresh?: boolean
+  requireRefresh?: boolean,
+  options?: { skipExit?: boolean }
 ) {
+  const { skipExit } = options ?? {};
   let error = undefined;
   if (actionMessage?.type !== 'failed') {
     error = await executeTasks(
@@ -531,7 +533,9 @@ export async function executeAction(
     });
   }
   message.result(result);
-  process.exit(0);
+  if (!skipExit) {
+    process.exit(0);
+  }
 }
 
 export function useCommand(
