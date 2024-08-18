@@ -1,0 +1,13 @@
+{
+  "name": "@pmnps/template-webpack-ts-react",
+  "version": "4.0.0",
+  "description": "This is a template package for creating webpack&typescript&react project with pmnps.",
+  "author": "Jimmy.Harding",
+  "main": "index.js",
+  "files": [
+    "resource"
+  ],
+  "pmnps": {
+    "slot": "template"
+  }
+}

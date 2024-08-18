@@ -26,7 +26,6 @@
     "@pmnps/tools": "^4.3.2",
     "@pmnps/lock-resolver": ">=4.3.2",
     "js-yaml": "4.1.0",
-    "prettier": "^3.0.3",
     "prettier-package-json": "^2.8.0"
   },
   "devDependencies": {

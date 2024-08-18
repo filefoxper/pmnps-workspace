@@ -1,11 +1,5 @@
 import type { LockResolver, PackageType } from '@pmnps/tools';
 
-export type CommandFile =
-  | 'install'
-  | 'prettier'
-  | 'prettier-package-json'
-  | 'add';
-
 export type CommandType = 'node' | 'npx' | 'npm' | 'git';
 
 export type CommandSerial = string[];
@@ -18,6 +12,7 @@ export interface WriteTask {
   content: string | object | ((c: string | null) => string | null);
   cwd?: string;
   dirSource?: string;
+  filter?: (filename: string) => boolean;
   option?: {
     formatter?: (content: string) => Promise<string>;
     skipIfExist?: true;

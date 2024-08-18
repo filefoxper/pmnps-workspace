@@ -8,8 +8,13 @@
   "plugins": [
     "@pmnps/plugin-vscode-workspace",
     "@pmnps/plugin-fork",
-    ["@pmnps/plugin-clean-node-modules"],
-    ["@pmnps/plugin-publish", { "registry": "https://registry.npmjs.org" }]
+    "@pmnps/plugin-clean-node-modules",
+    [
+      "@pmnps/plugin-publish",
+      {
+        "registry": "https://registry.npmjs.org"
+      }
+    ]
   ],
   "useCommandHelp": true,
   "core": "npm",

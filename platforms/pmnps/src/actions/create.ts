@@ -304,7 +304,7 @@ async function createTemplate(
     {
       name: 'templateType',
       type: 'list',
-      choices: ['package', 'platform'],
+      choices: ['package', 'platform', 'workspace'],
       message: 'Choose a package type for your template.',
       default: 'package'
     },

@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "plugins": [
+    ["@pmnps/plugin-vscode-workspace", { "shortcut": false,"excludes": ["@template"] }]
+  ],
+  "templates": ["@template/package-web"],
+  "name": "hades-jd",
+  "projectType": "monorepo",
+  "useGit": true,
+  "useCommandHelp": true,
+  "usePerformanceFirst": false,
+  "useRefreshAfterInstall": false,
+  "useNpmCi": true,
+  "registry": "https://npm.darcytech.com",
+  "core": "npm"
+}

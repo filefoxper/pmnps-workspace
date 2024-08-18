@@ -4,13 +4,13 @@ import { CONF_NAME, DEFAULT_REGISTRY } from '@/constants';
 import { packageJson } from '@/resource';
 import { equal, omit, omitBy, pick } from '@/libs/polyfill';
 import { task } from './task';
-import type { ActionMessage } from '@/actions/task/type';
 import type {
   PackageJson,
   ConfigDetail,
   Config,
   ConfigSetting
 } from '@pmnps/tools';
+import type { ActionMessage } from '@/actions/task/type';
 
 const configRange: Array<[string, keyof ConfigDetail]> = [
   ['allow publish to npm', 'private'],
@@ -19,6 +19,18 @@ const configRange: Array<[string, keyof ConfigDetail]> = [
   ['use command help', 'useCommandHelp'],
   ['use performance first', 'usePerformanceFirst']
 ];
+
+function defaultConfig(): Config {
+  return {
+    name: '',
+    core: 'npm',
+    projectType: 'monorepo',
+    private: true,
+    useGit: false,
+    useCommandHelp: false,
+    usePerformanceFirst: false
+  };
+}
 
 function decodeConfig(config: Config | undefined) {
   const allCheckedConfig = {
@@ -79,7 +91,17 @@ const installFeatures = new Map<string, keyof ConfigSetting>([
   ['install with npm ci command first', 'npmCiFirst']
 ]);
 
-export async function configAction(): Promise<ActionMessage> {
+async function requireTemplate(
+  name: string,
+  core: 'npm' | 'yarn' | 'yarn2' | 'pnpm',
+  template: string
+) {
+  const config = { ...defaultConfig(), name, core };
+}
+
+export async function configAction(
+  template?: string | null
+): Promise<ActionMessage> {
   const { config, project } = hold.instance().getState();
   let name = config?.name;
   const { name: firstSetName, detail } = await inquirer.prompt(
@@ -266,7 +288,12 @@ export async function configAction(): Promise<ActionMessage> {
   task.writePackage({
     paths: null,
     packageJson: (json: PackageJson | null) => {
-      const sourceJson: PackageJson = (json || {}) as PackageJson;
+      const sourceJson: PackageJson = (json ||
+        (template
+          ? {
+              devDependencies: { [template]: 'latest' }
+            }
+          : {})) as PackageJson;
       const result = packageJson(nextConfig.name, 'workspace', {
         ...sourceJson,
         ...projectDetail

@@ -1,11 +1,12 @@
 import os from 'os';
+import process from 'process';
 import { program } from 'commander';
-import { createPluginCommand } from '@pmnps/tools';
+import { createPluginCommand, requireFactory } from '@pmnps/tools';
 import { hold } from '@/state';
 import { configAction } from '@/actions/config';
 import { refreshAction } from '@/actions/refresh';
 import { createAction } from '@/actions/create';
-import { executeAction, useCommand } from '@/actions/task';
+import { executeAction, task, useCommand } from '@/actions/task';
 import { runAction, startAction } from '@/actions/run';
 import { getPluginState } from '@/plugin';
 import {
@@ -14,6 +15,7 @@ import {
   setPackageAction,
   setPlatformAction
 } from '@/actions/set';
+import { CONF_NAME } from '@/constants';
 import { env, file, path, inquirer, message } from './libs';
 import { initialize, loadProject } from './processor';
 import type { Command, CommandOption } from '@pmnps/tools';
@@ -256,6 +258,7 @@ async function initialAction() {
 
 export async function startup(isDevelopment?: boolean) {
   const px = process.env.PXS_ENV === 'pmnpx';
+  const [, , command, template] = process.argv;
   const platform = os.platform();
   global.pmnps = {
     holder: hold(),
@@ -277,8 +280,17 @@ export async function startup(isDevelopment?: boolean) {
   }
   const config = hold.instance().getState().config;
   if (config == null) {
-    const configActionMessage = await configAction();
+    const templatePackage = command === 'init' && template ? template : null;
+    const configActionMessage = await configAction(templatePackage);
     await executeAction(configActionMessage, true);
+    if (templatePackage) {
+      const { module } = await requireFactory(path.cwd()).require(template);
+      task.writeDir(path.cwd(), {
+        source: path.join(module.path, 'resource'),
+        filter: (filename: string) => filename !== CONF_NAME
+      });
+      await executeAction(configActionMessage, true);
+    }
     return;
   }
   const systemCommands = getCommands();

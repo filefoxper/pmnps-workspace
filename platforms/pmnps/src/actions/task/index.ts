@@ -304,9 +304,10 @@ export const task = {
       source?: string;
       command?: CommandSerial[];
       onFinish?: () => Promise<any>;
+      filter?: (filename: string) => boolean;
     }
   ) {
-    const { command, source, onFinish } = config ?? {};
+    const { command, source, onFinish, filter } = config ?? {};
     const pathname = typeof p === 'string' ? p : path.join(path.cwd(), ...p);
     const t: Task = {
       type: 'write',
@@ -315,6 +316,7 @@ export const task = {
       path: pathname,
       content: pathname,
       dirSource: source,
+      filter,
       option: omitBy(
         {
           command,

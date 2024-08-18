@@ -1,6 +1,4 @@
-/* eslint-disable */
-function buildTemplateIndex(projectType: 'package' | 'platform' | 'workspace') {
-  return `"use strict";
+"use strict";
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -26,15 +24,8 @@ __export(src_exports, {
 });
 module.exports = __toCommonJS(src_exports);
 var src_default = {
-  projectType: "${projectType}",
+  projectType: "workspace",
   path: __dirname
 };
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {});
-`;
-}
-/* eslint-disable */
-
-export const templateSupport = {
-  buildTemplate:buildTemplateIndex
-}

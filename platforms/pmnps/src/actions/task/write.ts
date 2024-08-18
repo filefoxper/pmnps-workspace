@@ -47,8 +47,8 @@ async function copydirs(tasks: WriteTask[]) {
       if (!t || !t.dirSource) {
         return undefined;
       }
-      const { dirSource, option } = t;
-      const r = await file.copyFolder(dirSource, t.path);
+      const { dirSource, filter, option } = t;
+      const r = await file.copyFolder(dirSource, t.path, filter);
       const finish = option?.onFinish ?? (() => Promise.resolve(undefined));
       await finish();
       return r;

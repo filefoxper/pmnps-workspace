@@ -1,7 +1,17 @@
 {
   "folders": [
-    { "name": "<workspaces>", "path": "." },
-    { "name": "@pmnps/tools", "path": "packages/@pmnps/tools" },
+    {
+      "name": "<workspaces>",
+      "path": "."
+    },
+    {
+      "name": "@pmnps/tools",
+      "path": "packages/@pmnps/tools"
+    },
+    {
+      "name": "@pmnps/template-webpack-ts-react",
+      "path": "packages/@pmnps/template-webpack-ts-react"
+    },
     {
       "name": "@pmnps/plugin-vscode-workspace",
       "path": "packages/@pmnps/plugin-vscode-workspace"
@@ -14,16 +24,34 @@
       "name": "@pmnps/plugin-publish",
       "path": "packages/@pmnps/plugin-publish"
     },
-    { "name": "@pmnps/plugin-fork", "path": "packages/@pmnps/plugin-fork" },
+    {
+      "name": "@pmnps/plugin-fork",
+      "path": "packages/@pmnps/plugin-fork"
+    },
     {
       "name": "@pmnps/plugin-clean-node-modules",
       "path": "packages/@pmnps/plugin-clean-node-modules"
     },
-    { "name": "@pmnps/lock-resolver", "path": "packages/@pmnps/lock-resolver" },
-    { "name": "pmnpx", "path": "platforms/pmnpx" },
-    { "name": "pmnps", "path": "platforms/pmnps" },
-    { "name": "package.json", "path": "package.json" },
-    { "name": ".pmnpsrc.json", "path": ".pmnpsrc.json" }
+    {
+      "name": "@pmnps/lock-resolver",
+      "path": "packages/@pmnps/lock-resolver"
+    },
+    {
+      "name": "pmnpx",
+      "path": "platforms/pmnpx"
+    },
+    {
+      "name": "pmnps",
+      "path": "platforms/pmnps"
+    },
+    {
+      "name": "package.json",
+      "path": "package.json"
+    },
+    {
+      "name": ".pmnpsrc.json",
+      "path": ".pmnpsrc.json"
+    }
   ],
   "settings": {}
 }
