@@ -16,9 +16,10 @@ import {
   setPlatformAction
 } from '@/actions/set';
 import { CONF_NAME } from '@/constants';
+import { omitBy } from '@/libs/polyfill';
 import { env, file, path, inquirer, message } from './libs';
 import { initialize, loadProject } from './processor';
-import type { Command, CommandOption } from '@pmnps/tools';
+import type { Command, CommandOption, PackageJson } from '@pmnps/tools';
 import type { ActionMessage, Task } from '@/actions/task/type';
 import type { Resource, State } from './types';
 
@@ -284,11 +285,48 @@ export async function startup(isDevelopment?: boolean) {
     const configActionMessage = await configAction(templatePackage);
     await executeAction(configActionMessage, true);
     if (templatePackage) {
+      const { config: sourceConfig, project } = hold.instance().getState();
+      const { workspace: sourceWorkspace } = project?.project ?? {};
       const { module } = await requireFactory(path.cwd()).require(template);
       task.writeDir(path.cwd(), {
-        source: path.join(module.path, 'resource'),
-        filter: (filename: string) => filename !== CONF_NAME
+        source: path.join(module.path, 'resource')
       });
+      task.write(path.cwd(), CONF_NAME, cfs => {
+        if (cfs == null) {
+          return null;
+        }
+        const cf = JSON.parse(cfs);
+        return JSON.stringify({ ...cf, ...sourceConfig });
+      });
+      task.writePackage({
+        paths: null,
+        type: 'workspace',
+        packageJson: pj => {
+          if (pj == null) {
+            return null;
+          }
+          const { dependencies: pjDep, devDependencies: pjDevDep } = pj;
+          const { dependencies, devDependencies, ...rest } =
+            sourceWorkspace?.packageJson ?? {};
+          return omitBy(
+            {
+              ...pj,
+              ...rest,
+              dependencies:
+                pjDep || dependencies
+                  ? { ...pjDep, ...dependencies }
+                  : undefined,
+              devDependencies: { ...pjDevDep, ...devDependencies }
+            },
+            v => v == null
+          ) as PackageJson;
+        }
+      });
+      await executeAction(configActionMessage, false);
+      const success = await initialize();
+      if (!success) {
+        return;
+      }
       await executeAction(configActionMessage, true);
     }
     return;

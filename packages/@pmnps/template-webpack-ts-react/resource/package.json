@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "hades-jd",
+  "name": "template-webpack-ts-react",
   "version": "1.0.0",
   "workspaces": [
     "packages/*"
