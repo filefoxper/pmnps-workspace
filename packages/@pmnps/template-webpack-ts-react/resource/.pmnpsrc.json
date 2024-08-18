@@ -11,6 +11,6 @@
   "usePerformanceFirst": false,
   "useRefreshAfterInstall": false,
   "useNpmCi": true,
-  "registry": "https://npm.darcytech.com",
+  "registry": "https://registry.npmmirror.com",
   "core": "npm"
 }
