@@ -303,15 +303,16 @@ async function createFileIntoDirIfNotExist(
 async function copyFolder(
   sourceDirPath: string,
   targetDirPath: string,
-  filter?: (source: string) => boolean
+  opt?: { filter?: (source: string) => boolean; force?: boolean }
 ): Promise<boolean> {
+  const { filter, force } = opt ?? {};
   return new Promise((resolve, reject) => {
     fs.cp(
       sourceDirPath,
       targetDirPath,
       {
         recursive: true,
-        force: false,
+        force: force || false,
         filter(source: string): boolean | Promise<boolean> {
           if (filter) {
             return filter(source);

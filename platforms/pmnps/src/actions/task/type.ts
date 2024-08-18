@@ -13,6 +13,7 @@ export interface WriteTask {
   cwd?: string;
   dirSource?: string;
   filter?: (filename: string) => boolean;
+  force?: boolean;
   option?: {
     formatter?: (content: string) => Promise<string>;
     skipIfExist?: true;

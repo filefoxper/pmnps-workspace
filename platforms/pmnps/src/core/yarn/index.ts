@@ -220,7 +220,9 @@ function refreshNpmrcByPackage(p: Package) {
   const { npmrc } = data;
   const contents = (npmrc || '').split('\n');
   const contentSet = new Set(
-    [...contents, `registry=${registry}`].filter(r => r.trim())
+    [...contents, `registry=${registry}`]
+      .filter(r => r.trim())
+      .map(r => r.trim())
   );
   const content = [...contentSet].join('\n');
   if (content === npmrc) {

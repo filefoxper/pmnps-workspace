@@ -2,7 +2,7 @@ import { equal, keyBy, omit, orderBy, partition } from '@/libs/polyfill';
 import { hold } from '@/state';
 import { task } from '@/actions/task';
 import { SystemCommands } from '@/cmds';
-import { message, path } from '@/libs';
+import { path } from '@/libs';
 import { DEFAULT_REGISTRY, INVALID_REGISTRY } from '@/constants';
 import type { ActionMessage } from '@/actions/task/type';
 import type { Package, PackageJson } from '@pmnps/tools';
@@ -257,7 +257,9 @@ function refreshNpmrcByPackage(p: Package) {
   const { npmrc } = data;
   const contents = (npmrc || '').split('\n');
   const contentSet = new Set(
-    [...contents, `registry=${registry}`].filter(r => r.trim())
+    [...contents, `registry=${registry}`]
+      .filter(r => r.trim())
+      .map(r => r.trim())
   );
   const content = [...contentSet].join('\n');
   if (content === npmrc) {

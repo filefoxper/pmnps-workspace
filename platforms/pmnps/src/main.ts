@@ -15,7 +15,7 @@ import {
   setPackageAction,
   setPlatformAction
 } from '@/actions/set';
-import { CONF_NAME } from '@/constants';
+import { CONF_NAME, SystemFormatter } from '@/constants';
 import { omitBy } from '@/libs/polyfill';
 import { env, file, path, inquirer, message } from './libs';
 import { initialize, loadProject } from './processor';
@@ -283,8 +283,15 @@ export async function startup(isDevelopment?: boolean) {
   if (config == null) {
     const templatePackage = command === 'init' && template ? template : null;
     const configActionMessage = await configAction(templatePackage);
-    await executeAction(configActionMessage, true, { skipExit: true });
+    await executeAction(configActionMessage, true, {
+      skipExit: !!templatePackage
+    });
     if (templatePackage) {
+      const s = await initialize();
+      if (!s) {
+        process.exit(0);
+        return;
+      }
       const { config: sourceConfig, project } = hold.instance().getState();
       const { workspace: sourceWorkspace } = project?.project ?? {};
       const modulePath = path.join(
@@ -294,47 +301,62 @@ export async function startup(isDevelopment?: boolean) {
         'resource'
       );
       task.writeDir(path.cwd(), {
-        source: modulePath
-      });
-      task.write(path.cwd(), CONF_NAME, cfs => {
-        if (cfs == null) {
-          return null;
+        source: modulePath,
+        force: true,
+        async onFinish() {
+          const [cnf, pj] = await Promise.all([
+            file.readJson(path.join(path.cwd(), CONF_NAME)),
+            file.readJson(path.join(path.cwd(), 'package.json'))
+          ]);
+          const packageJson = (function computePackageJson() {
+            const { dependencies: pjDep, devDependencies: pjDevDep } = (pj ??
+              {}) as PackageJson;
+            const { dependencies, devDependencies, ...rest } =
+              sourceWorkspace?.packageJson ?? {};
+            return omitBy(
+              {
+                ...pj,
+                ...rest,
+                dependencies:
+                  pjDep || dependencies
+                    ? { ...pjDep, ...dependencies }
+                    : undefined,
+                devDependencies: { ...pjDevDep, ...devDependencies }
+              },
+              v => v == null
+            ) as PackageJson;
+          })();
+          const confString = await SystemFormatter.json(
+            JSON.stringify({
+              ...cnf,
+              ...sourceConfig
+            })
+          );
+          const packageJsonString = await SystemFormatter.packageJson(
+            JSON.stringify(packageJson)
+          );
+          task.writePackageToState(path.cwd(), {
+            paths: null,
+            path: path.cwd(),
+            type: 'workspace',
+            packageJson,
+            packageJsonFileName: 'package.json',
+            name: packageJson.name || '',
+            category: null
+          });
+          return Promise.all([
+            file.writeFile(path.join(path.cwd(), CONF_NAME), confString),
+            file.writeFile(
+              path.join(path.cwd(), 'package.json'),
+              packageJsonString
+            )
+          ]);
         }
-        const cf = JSON.parse(cfs);
-        return JSON.stringify({ ...cf, ...sourceConfig });
       });
-      task.writePackage({
-        paths: null,
-        type: 'workspace',
-        packageJson: pj => {
-          if (pj == null) {
-            return null;
-          }
-          const { dependencies: pjDep, devDependencies: pjDevDep } = pj;
-          const { dependencies, devDependencies, ...rest } =
-            sourceWorkspace?.packageJson ?? {};
-          return omitBy(
-            {
-              ...pj,
-              ...rest,
-              dependencies:
-                pjDep || dependencies
-                  ? { ...pjDep, ...dependencies }
-                  : undefined,
-              devDependencies: { ...pjDevDep, ...devDependencies }
-            },
-            v => v == null
-          ) as PackageJson;
-        }
-      });
-      await executeAction(configActionMessage, false, { skipExit: true });
-      const success = await initialize();
-      if (!success) {
-        process.exit(0);
-        return;
-      }
       await executeAction(configActionMessage, true);
+      return;
     }
+    process.exit(0);
     return;
   }
   const systemCommands = getCommands();

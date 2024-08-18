@@ -274,6 +274,20 @@ export async function configAction(
   if (!nextConfig.usePerformanceFirst || !equal(nextConfig, config)) {
     task.write(cwd, CONF_NAME, JSON.stringify(nextConfig));
   }
+  if (nextConfig.registry && nextConfig.registry !== DEFAULT_REGISTRY) {
+    task.write(cwd, '.npmrc', npmrc => {
+      if (npmrc == null) {
+        return `registry=${registry}`;
+      }
+      const contents = (npmrc || '').split('\n');
+      const contentSet = new Set(
+        [...contents, `registry=${registry}`]
+          .filter(r => r.trim())
+          .map(r => r.trim())
+      );
+      return [...contentSet].join('\n');
+    });
+  }
   if (config && nextConfig.core !== config.core) {
     hold.instance().setCoreChanged();
   }
