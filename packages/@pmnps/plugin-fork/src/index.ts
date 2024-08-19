@@ -1,14 +1,7 @@
 import path from 'path';
 import { createPluginCommand, inquirer } from '@pmnps/tools';
 import type { CommandSerial } from 'pmnps/src/actions/task/type';
-import type {
-  Plugin,
-  Config,
-  ActionState,
-  LockResolver,
-  LockResolverState,
-  PackageJson
-} from '@pmnps/tools';
+import type { Plugin, Config, ActionState, PackageJson } from '@pmnps/tools';
 
 type Query = {
   to?: string;
@@ -27,153 +20,6 @@ function omit(obj: Record<string, any>, ...keys: string[]) {
   const keySet = new Set(keys);
   return omitBy(obj, (v, k) => keySet.has(k));
 }
-
-function parseForkTo(forkTo: string | undefined | Array<string>): string[] {
-  if (forkTo == null) {
-    return [];
-  }
-  if (typeof forkTo === 'string') {
-    return [forkTo];
-  }
-  return forkTo;
-}
-
-const lockResolver: LockResolver = {
-  core: 'npm',
-  filename: 'package-lock.json',
-  lockfileVersion: 2,
-  resolver(
-    lockContent: string,
-    { project, current, lockBak }: LockResolverState
-  ) {
-    const paths = (current.paths || []).join('/');
-    const lockJson = JSON.parse(lockContent);
-    const forkLockObj = lockBak ?? {};
-    const packagesObj = lockJson.packages;
-    const dependenciesObj = lockJson.dependencies;
-    const { customized = [] } = project.project;
-    const forks = customized.filter(c => c.category === 'forks');
-    const newForks = forks.filter(f => {
-      const forkKeyName = `forks/${f.name}`;
-      const independentForkKeyName = `../../forks/${f.name}`;
-      const matched = parseForkTo(f.packageJson.pmnps?.forkTo as string).some(
-        to => {
-          const rootMatch = !paths && to.startsWith('node_modules');
-          const packMatch = paths && to.startsWith(paths);
-          return rootMatch || packMatch;
-        }
-      );
-      return (
-        packagesObj[forkKeyName] == null &&
-        packagesObj[independentForkKeyName] == null &&
-        matched
-      );
-    });
-    const forkNameSet = new Set(forks.map(f => f.name));
-    const staleForkNames = Object.entries(packagesObj)
-      .map(([prefix, value]) => {
-        const prefixName = (function computeName() {
-          const independentForkPrefix = '../../forks/';
-          const forkPrefix = 'forks/';
-          if (prefix.startsWith(independentForkPrefix)) {
-            return prefix.slice(independentForkPrefix.length);
-          }
-          if (prefix.startsWith(forkPrefix)) {
-            return prefix.slice(forkPrefix.length);
-          }
-          return null;
-        })();
-        if (prefixName == null) {
-          return null;
-        }
-        const [packageName] = prefixName.split('/node_modules/');
-        return forkNameSet.has(packageName) ? null : packageName;
-      })
-      .filter((packageName): packageName is string => packageName != null);
-    if (!newForks.length && !staleForkNames.length) {
-      return [lockContent, false];
-    }
-    const newForkMap = new Map(
-      newForks.flatMap(f => {
-        const ts = (function getForkTo() {
-          const { packageJson } = f;
-          return parseForkTo(packageJson.pmnps?.forkTo as string).filter(to => {
-            const rootMatch = !paths && to.startsWith('node_modules');
-            const packMatch = paths && to.startsWith(paths);
-            return rootMatch || packMatch;
-          });
-        })();
-        return ts.map(t => [t, f]);
-      })
-    );
-    const entries = Object.entries(packagesObj);
-    const processes = entries.map(
-      ([k, v]): [string, { value: any; removed?: string }] => {
-        const fork = newForkMap.get(paths ? paths + '/' + k : k);
-        if (!fork) {
-          return [k, { value: v }];
-        }
-        return [k, { value: v, removed: fork.name }];
-      }
-    );
-    const newEntries = processes
-      .filter(([k, v]) => !v.removed)
-      .map(([k, v]) => [k, v.value]);
-    const staleForkNameSetInLock = new Set(
-      staleForkNames.flatMap(name => {
-        const independentName = `../../forks/${name}`;
-        const workName = `forks/${name}`;
-        return [workName, independentName];
-      })
-    );
-    const forkLockEntries = Object.entries(forkLockObj.packages || {});
-    const forkBakMap = new Map(
-      forkLockEntries.map(([k, v]): [string, any] => {
-        const [forkName, actualKey] = k.split(':');
-        return [forkName, { [actualKey]: v }];
-      })
-    );
-    const backLockEntries = staleForkNames
-      .flatMap(name => {
-        const bakValue = forkBakMap.get(name);
-        if (bakValue == null) {
-          return undefined;
-        }
-        return Object.entries(bakValue);
-      })
-      .filter((e): e is [string, any] => !!e);
-    const processedEntries = newEntries
-      .map(([k, v]) => {
-        if (staleForkNameSetInLock.has(k)) {
-          return undefined;
-        }
-        return [k, v];
-      })
-      .filter((e): e is [string, any] => !!e);
-    const newPackages = Object.fromEntries(processedEntries);
-    const removedEntries = processes
-      .filter(([k, v]) => v.removed)
-      .map(([k, v]) => [`${v.removed}:${k}`, v.value]);
-    const nextLockContent = JSON.stringify({
-      ...lockJson,
-      packages: backLockEntries.length
-        ? { ...newPackages, ...Object.fromEntries(backLockEntries) }
-        : newPackages,
-      dependencies: dependenciesObj
-    });
-    const bak = !removedEntries.length
-      ? true
-      : (function computeForkLock() {
-          const packagesPart = Object.fromEntries(removedEntries);
-          const bakPackages = { ...forkLockObj.packages, ...packagesPart };
-          return {
-            ...forkLockObj,
-            packages: bakPackages
-          };
-        })();
-    return [nextLockContent, bak];
-  }
-};
 
 function writeFork(
   state: ActionState,
@@ -228,11 +74,6 @@ function writeFork(
 const fork: Plugin<any> = function fork() {
   const slot = createPluginCommand('fork');
   return slot
-    .filter((config: Config) => {
-      const { core } = config;
-      return core == null || core === 'npm';
-    })
-    .resolveLock(lockResolver)
     .requireRefresh()
     .requireSpace('forks')
     .args(

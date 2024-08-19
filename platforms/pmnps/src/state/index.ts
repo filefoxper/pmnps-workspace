@@ -89,7 +89,9 @@ export function hold() {
           isEmpty: true
         };
       }
-      if (skipCompare) {
+      const targetCustomized = target.project.customized || [];
+      const sourceCustomized = source?.project.customized || [];
+      if (skipCompare || targetCustomized.length !== sourceCustomized.length) {
         return {
           packs: [workspace, ...packages, ...platforms].filter(
             (d): d is Package => !!d
