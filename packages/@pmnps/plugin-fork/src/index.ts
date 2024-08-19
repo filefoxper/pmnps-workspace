@@ -36,6 +36,9 @@ const lockResolver: LockResolver = {
     lockContent: string,
     { project, current, lockBak }: LockResolverState
   ) {
+    if (current.type !== 'workspace') {
+      return [lockContent, false];
+    }
     const lockJson = JSON.parse(lockContent);
     const forkLockObj = lockBak ?? {};
     const packagesObj = lockJson.packages;
