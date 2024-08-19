@@ -6,7 +6,14 @@ export type CommandSerial = string[];
 export interface PmnpsJson {
   ownRoot?: boolean | 'flexible' | 'independent';
   slot?: 'template';
-  [key: string]: string | boolean | number | null | undefined;
+  [key: string]:
+    | string
+    | boolean
+    | number
+    | null
+    | undefined
+    | Array<string>
+    | Array<number>;
 }
 
 export interface PackageJson {

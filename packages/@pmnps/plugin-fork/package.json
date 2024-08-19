@@ -1,6 +1,6 @@
 {
   "name": "@pmnps/plugin-fork",
-  "version": "4.4.1",
+  "version": "4.4.2",
   "description": "This is a pmnps plugin for forking a package out to replace the node_modules one.",
   "author": "Jimmy.Harding",
   "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-fork",

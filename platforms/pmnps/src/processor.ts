@@ -110,9 +110,9 @@ async function load() {
   const holder = hold.instance();
   const { config, resources } = await loadConfig();
   holder.setState({ config });
+  holder.setResources(resources);
   const partState = await holder.load(true);
   holder.setState(partState);
-  holder.setResources(resources);
   loadPluginRequires();
 }
 

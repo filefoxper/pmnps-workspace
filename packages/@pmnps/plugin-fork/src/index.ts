@@ -28,6 +28,16 @@ function omit(obj: Record<string, any>, ...keys: string[]) {
   return omitBy(obj, (v, k) => keySet.has(k));
 }
 
+function parseForkTo(forkTo: string | undefined | Array<string>): string[] {
+  if (forkTo == null) {
+    return [];
+  }
+  if (typeof forkTo === 'string') {
+    return [forkTo];
+  }
+  return forkTo;
+}
+
 const lockResolver: LockResolver = {
   core: 'npm',
   filename: 'package-lock.json',
@@ -36,9 +46,7 @@ const lockResolver: LockResolver = {
     lockContent: string,
     { project, current, lockBak }: LockResolverState
   ) {
-    if (current.type !== 'workspace') {
-      return [lockContent, false];
-    }
+    const paths = (current.paths || []).join('/');
     const lockJson = JSON.parse(lockContent);
     const forkLockObj = lockBak ?? {};
     const packagesObj = lockJson.packages;
@@ -48,9 +56,17 @@ const lockResolver: LockResolver = {
     const newForks = forks.filter(f => {
       const forkKeyName = `forks/${f.name}`;
       const independentForkKeyName = `../../forks/${f.name}`;
+      const matched = parseForkTo(f.packageJson.pmnps?.forkTo as string).some(
+        to => {
+          const rootMatch = !paths && to.startsWith('node_modules');
+          const packMatch = paths && to.startsWith(paths);
+          return rootMatch || packMatch;
+        }
+      );
       return (
         packagesObj[forkKeyName] == null &&
-        packagesObj[independentForkKeyName] == null
+        packagesObj[independentForkKeyName] == null &&
+        matched
       );
     });
     const forkNameSet = new Set(forks.map(f => f.name));
@@ -78,13 +94,17 @@ const lockResolver: LockResolver = {
       return [lockContent, false];
     }
     const newForkMap = new Map(
-      newForks.map(f => [
-        (function getForkTo() {
+      newForks.flatMap(f => {
+        const ts = (function getForkTo() {
           const { packageJson } = f;
-          return packageJson.pmnps?.forkTo;
-        })(),
-        f
-      ])
+          return parseForkTo(packageJson.pmnps?.forkTo as string).filter(to => {
+            const rootMatch = !paths && to.startsWith('node_modules');
+            const packMatch = paths && to.startsWith(paths);
+            return rootMatch || packMatch;
+          });
+        })();
+        return ts.map(t => [t, f]);
+      })
     );
     const entries = Object.entries(packagesObj);
     const processes = entries.map(
@@ -167,10 +187,11 @@ function writeFork(
 ) {
   const cwd = state.cwd();
   const { source, omits: ot = ['devDependencies'] } = config ?? {};
-  const ends = p.slice(p.length - 2);
+  const pas = source?.split('/') ?? [];
+  const ends = pas.slice(pas.length - 2);
   const packageName = ends[0].startsWith('@') ? ends.join('/') : ends[1];
   const pathname = path.join(cwd, 'forks', ...packageName.split('/'));
-  const pmnpsForkTo = p.join('/');
+  const pmnpsForkTo = p;
   return state.task.writeDir(pathname, {
     source,
     onFinish: async () => {
@@ -185,9 +206,10 @@ function writeFork(
         ? (omit(pjData, ...(ot as 'devDependencies'[])) as PackageJson)
         : pjData;
       const pjDataWithPmnps: PackageJson = { ...pjdWithOmit, pmnps };
+      const paths = ['forks', ...packageName.split('/')];
       state.task.writePackageToState(cwd, {
         name: packageName || '',
-        paths: p,
+        paths,
         path: pathname,
         type: 'customized',
         category: 'forks',
@@ -276,7 +298,10 @@ const fork: Plugin<any> = function fork() {
       const source = path.join(cwd, ...pathParts);
       writeFork(
         state,
-        targetPathname.split('/').filter(s => s.trim()),
+        targetPathname
+          .split(',')
+          .filter(s => s.trim())
+          .map(s => s.trim()),
         { source, omits: omits ? omits.split(',') : ['devDependencies'] }
       );
       return {
