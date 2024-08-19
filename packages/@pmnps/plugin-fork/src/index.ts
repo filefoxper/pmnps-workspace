@@ -109,7 +109,7 @@ const lockResolver: LockResolver = {
     const entries = Object.entries(packagesObj);
     const processes = entries.map(
       ([k, v]): [string, { value: any; removed?: string }] => {
-        const fork = newForkMap.get(k);
+        const fork = newForkMap.get(paths ? paths + '/' + k : k);
         if (!fork) {
           return [k, { value: v }];
         }
@@ -187,7 +187,7 @@ function writeFork(
 ) {
   const cwd = state.cwd();
   const { source, omits: ot = ['devDependencies'] } = config ?? {};
-  const pas = source?.split('/') ?? [];
+  const pas = source?.split(path.sep) ?? [];
   const ends = pas.slice(pas.length - 2);
   const packageName = ends[0].startsWith('@') ? ends.join('/') : ends[1];
   const pathname = path.join(cwd, 'forks', ...packageName.split('/'));
