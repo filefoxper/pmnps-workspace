@@ -124,7 +124,7 @@ async function collectPackages(
       const nextState = {
         ...state,
         type: packageType,
-        category: currentName,
+        category: state.category || currentName,
         level: state.level + 1,
         dirnames: [...state.dirnames, c]
       };
