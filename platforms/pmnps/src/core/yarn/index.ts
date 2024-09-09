@@ -21,7 +21,7 @@ function refreshWorkspace() {
     scopes = [],
     workspace,
     platforms = [],
-    forks
+    customized
   } = project?.project ?? {};
   const { projectType, core = 'npm' } = config ?? {};
   const workspacePackageJson = workspace?.packageJson;
@@ -47,10 +47,18 @@ function refreshWorkspace() {
       .map(p => `platforms/${p.name}`);
   }
   const scopeWorkspaces = scopes.map(s => `packages/${s.name}/*`);
-  const forksWorkspaces = forks && forks.length ? ['forks/*'] : [];
+  const customizedWorkspaces = (function computeCustomizedWorkspaces() {
+    if (!customized || !customized.length) {
+      return [];
+    }
+    const set = new Set(
+      customized.map(c => c.category).filter((c): c is string => !!c)
+    );
+    return [...set].map(s => `${s}/*`);
+  })();
   const workspaceSet = new Set([
     'packages/*',
-    ...forksWorkspaces,
+    ...customizedWorkspaces,
     ...scopeWorkspaces,
     ...buildPlatformWorkspaces()
   ]);
@@ -69,13 +77,21 @@ function refreshWorkspace() {
 }
 
 function refreshChangePackages(changes: Package[]) {
-  const { scopes = [], forks } =
+  const { scopes = [], customized } =
     hold.instance().getState().project?.project ?? {};
   const scopeWorkspaces = scopes.map(s => `../../packages/${s.name}/*`);
-  const forksWorkspaces = forks && forks.length ? ['../../forks/*'] : [];
+  const customizedWorkspaces = (function computeCustomizedWorkspaces() {
+    if (!customized || !customized.length) {
+      return [];
+    }
+    const set = new Set(
+      customized.map(c => c.category).filter((c): c is string => !!c)
+    );
+    return [...set].map(s => `../../${s}/*`);
+  })();
   const workspaces = [
     '../../packages/*',
-    ...forksWorkspaces,
+    ...customizedWorkspaces,
     ...scopeWorkspaces
   ];
   const packs = changes.filter(p => p.type !== 'workspace');
@@ -172,47 +188,6 @@ function installOwnRootPackage(
   );
 }
 
-function refreshWithForkChanges(parameters?: string) {
-  const { project, dynamicState = {} } = hold.instance().getState();
-  const { workspace, platforms = [] } = project?.project ?? {};
-  const ownRootPlatforms = platforms.filter(
-    p =>
-      p.packageJson.pmnps?.ownRoot === true ||
-      p.packageJson.pmnps?.ownRoot === 'independent'
-  );
-  if (workspace) {
-    const ds = dynamicState[workspace.name];
-    task.execute(
-      SystemCommands.install({ ...ds, isPoint: false, parameters }),
-      workspace.path,
-      'install workspace'
-    );
-  }
-  if (ownRootPlatforms.length) {
-    ownRootPlatforms.forEach(p => {
-      const ds = dynamicState[p.name];
-      installOwnRootPackage(p, { ...ds, isPoint: false, parameters }, true);
-    });
-  }
-}
-
-function hasForksChange() {
-  const { project, cacheProject } = hold.instance().getState();
-  const forks = project?.project?.forks ?? [];
-  const forkNames = orderBy(
-    forks.map(p => p.name),
-    [n => n],
-    ['desc']
-  );
-  const cacheForks = cacheProject?.project?.forks ?? [];
-  const cacheForkNames = orderBy(
-    cacheForks.map(p => p.name),
-    [n => n],
-    ['desc']
-  );
-  return forkNames.join() !== cacheForkNames.join();
-}
-
 function computeShouldRemovePackNames(packs: Package[], cachePacks: Package[]) {
   const packageMap = keyBy(packs, 'path');
   return cachePacks
@@ -230,10 +205,14 @@ function refreshNpmrcByPackage(p: Package) {
   }
   if (
     p.type !== 'workspace' &&
-    p.packageJson.pmnps?.ownRoot != true &&
-    p.packageJson.pmnps?.ownRoot != 'independent'
+    p.packageJson.pmnps?.ownRoot !== true &&
+    p.packageJson.pmnps?.ownRoot !== 'independent' &&
+    p.packageJson.pmnps?.ownRoot !== 'flexible'
   ) {
-    if (!forbiddenWorkspacePackageInstall) {
+    if (
+      !forbiddenWorkspacePackageInstall &&
+      data.npmrc?.includes(`registry=${INVALID_REGISTRY}`)
+    ) {
       task.remove(path.join(p.path, '.npmrc'));
       return;
     }
@@ -245,7 +224,9 @@ function refreshNpmrcByPackage(p: Package) {
   const { npmrc } = data;
   const contents = (npmrc || '').split('\n');
   const contentSet = new Set(
-    [...contents, `registry=${registry}`].filter(r => r.trim())
+    [...contents, `registry=${registry}`]
+      .filter(r => r.trim())
+      .map(r => r.trim())
   );
   const content = [...contentSet].join('\n');
   if (content === npmrc) {
@@ -268,19 +249,19 @@ function cleanRemovedPacks() {
   const {
     packages: cachePackages = [],
     platforms: cachePlatforms = [],
-    forks: cacheForks = []
+    customized: cacheCustomized = []
   } = cacheProject?.project ?? {};
-  const cachePacks = [...cachePackages, ...cacheForks, ...cachePlatforms];
+  const cachePacks = [...cachePackages, ...cacheCustomized, ...cachePlatforms];
   if (project == null || project.project == null || !cachePacks.length) {
     return;
   }
   const {
     workspace,
     packages = [],
-    forks = [],
+    customized = [],
     platforms = []
   } = project.project;
-  const allPacks = [workspace, ...packages, ...forks, ...platforms].filter(
+  const allPacks = [workspace, ...packages, ...customized, ...platforms].filter(
     (p): p is Package => !!p
   );
   const shouldRemovePackNames = computeShouldRemovePackNames(
@@ -379,10 +360,6 @@ export async function refreshByYarn(option?: {
         force
       );
     });
-  }
-  if (hasForksChange() && workspace) {
-    refreshWithForkChanges(parameters);
-    return { content: 'Refresh success...', type: 'success' };
   }
   if (workRoots.length) {
     return { content: 'Refresh success...', type: 'success' };

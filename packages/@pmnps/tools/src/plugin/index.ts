@@ -1,9 +1,12 @@
 import type { Action, Command, CommandOption, RequireFn } from './type';
+import type { Config, LockResolver } from '../types';
 
 export function createPluginCommand(name: string) {
   const command: {
     name: string;
+    lockResolver?: LockResolver;
     requireRefresh?: boolean;
+    requireSpace?: string;
     require: RequireFn | undefined;
     required: Promise<any> | undefined;
     options: CommandOption[];
@@ -11,6 +14,7 @@ export function createPluginCommand(name: string) {
     description: string;
     list?: boolean;
     args?: { param: string; description: string };
+    filter?: (config: Config) => boolean;
   } = {
     name,
     requireRefresh: false,
@@ -31,8 +35,16 @@ export function createPluginCommand(name: string) {
       command.args = { param, description };
       return pluginSlot;
     },
+    resolveLock(resolver: LockResolver) {
+      command.lockResolver = resolver;
+      return pluginSlot;
+    },
     requireRefresh() {
       command.requireRefresh = true;
+      return pluginSlot;
+    },
+    requireSpace(space: string) {
+      command.requireSpace = space;
       return pluginSlot;
     },
     option(
@@ -55,6 +67,10 @@ export function createPluginCommand(name: string) {
         command.required = required;
         return required;
       };
+      return pluginSlot;
+    },
+    filter(callback: (config: Config) => boolean) {
+      command.filter = callback;
       return pluginSlot;
     },
     describe(description: string) {

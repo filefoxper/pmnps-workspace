@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { file, path } from '@/libs';
-import { projectSupport } from '@/support';
+import { getLockBakName, getLockName, projectSupport } from '@/support';
 import { groupBy, omitBy, orderBy, partition } from '@/libs/polyfill';
 import type {
   PackageJson,
@@ -13,6 +13,7 @@ import type { State } from '@/types';
 
 async function readProject(
   cwd: string,
+  spaces: string[],
   config?: Config
 ): Promise<[undefined | Project, Record<string, PackageLockInfo> | undefined]> {
   const {
@@ -20,22 +21,15 @@ async function readProject(
     usePerformanceFirst: performanceFirst,
     projectType = 'monorepo'
   } = config ?? {};
-  const lockFileName = (function computeLockFileName() {
-    if (core === 'yarn' || core === 'yarn2') {
-      return 'yarn.lock';
-    }
-    if (core === 'pnpm') {
-      return 'pnpm-lock.yaml';
-    }
-    return 'package-lock.json';
-  })();
+  const spaceSet = new Set(spaces);
+  const lockFileName = getLockName(core);
   const [
     mainPackageJson,
     lockContent,
     hasNodeModules,
     pnpmWorkspace,
-    forkLockContent,
-    npmrc
+    npmrc,
+    lockBak
   ] = await Promise.all([
     file.readJson<PackageJson>(path.join(cwd, 'package.json')),
     performanceFirst
@@ -53,16 +47,15 @@ async function readProject(
           path.join(cwd, 'pnpm-workspace.yaml')
         )
       : Promise.resolve(undefined),
-    performanceFirst
-      ? Promise.resolve(undefined)
-      : file.readFile(path.join(cwd, 'fork-lock.json')),
-    file.readFile(path.join(cwd, '.npmrc'))
+    file.readFile(path.join(cwd, '.npmrc')),
+    file.readJson(path.join(cwd, getLockBakName(core)))
   ]);
   if (!mainPackageJson) {
     return [undefined, undefined];
   }
   const mainPackage: Package = {
     name: mainPackageJson.name ?? '',
+    category: null,
     path: cwd,
     paths: null,
     packageJson: mainPackageJson,
@@ -70,7 +63,7 @@ async function readProject(
     type: 'workspace'
   };
   const [packsInfo, scopes] = await Promise.all([
-    projectSupport.loadPackages(cwd, lockFileName, performanceFirst),
+    projectSupport.loadPackages(cwd, core, spaceSet, performanceFirst),
     projectSupport.loadScopes(cwd)
   ]);
   const { packs: children, dynamicStates } = packsInfo;
@@ -82,18 +75,17 @@ async function readProject(
       hasNodeModules,
       lockContent: lockContent || '',
       lockFileName,
-      forkLockContent,
       npmrc,
-      payload: { pnpmWorkspace }
+      payload: { pnpmWorkspace, lockBak }
     }
   ];
   const dynamicState = Object.fromEntries(
     dynamicStateArray.map((d): [string, PackageLockInfo] => [d.name, d])
   );
   const [allPks, pls] = partition(children, c => c.type !== 'platform');
-  const [pks, fks] = partition(allPks, c => c.type === 'package');
+  const [pks, cks] = partition(allPks, c => c.type === 'package');
   const packages = orderBy(pks, ['name'], ['desc']);
-  const forks = orderBy(fks, ['name'], ['desc']);
+  const customized = orderBy(cks, ['name'], ['desc']);
   const platforms = orderBy(pls, ['name'], ['desc']);
   const childMap = Object.fromEntries(children.map(c => [c.path, c]));
   const scopePackageGroup = groupBy(packages, p => {
@@ -112,7 +104,13 @@ async function readProject(
       type: projectType,
       packageMap: { [cwd]: mainPackage, ...childMap },
       project: omitBy(
-        { workspace: mainPackage, packages, forks, platforms, scopes: sps },
+        {
+          workspace: mainPackage,
+          packages,
+          customized,
+          platforms,
+          scopes: sps
+        },
         (value, key) => {
           return value == null || (Array.isArray(value) && !value.length);
         }
@@ -122,7 +120,7 @@ async function readProject(
   ];
 }
 
-export async function loadData(cwd: string, config?: Config) {
-  const [project, dynamicState] = await readProject(cwd, config);
+export async function loadData(cwd: string, spaces: string[], config?: Config) {
+  const [project, dynamicState] = await readProject(cwd, spaces, config);
   return { project, dynamicState } as State;
 }

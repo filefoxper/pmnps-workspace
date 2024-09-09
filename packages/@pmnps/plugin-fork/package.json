@@ -1,0 +1,35 @@
+{
+  "name": "@pmnps/plugin-fork",
+  "version": "4.4.6",
+  "description": "This is a pmnps plugin for forking a package out to replace the node_modules one.",
+  "author": "Jimmy.Harding",
+  "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-fork",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-fork"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "build": "node ./build.js"
+  },
+  "typings": "index.d.ts",
+  "dependencies": {
+    "@pmnps/tools": "^4.3.1"
+  },
+  "devDependencies": {
+    "typescript": "4.9.5"
+  },
+  "keywords": [
+    "js",
+    "monorepo",
+    "fork",
+    "package",
+    "npm workspaces",
+    "pmnps",
+    "pmnps plugin"
+  ]
+}

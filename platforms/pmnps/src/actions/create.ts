@@ -200,7 +200,7 @@ export async function setPackageOptions(
   const ops = [...optionMap.keys()];
   const { ownRootSetting } = await inquirer.prompt([
     {
-      name: 'ownRoot',
+      name: 'ownRootSetting',
       type: 'list',
       message: `Choose options for this ${type}`,
       choices: ops,
@@ -304,7 +304,7 @@ async function createTemplate(
     {
       name: 'templateType',
       type: 'list',
-      choices: ['package', 'platform'],
+      choices: ['package', 'platform', 'workspace'],
       message: 'Choose a package type for your template.',
       default: 'package'
     },

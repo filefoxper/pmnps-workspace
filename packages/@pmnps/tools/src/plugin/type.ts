@@ -3,7 +3,8 @@ import type {
   Project,
   CommandSerial,
   PackageJson,
-  PackageType
+  PackageType,
+  LockResolver
 } from '../types';
 
 export type Task = {
@@ -84,10 +85,13 @@ export type Command = {
   name: string;
   list?: boolean;
   requireRefresh?: boolean;
+  requireSpace?: string;
+  lockResolver?: LockResolver;
   require?: RequireFn;
   options?: CommandOption[];
   action: Action;
   required?: Promise<any>;
   description: string;
   args?: { params: string; description: string };
+  filter?: (config: Config) => boolean;
 };

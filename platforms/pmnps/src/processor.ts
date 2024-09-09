@@ -24,14 +24,18 @@ function checkRuntimeEnv(): string | null {
 export async function loadProject(withCache?: boolean) {
   const cwd = path.cwd();
   const { config } = hold.instance().getState();
+  const commands = hold.instance().getCommands();
+  const spaces = commands
+    .map(c => c.requireSpace)
+    .filter((s): s is string => !!s);
   if (withCache) {
     const [projectState, cacheProjectState] = await Promise.all([
-      loadData(cwd, config),
+      loadData(cwd, spaces, config),
       loadCacheData(cwd)
     ]);
     return { ...projectState, ...cacheProjectState };
   }
-  return loadData(cwd, config);
+  return loadData(cwd, spaces, config);
 }
 
 async function loadPlugins(
@@ -64,8 +68,7 @@ function loadTemplates(
   const factory = requireFactory(cwd, performanceFirst);
   return Promise.all(
     templates.map(async name => {
-      const { module: templateModule } =
-        await factory.require(name);
+      const { module: templateModule } = await factory.require(name);
       if (!templateModule || !templateModule.default) {
         return null;
       }
@@ -107,9 +110,9 @@ async function load() {
   const holder = hold.instance();
   const { config, resources } = await loadConfig();
   holder.setState({ config });
+  holder.setResources(resources);
   const partState = await holder.load(true);
   holder.setState(partState);
-  holder.setResources(resources);
   loadPluginRequires();
 }
 

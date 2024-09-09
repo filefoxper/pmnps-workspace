@@ -1,4 +1,5 @@
 /** State **/
+import type { LockResolverState } from '../index';
 
 export interface PmnpsJson {
   ownRoot?: boolean | 'flexible' | 'independent';
@@ -86,6 +87,15 @@ export interface ConfigPlugins {
   templates?: string[];
   plugins?: (string | [string, Record<string, any>])[];
 }
+
+export type LockResolver = {
+  core: 'npm' | 'yarn' | 'yarn2' | 'pnpm';
+  filename: string;
+  lockfileVersion?: number;
+  relativePath?: string;
+  formatter?: (source: string) => Promise<string>;
+  resolver: (lockContent: string, info: LockResolverState) => [string, boolean];
+};
 
 export type Config = {
   name: string;

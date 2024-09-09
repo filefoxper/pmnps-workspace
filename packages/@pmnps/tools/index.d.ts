@@ -6,7 +6,14 @@ export type CommandSerial = string[];
 export interface PmnpsJson {
   ownRoot?: boolean | 'flexible' | 'independent';
   slot?: 'template';
-  forkTo?: string;
+  [key: string]:
+    | string
+    | boolean
+    | number
+    | null
+    | undefined
+    | Array<string>
+    | Array<number>;
 }
 
 export interface PackageJson {
@@ -21,10 +28,11 @@ export interface PackageJson {
   scripts?: Record<string, string>;
 }
 
-export type PackageType = 'package' | 'fork' | 'platform' | 'workspace';
+export type PackageType = 'package' | 'customized' | 'platform' | 'workspace';
 
 export interface Package {
   path: string;
+  category: string | null;
   paths: string[] | null;
   name: string;
   packageJson: PackageJson;
@@ -49,7 +57,7 @@ export interface Project {
     workspace?: Package;
     scopes?: Scope[];
     packages?: Package[];
-    forks?: Package[];
+    customized?: Package[];
     platforms?: Package[];
   };
 }
@@ -91,11 +99,31 @@ export declare type CommandOption = {
   inputType?: string;
 };
 
+export declare type LockResolverState = {
+  project: Project;
+  current: Package;
+  lockBak?: LockBak | null;
+};
+
+export declare type LockBak = Record<string, any>;
+
+export declare type LockResolver = {
+  core: 'npm' | 'yarn' | 'yarn2' | 'pnpm';
+  filename: string;
+  lockfileVersion?: number;
+  relativePath?: string;
+  formatter?: (source: string) => Promise<string>;
+  resolver: (
+    lockContent: string,
+    info: LockResolverState
+  ) => [string, boolean | LockBak];
+};
+
 export declare type ActionMessage = {
   type: 'success' | 'failed' | 'warning';
   content: string;
   payload?: unknown;
-  requireRefresh?: boolean;
+  requireRefresh?: boolean | LockResolver;
 };
 
 declare type Task = {
@@ -118,7 +146,12 @@ declare type Task = {
   ): any;
   writeDir(
     p: string | Array<string>,
-    config?: { relative?: boolean; source?: string; command?: CommandSerial[] }
+    config?: {
+      relative?: boolean;
+      source?: string;
+      command?: CommandSerial[];
+      onFinish?: () => Promise<any>;
+    }
   ): any;
   writeScope(scopeName: string): any;
   writePackage(pack: {
@@ -129,6 +162,7 @@ declare type Task = {
       | ((json: PackageJson | null) => PackageJson | null);
     type: PackageType;
   }): any;
+  writePackageToState(cwd: string, packageData: Package): void;
   execute(command: CommandSerial, cwd: string, description?: string): any;
   remove(pathname: string, opt?: { fileType?: 'file' | 'dir' }): any;
 };
@@ -148,10 +182,10 @@ export declare type PackageLockInfo = {
   hasNodeModules: boolean;
   lockContent?: string | null;
   lockFileName: string;
-  forkLockContent?: string | null;
   npmrc?: string | null;
   payload?: {
     pnpmWorkspace?: { packages: string[] };
+    lockBak?: LockBak | null;
   };
 };
 
@@ -195,31 +229,16 @@ export declare type Command = {
   action: Action;
   required?: Promise<any>;
   description: string;
+  lockResolver?: LockResolver;
   args?: { param: string; description: string };
   requireRefresh?: boolean;
+  requireSpace?: string;
+  filter?: (config: Config) => boolean;
 };
 
 export declare type Plugin<S extends Record<string, any>> = (
   setting?: S
 ) => Command;
-
-export declare type LockResolverState = {
-  project: Project;
-  current: Package;
-  forkLockContent?: string | null;
-};
-
-export declare type LockResolver = {
-  core: 'npm' | 'yarn' | 'yarn2' | 'pnpm';
-  filename: string;
-  lockfileVersion?: number;
-  relativePath?: string;
-  formatter?: (source: string) => Promise<string>;
-  resolver: (
-    lockContent: string,
-    info: LockResolverState
-  ) => [string | null, string | null];
-};
 
 declare function prompt<T extends Answers = Answers>(
   questions: QuestionCollection<T>,
@@ -233,6 +252,8 @@ declare type PluginSlot = {
   list(l: boolean): PluginSlot;
   args(param: string, description: string): PluginSlot;
   requireRefresh(): PluginSlot;
+  requireSpace(space: string): PluginSlot;
+  resolveLock(resolver: LockResolver): PluginSlot;
   option(
     optionName: string,
     shortcut: string,
@@ -240,6 +261,7 @@ declare type PluginSlot = {
   ): PluginSlot;
   describe(description: string): PluginSlot;
   require(requireFn: RequireFn): PluginSlot;
+  filter(callback: (config: Config) => boolean): PluginSlot;
   action(action: Action): Command;
 };
 

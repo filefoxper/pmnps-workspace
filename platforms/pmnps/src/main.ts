@@ -1,11 +1,12 @@
 import os from 'os';
+import process from 'process';
 import { program } from 'commander';
 import { createPluginCommand } from '@pmnps/tools';
 import { hold } from '@/state';
 import { configAction } from '@/actions/config';
 import { refreshAction } from '@/actions/refresh';
 import { createAction } from '@/actions/create';
-import { executeAction, useCommand } from '@/actions/task';
+import { executeAction, task, useCommand } from '@/actions/task';
 import { runAction, startAction } from '@/actions/run';
 import { getPluginState } from '@/plugin';
 import {
@@ -14,10 +15,11 @@ import {
   setPackageAction,
   setPlatformAction
 } from '@/actions/set';
-import { forkAction } from '@/actions/fork';
+import { CONF_NAME, SystemFormatter } from '@/constants';
+import { omitBy } from '@/libs/polyfill';
 import { env, file, path, inquirer, message } from './libs';
 import { initialize, loadProject } from './processor';
-import type { Command, CommandOption } from '@pmnps/tools';
+import type { Command, CommandOption, PackageJson } from '@pmnps/tools';
 import type { ActionMessage, Task } from '@/actions/task/type';
 import type { Resource, State } from './types';
 
@@ -108,16 +110,6 @@ const setCommand = createPluginCommand('set')
   .args('package|platform', 'Enter a target type for setting')
   .action((state, argument) => setAction(argument));
 
-const forkCommand = createPluginCommand('fork')
-  .describe('Fork a package out')
-  .requireRefresh()
-  .args('package name', 'Enter a package name in node_modules for forking')
-  .option('to', 't', {
-    description: 'Enter a target path for package',
-    inputType: '<target path>'
-  })
-  .action((state, argument, option) => forkAction(argument, option));
-
 const noListCommands = [
   createPluginCommand('set:package')
     .describe('Set package detail.')
@@ -169,7 +161,6 @@ const getCommands = () => {
     hold.instance().getState().config ?? {};
   const canUseAlias = !!global.pmnps.px && global.pmnps.platform === 'darwin';
   const pmnpxCommands = canUseAlias ? [setAliasCommand] : [];
-  const coreCommands = core === 'npm' ? [forkCommand] : [];
   return actCommands(
     projectType === 'monorepo'
       ? ([
@@ -179,7 +170,6 @@ const getCommands = () => {
           createCommand,
           configCommand,
           setCommand,
-          ...coreCommands,
           ...noListCommands,
           ...pmnpxCommands
         ] as Command[])
@@ -269,6 +259,7 @@ async function initialAction() {
 
 export async function startup(isDevelopment?: boolean) {
   const px = process.env.PXS_ENV === 'pmnpx';
+  const [, , command, template] = process.argv;
   const platform = os.platform();
   global.pmnps = {
     holder: hold(),
@@ -290,8 +281,82 @@ export async function startup(isDevelopment?: boolean) {
   }
   const config = hold.instance().getState().config;
   if (config == null) {
-    const configActionMessage = await configAction();
-    await executeAction(configActionMessage, true);
+    const templatePackage = command === 'init' && template ? template : null;
+    const configActionMessage = await configAction(templatePackage);
+    await executeAction(configActionMessage, true, {
+      skipExit: !!templatePackage
+    });
+    if (templatePackage) {
+      const s = await initialize();
+      if (!s) {
+        process.exit(0);
+        return;
+      }
+      const { config: sourceConfig, project } = hold.instance().getState();
+      const { workspace: sourceWorkspace } = project?.project ?? {};
+      const modulePath = path.join(
+        path.cwd(),
+        'node_modules',
+        ...template.split('/'),
+        'resource'
+      );
+      task.writeDir(path.cwd(), {
+        source: modulePath,
+        force: true,
+        async onFinish() {
+          const [cnf, pj] = await Promise.all([
+            file.readJson(path.join(path.cwd(), CONF_NAME)),
+            file.readJson(path.join(path.cwd(), 'package.json'))
+          ]);
+          const packageJson = (function computePackageJson() {
+            const { dependencies: pjDep, devDependencies: pjDevDep } = (pj ??
+              {}) as PackageJson;
+            const { dependencies, devDependencies, ...rest } =
+              sourceWorkspace?.packageJson ?? {};
+            return omitBy(
+              {
+                ...pj,
+                ...rest,
+                dependencies:
+                  pjDep || dependencies
+                    ? { ...pjDep, ...dependencies }
+                    : undefined,
+                devDependencies: { ...pjDevDep, ...devDependencies }
+              },
+              v => v == null
+            ) as PackageJson;
+          })();
+          const confString = await SystemFormatter.json(
+            JSON.stringify({
+              ...cnf,
+              ...sourceConfig
+            })
+          );
+          const packageJsonString = await SystemFormatter.packageJson(
+            JSON.stringify(packageJson)
+          );
+          task.writePackageToState(path.cwd(), {
+            paths: null,
+            path: path.cwd(),
+            type: 'workspace',
+            packageJson,
+            packageJsonFileName: 'package.json',
+            name: packageJson.name || '',
+            category: null
+          });
+          return Promise.all([
+            file.writeFile(path.join(path.cwd(), CONF_NAME), confString),
+            file.writeFile(
+              path.join(path.cwd(), 'package.json'),
+              packageJsonString
+            )
+          ]);
+        }
+      });
+      await executeAction(configActionMessage, true);
+      return;
+    }
+    process.exit(0);
     return;
   }
   const systemCommands = getCommands();

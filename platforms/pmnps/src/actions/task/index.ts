@@ -1,8 +1,8 @@
 import process from 'process';
 import { format as formatPackageJson } from 'prettier-package-json';
-import { file, message, path } from '@/libs';
+import { message, path } from '@/libs';
 import { hold } from '@/state';
-import { equal, omit, omitBy, orderBy, partition } from '@/libs/polyfill';
+import { equal, omitBy, orderBy, partition } from '@/libs/polyfill';
 import { CONF_NAME, SystemFormatter } from '@/constants';
 import { projectSupport } from '@/support';
 import { SystemCommands } from '@/cmds';
@@ -16,7 +16,8 @@ import type {
   PackageType,
   Scope,
   Project,
-  Config
+  Config,
+  LockResolver
 } from '@pmnps/tools';
 import type {
   ActionMessage,
@@ -154,12 +155,12 @@ function writePackageToState(cwd: string, packageData: Package) {
   project.packageMap[pathname] = packageData;
   if (packageType === 'workspace') {
     project.project.workspace = packageData;
-  } else if (packageType === 'fork') {
-    project.project.forks = project.project.forks || [];
-    const p = project.project.forks.find(p => p.path === pathname);
+  } else if (packageType === 'customized') {
+    project.project.customized = project.project.customized || [];
+    const p = project.project.customized.find(p => p.path === pathname);
     if (p == null) {
-      project.project.forks = orderBy(
-        [...project.project.forks, packageData],
+      project.project.customized = orderBy(
+        [...project.project.customized, packageData],
         ['name'],
         ['desc']
       );
@@ -298,9 +299,16 @@ export const task = {
   },
   writeDir(
     p: string | Array<string>,
-    config?: { relative?: boolean; source?: string; command?: CommandSerial[] }
+    config?: {
+      relative?: boolean;
+      source?: string;
+      command?: CommandSerial[];
+      onFinish?: () => Promise<any>;
+      filter?: (filename: string) => boolean;
+      force?: boolean;
+    }
   ) {
-    const { command, source } = config ?? {};
+    const { command, source, onFinish, force, filter } = config ?? {};
     const pathname = typeof p === 'string' ? p : path.join(path.cwd(), ...p);
     const t: Task = {
       type: 'write',
@@ -309,9 +317,12 @@ export const task = {
       path: pathname,
       content: pathname,
       dirSource: source,
+      filter,
+      force,
       option: omitBy(
         {
-          command
+          command,
+          onFinish
         },
         value => value == null
       )
@@ -360,6 +371,7 @@ export const task = {
                 const packageData: Package = {
                   path: pathname,
                   paths,
+                  category: 'packages',
                   packageJsonFileName: 'package.json',
                   packageJson: r,
                   name: r.name ?? '',
@@ -394,6 +406,7 @@ export const task = {
       const packageData: Package = {
         path: pathname,
         paths,
+        category: 'packages',
         packageJsonFileName: 'package.json',
         packageJson: pjson,
         name: pjson.name ?? '',
@@ -403,73 +416,7 @@ export const task = {
     }
     return p;
   },
-  fork(
-    p: Array<string>,
-    config?: {
-      relative?: boolean;
-      source?: string;
-      command?: CommandSerial[];
-      omits?: string[];
-    }
-  ) {
-    const cwd = path.cwd();
-    const { command, source, omits: ot = ['devDependencies'] } = config ?? {};
-    const ends = p.slice(p.length - 2);
-    const packageName = ends[0].startsWith('@') ? ends.join('/') : ends[1];
-    const pathname = path.join(cwd, 'forks', ...packageName.split('/'));
-    const pmnpsForkTo = p.join('/');
-    const t: Task = {
-      type: 'write',
-      fileType: 'dir',
-      file: pathname,
-      path: pathname,
-      content: pathname,
-      dirSource: source,
-      option: omitBy(
-        {
-          command,
-          onFinish: async () => {
-            const pmnps = { forkTo: pmnpsForkTo };
-            const packagePath = path.join(pathname, 'package.json');
-            task.write(pathname, 'package.json', d => {
-              if (d == null) {
-                return null;
-              }
-              const pjData = JSON.parse(d);
-              const pjDataWithPmnps = { ...pjData, pmnps };
-              if (ot.length) {
-                return JSON.stringify(omit(pjDataWithPmnps, ...ot));
-              }
-              return JSON.stringify(pjDataWithPmnps);
-            });
-            const packageJson = await file.readJson<PackageJson>(packagePath);
-            if (packageJson == null) {
-              return;
-            }
-            const pjdWithOmit = ot
-              ? omit(packageJson, ...(ot as 'devDependencies'[]))
-              : packageJson;
-            const pjdWithPmnps = { ...pjdWithOmit, pmnps };
-            const content = await SystemFormatter.packageJson(
-              JSON.stringify(pjdWithOmit)
-            );
-            await file.writeFile(packagePath, content);
-            writePackageToState(cwd, {
-              name: packageName || '',
-              paths: p,
-              path: pathname,
-              type: 'fork',
-              packageJsonFileName: 'package.json',
-              packageJson: pjdWithPmnps
-            });
-          }
-        },
-        value => value == null
-      )
-    };
-    hold.instance().pushTask(t);
-    return t;
-  },
+  writePackageToState,
   remove(pathname: string, opt?: { fileType?: 'file' | 'dir' }) {
     const { fileType } = opt ?? {};
     const t: Task = {
@@ -526,7 +473,10 @@ export function refreshCache() {
   return false;
 }
 
-async function executeTasks(requireRefresh: boolean, level?: number) {
+async function executeTasks(
+  requireRefresh: boolean | LockResolver,
+  level?: number
+) {
   const { config } = hold.instance().getState();
   const useGit = config?.useGit;
   const tasks = hold.instance().consumeTasks();
@@ -567,8 +517,10 @@ async function executeTasks(requireRefresh: boolean, level?: number) {
 
 export async function executeAction(
   actionMessage: ActionMessage | null,
-  requireRefresh: boolean
+  requireRefresh?: boolean,
+  options?: { skipExit?: boolean }
 ) {
+  const { skipExit } = options ?? {};
   let error = undefined;
   if (actionMessage?.type !== 'failed') {
     error = await executeTasks(
@@ -583,7 +535,9 @@ export async function executeAction(
     });
   }
   message.result(result);
-  process.exit(0);
+  if (!skipExit) {
+    process.exit(0);
+  }
 }
 
 export function useCommand(
@@ -593,6 +547,6 @@ export function useCommand(
 ) {
   return com.action(async (...args: any[]) => {
     const actionMessage = await action(...args);
-    await executeAction(actionMessage, !!requireRefresh);
+    await executeAction(actionMessage, requireRefresh);
   });
 }

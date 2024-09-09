@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "name": "package",
+  "version": "1.0.0",
+  "description": "This is a package",
+  "module": "es/index.ts",
+  "dependencies": {
+    "react": "16.14.0",
+    "react-dom": "16.14.0",
+    "@types/react": "^17.0.45",
+    "@types/react-dom": "^17.0.17"
+  }
+}

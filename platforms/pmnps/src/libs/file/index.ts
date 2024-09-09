@@ -169,7 +169,7 @@ async function rename(
 }
 
 async function rmdir(filePath: string): Promise<boolean> {
-  if(!fs.existsSync(filePath)){
+  if (!fs.existsSync(filePath)) {
     return false;
   }
   return new Promise((resolve, reject) => {
@@ -302,16 +302,21 @@ async function createFileIntoDirIfNotExist(
 
 async function copyFolder(
   sourceDirPath: string,
-  targetDirPath: string
+  targetDirPath: string,
+  opt?: { filter?: (source: string) => boolean; force?: boolean }
 ): Promise<boolean> {
+  const { filter, force } = opt ?? {};
   return new Promise((resolve, reject) => {
     fs.cp(
       sourceDirPath,
       targetDirPath,
       {
         recursive: true,
-        force: false,
+        force: force || false,
         filter(source: string): boolean | Promise<boolean> {
+          if (filter) {
+            return filter(source);
+          }
           return source !== 'node_modules';
         }
       },

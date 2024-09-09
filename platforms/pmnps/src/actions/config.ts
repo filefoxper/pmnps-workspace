@@ -4,13 +4,13 @@ import { CONF_NAME, DEFAULT_REGISTRY } from '@/constants';
 import { packageJson } from '@/resource';
 import { equal, omit, omitBy, pick } from '@/libs/polyfill';
 import { task } from './task';
-import type { ActionMessage } from '@/actions/task/type';
 import type {
   PackageJson,
   ConfigDetail,
   Config,
   ConfigSetting
 } from '@pmnps/tools';
+import type { ActionMessage } from '@/actions/task/type';
 
 const configRange: Array<[string, keyof ConfigDetail]> = [
   ['allow publish to npm', 'private'],
@@ -19,6 +19,18 @@ const configRange: Array<[string, keyof ConfigDetail]> = [
   ['use command help', 'useCommandHelp'],
   ['use performance first', 'usePerformanceFirst']
 ];
+
+function defaultConfig(): Config {
+  return {
+    name: '',
+    core: 'npm',
+    projectType: 'monorepo',
+    private: true,
+    useGit: false,
+    useCommandHelp: false,
+    usePerformanceFirst: false
+  };
+}
 
 function decodeConfig(config: Config | undefined) {
   const allCheckedConfig = {
@@ -79,7 +91,9 @@ const installFeatures = new Map<string, keyof ConfigSetting>([
   ['install with npm ci command first', 'npmCiFirst']
 ]);
 
-export async function configAction(): Promise<ActionMessage> {
+export async function configAction(
+  template?: string | null
+): Promise<ActionMessage> {
   const { config, project } = hold.instance().getState();
   let name = config?.name;
   const { name: firstSetName, detail } = await inquirer.prompt(
@@ -260,13 +274,32 @@ export async function configAction(): Promise<ActionMessage> {
   if (!nextConfig.usePerformanceFirst || !equal(nextConfig, config)) {
     task.write(cwd, CONF_NAME, JSON.stringify(nextConfig));
   }
+  if (nextConfig.registry && nextConfig.registry !== DEFAULT_REGISTRY) {
+    task.write(cwd, '.npmrc', npmrc => {
+      if (npmrc == null) {
+        return `registry=${registry}`;
+      }
+      const contents = (npmrc || '').split('\n');
+      const contentSet = new Set(
+        [...contents, `registry=${registry}`]
+          .filter(r => r.trim())
+          .map(r => r.trim())
+      );
+      return [...contentSet].join('\n');
+    });
+  }
   if (config && nextConfig.core !== config.core) {
     hold.instance().setCoreChanged();
   }
   task.writePackage({
     paths: null,
     packageJson: (json: PackageJson | null) => {
-      const sourceJson: PackageJson = (json || {}) as PackageJson;
+      const sourceJson: PackageJson = (json ||
+        (template
+          ? {
+              devDependencies: { [template]: 'latest' }
+            }
+          : {})) as PackageJson;
       const result = packageJson(nextConfig.name, 'workspace', {
         ...sourceJson,
         ...projectDetail

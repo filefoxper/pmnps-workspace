@@ -1,5 +1,5 @@
 /* eslint-disable */
-function buildTemplateIndex(projectType: 'package' | 'platform') {
+function buildTemplateIndex(projectType: 'package' | 'platform' | 'workspace') {
   return `"use strict";
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
