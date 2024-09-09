@@ -100,8 +100,13 @@ const officialReg = 'https://registry.npmjs.org';
 function levelPackages(packs: Package[]): Package[][] {
   const map = new Map(packs.map(p => [p.name, p] as [string, Package]));
   const top = packs.filter(p => {
-    const { dependencies, devDependencies } = p.packageJson;
-    const deps = { ...dependencies, ...devDependencies };
+    const { dependencies, devDependencies, optionalDependencies } =
+      p.packageJson;
+    const deps = {
+      ...dependencies,
+      ...devDependencies,
+      ...optionalDependencies
+    };
     const keys = Object.keys(deps);
     return keys.every(k => !map.has(k));
   });

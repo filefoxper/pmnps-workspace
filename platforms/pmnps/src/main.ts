@@ -309,10 +309,17 @@ export async function startup(isDevelopment?: boolean) {
             file.readJson(path.join(path.cwd(), 'package.json'))
           ]);
           const packageJson = (function computePackageJson() {
-            const { dependencies: pjDep, devDependencies: pjDevDep } = (pj ??
-              {}) as PackageJson;
-            const { dependencies, devDependencies, ...rest } =
-              sourceWorkspace?.packageJson ?? {};
+            const {
+              dependencies: pjDep,
+              devDependencies: pjDevDep,
+              optionalDependencies: pjOptDep
+            } = (pj ?? {}) as PackageJson;
+            const {
+              dependencies,
+              devDependencies,
+              optionalDependencies,
+              ...rest
+            } = sourceWorkspace?.packageJson ?? {};
             return omitBy(
               {
                 ...pj,
@@ -321,7 +328,11 @@ export async function startup(isDevelopment?: boolean) {
                   pjDep || dependencies
                     ? { ...pjDep, ...dependencies }
                     : undefined,
-                devDependencies: { ...pjDevDep, ...devDependencies }
+                devDependencies: { ...pjDevDep, ...devDependencies },
+                optionalDependencies:
+                  pjOptDep || optionalDependencies
+                    ? { ...pjOptDep, ...optionalDependencies }
+                    : undefined
               },
               v => v == null
             ) as PackageJson;
