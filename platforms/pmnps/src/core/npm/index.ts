@@ -242,10 +242,14 @@ function refreshNpmrcByPackage(p: Package) {
   }
   if (
     p.type !== 'workspace' &&
-    p.packageJson.pmnps?.ownRoot != true &&
-    p.packageJson.pmnps?.ownRoot != 'independent'
+    p.packageJson.pmnps?.ownRoot !== true &&
+    p.packageJson.pmnps?.ownRoot !== 'independent' &&
+    p.packageJson.pmnps?.ownRoot !== 'flexible'
   ) {
-    if (!forbiddenWorkspacePackageInstall) {
+    if (
+      !forbiddenWorkspacePackageInstall &&
+      data.npmrc?.includes(`registry=${INVALID_REGISTRY}`)
+    ) {
       task.remove(path.join(p.path, '.npmrc'));
       return;
     }

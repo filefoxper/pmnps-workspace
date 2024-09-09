@@ -200,7 +200,7 @@ export async function setPackageOptions(
   const ops = [...optionMap.keys()];
   const { ownRootSetting } = await inquirer.prompt([
     {
-      name: 'ownRoot',
+      name: 'ownRootSetting',
       type: 'list',
       message: `Choose options for this ${type}`,
       choices: ops,
