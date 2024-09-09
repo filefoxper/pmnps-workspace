@@ -462,6 +462,7 @@ export async function refresh(option?: {
   force?: boolean;
   install?: string;
   parameters?: string;
+  name?: string;
 }): Promise<ActionMessage> {
   mergeProject();
   const loops = analyzePackagePaths();
@@ -499,6 +500,7 @@ export async function refreshProject(option?: {
   force?: boolean;
   install?: string;
   parameters?: string;
+  name?: string;
 }): Promise<ActionMessage> {
   const pluginState = getPluginState();
   async function runCommand(
