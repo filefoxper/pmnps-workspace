@@ -216,7 +216,10 @@ function refreshNpmrcByPackage(p: Package) {
       task.remove(path.join(p.path, '.npmrc'));
       return;
     }
-    if (data.npmrc !== `registry=${INVALID_REGISTRY}`) {
+    if (
+      data.npmrc !== `registry=${INVALID_REGISTRY}` &&
+      forbiddenWorkspacePackageInstall
+    ) {
       task.write(p.path, '.npmrc', `registry=${INVALID_REGISTRY}`);
     }
     return;
