@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "@pmnps/plugin-clean-node-modules",
-  "version": "4.3.0",
+  "version": "4.4.0",
   "description": "This is a pmnps plugin for cleaning node_modules in packages when the pkg manager is changed.",
   "author": "Jimmy.Harding",
   "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-clean-node-modules",
