@@ -23,6 +23,7 @@ export interface PackageJson {
   version?: string;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
   workspaces: Array<string>;
   pmnps?: PmnpsJson;
   scripts?: Record<string, string>;

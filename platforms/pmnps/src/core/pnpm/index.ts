@@ -84,11 +84,13 @@ function installOwnRootPackage(
   const packageMap = new Map(packages.map(p => [p.name, p] as const));
   const cachePackDeps = {
     ...cachePack.packageJson.dependencies,
-    ...cachePack.packageJson.devDependencies
+    ...cachePack.packageJson.devDependencies,
+    ...cachePack.packageJson.optionalDependencies
   };
   const packDeps = {
     ...pack.packageJson.dependencies,
-    ...pack.packageJson.devDependencies
+    ...pack.packageJson.devDependencies,
+    ...pack.packageJson.optionalDependencies
   };
   const packageNames = packages.map(n => n.name);
   const newDepKeys = Object.keys(packDeps).filter(k => !cachePackDeps[k]);
@@ -223,11 +225,13 @@ function linkAdditions(changes: Package[]) {
     const cachePack = cacheMap[pack.path];
     const cachePackDeps = {
       ...cachePack.packageJson.dependencies,
-      ...cachePack.packageJson.devDependencies
+      ...cachePack.packageJson.devDependencies,
+      ...cachePack.packageJson.optionalDependencies
     };
     const packDeps = {
       ...pack.packageJson.dependencies,
-      ...pack.packageJson.devDependencies
+      ...pack.packageJson.devDependencies,
+      ...pack.packageJson.optionalDependencies
     };
     const newDepKeys = Object.keys(packDeps).filter(k => !cachePackDeps[k]);
     const withoutWorkspaceDepPackDeps = omit(packDeps, ...packageNames);

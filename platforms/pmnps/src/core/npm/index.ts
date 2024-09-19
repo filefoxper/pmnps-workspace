@@ -32,11 +32,13 @@ function installOwnRootPackage(
   const packageMap = new Map(packages.map(p => [p.name, p] as const));
   const cachePackDeps = {
     ...cachePack.packageJson.dependencies,
-    ...cachePack.packageJson.devDependencies
+    ...cachePack.packageJson.devDependencies,
+    ...cachePack.packageJson.optionalDependencies
   };
   const packDeps = {
     ...pack.packageJson.dependencies,
-    ...pack.packageJson.devDependencies
+    ...pack.packageJson.devDependencies,
+    ...pack.packageJson.optionalDependencies
   };
   const packageNames = packages.map(n => n.name);
   const newDepKeys = Object.keys(packDeps).filter(k => !cachePackDeps[k]);
@@ -288,10 +290,11 @@ export async function refreshByNpm(option?: {
   force?: boolean;
   install?: string;
   parameters?: string;
+  name?: string;
 }): Promise<ActionMessage> {
   const { dynamicState = {}, project } = hold.instance().getState();
   const { workspace } = project?.project ?? {};
-  const { force, install, parameters } = option ?? {};
+  const { force, install, parameters, name } = option ?? {};
   const installRange = install
     ? (install.split(',').filter(d => {
         return d.trim();
@@ -302,9 +305,9 @@ export async function refreshByNpm(option?: {
   refreshWorkspace();
   const { packs: changes } = hold.instance().diffDepsPackages(force);
   refreshChangePackages(changes);
-  const changeRoots = changes.filter(
-    p => p.type === 'workspace' || p.packageJson.pmnps?.ownRoot
-  );
+  const changeRoots = changes
+    .filter(p => p.type === 'workspace' || p.packageJson.pmnps?.ownRoot)
+    .filter(p => !name || p.name === name);
   const [workspaceRoots, ownRoots] = partition(
     changeRoots,
     p => p.type === 'workspace'

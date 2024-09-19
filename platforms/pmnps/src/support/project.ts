@@ -229,11 +229,17 @@ function diffDepsPackagesMap(
     const {
       dependencies: sd,
       devDependencies: sdev,
+      optionalDependencies: sopt,
       pmnps: spmnps
     } = v.packageJson;
-    const { dependencies: td, devDependencies: tdev, pmnps: tpmnps } = targetPj;
-    const sourceDeps = { ...sd, ...sdev };
-    const targetDeps = { ...td, ...tdev };
+    const {
+      dependencies: td,
+      devDependencies: tdev,
+      optionalDependencies: topt,
+      pmnps: tpmnps
+    } = targetPj;
+    const sourceDeps = { ...sd, ...sdev, ...sopt };
+    const targetDeps = { ...td, ...tdev, ...topt };
     return (
       !equal(sourceDeps, targetDeps) || spmnps?.ownRoot !== tpmnps?.ownRoot
     );
@@ -360,13 +366,18 @@ function checkProjectLoops(project: Project) {
     .concat(platforms)
     .map((p): PackageItem | null => {
       const { packageJson } = p;
-      const { name, dependencies, devDependencies } = packageJson;
+      const { name, dependencies, devDependencies, optionalDependencies } =
+        packageJson;
       if (name == null) {
         return null;
       }
       return {
         name,
-        dependencies: { ...dependencies, ...devDependencies },
+        dependencies: {
+          ...dependencies,
+          ...devDependencies,
+          ...optionalDependencies
+        },
         dependencyItems: [],
         dependentItems: []
       };

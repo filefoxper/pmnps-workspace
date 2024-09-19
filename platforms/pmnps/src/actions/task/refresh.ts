@@ -101,8 +101,12 @@ function listPackageDependencies(
   }
   const packages = packs.filter(p => p.type === 'package');
   return packages.reduce((res, current) => {
-    const { dependencies, devDependencies } = res;
-    const allDeps = { ...dependencies, ...devDependencies };
+    const { dependencies, devDependencies, optionalDependencies } = res;
+    const allDeps = {
+      ...dependencies,
+      ...devDependencies,
+      ...optionalDependencies
+    };
     const { name, packageJson } = current;
     if (allDeps[name] || packageJson == null || packageJson.version == null) {
       return res;
@@ -136,16 +140,24 @@ function mergeWorkspace(
   };
   const { packageJson } = workspace;
   const result = packs.reduce((result, current) => {
-    const { dependencies: deps, devDependencies: devDeps } =
-      current.packageJson;
+    const {
+      dependencies: deps,
+      devDependencies: devDeps,
+      optionalDependencies: optDeps
+    } = current.packageJson;
     const workspaceDependencies = {
       ...result.dependencies,
-      ...result.devDependencies
+      ...result.devDependencies,
+      ...result.optionalDependencies
     };
     const differDeps = differ(workspaceDependencies, excludePackDeps(deps));
     const differDevDeps = differ(
       workspaceDependencies,
       excludePackDeps(devDeps)
+    );
+    const differOptDeps = differ(
+      workspaceDependencies,
+      excludePackDeps(optDeps)
     );
     return {
       ...result,
@@ -164,13 +176,22 @@ function mergeWorkspace(
               ...differDevDeps
             }
           : result.devDependencies
+      ),
+      optionalDependencies: excludePackDeps(
+        differOptDeps
+          ? { ...result.optionalDependencies, ...differOptDeps }
+          : result.optionalDependencies
       )
     };
   }, packageJson);
   const nextPackageJson = omitBy(
     listPackageDependencies(result, packs),
     (value, key) => {
-      if (!['dependencies', 'devDependencies'].includes(key)) {
+      if (
+        !['dependencies', 'devDependencies', 'optionalDependencies'].includes(
+          key
+        )
+      ) {
         return false;
       }
       return value == null || !Object.keys(value).length;
@@ -194,8 +215,16 @@ function mergeDeps(
   if (deps == null) {
     return deps;
   }
-  const { dependencies = {}, devDependencies = {} } = packageJson;
-  const refDeps = { ...dependencies, ...devDependencies };
+  const {
+    dependencies = {},
+    devDependencies = {},
+    optionalDependencies = {}
+  } = packageJson;
+  const refDeps = {
+    ...dependencies,
+    ...devDependencies,
+    ...optionalDependencies
+  };
   const entries = Object.entries(deps)
     .filter(([k, v]) => refDeps[k] !== v)
     .map(([k, v]) => [k, refDeps[k] ?? v]);
@@ -254,11 +283,17 @@ function mergePacks(
       }
       return Object.keys(dep).some(k => shouldRemovePackNameSet.has(k));
     }
-    const { dependencies, devDependencies } = pjs;
+    const { dependencies, devDependencies, optionalDependencies } = pjs;
     const collectedDep = collectChangeWorkspacePackDeps(dependencies);
     const collectedDevDep = collectChangeWorkspacePackDeps(devDependencies);
-    const hasRemoves = checkHasRemoves({ ...dependencies, ...devDependencies });
-    if (!collectedDep && !collectedDevDep && !hasRemoves) {
+    const collectedOptDep =
+      collectChangeWorkspacePackDeps(optionalDependencies);
+    const hasRemoves = checkHasRemoves({
+      ...dependencies,
+      ...devDependencies,
+      ...optionalDependencies
+    });
+    if (!collectedDep && !collectedDevDep && !collectedOptDep && !hasRemoves) {
       return { packageJson: pjs, hasChanges: false };
     }
     const nextPjs = {
@@ -272,6 +307,12 @@ function mergePacks(
         ? devDependencies
         : omitBy({ ...devDependencies, ...collectedDevDep }, (value, key) =>
             shouldRemovePackNameSet.has(key as string)
+          ),
+      optionalDependencies: !optionalDependencies
+        ? optionalDependencies
+        : omitBy(
+            { ...optionalDependencies, ...collectedOptDep },
+            (value, key) => shouldRemovePackNameSet.has(key as string)
           )
     };
     return {
@@ -283,7 +324,7 @@ function mergePacks(
   packs.forEach(pack => {
     const { packageJson: pjs, type, paths } = pack;
     const { packageJson: pj, hasChanges } = updateWorkspacePackVersion(pjs);
-    const { dependencies, devDependencies } = pj;
+    const { dependencies, devDependencies, optionalDependencies } = pj;
     if (pj.pmnps?.ownRoot) {
       if (hasChanges) {
         task.writePackage({
@@ -296,9 +337,11 @@ function mergePacks(
     }
     const nextDeps = mergeDeps(dependencies, packageJson);
     const nextDevDeps = mergeDeps(devDependencies, packageJson);
+    const nextOptDeps = mergeDeps(optionalDependencies, packageJson);
     if (
       dependencies === nextDeps &&
       devDependencies === nextDevDeps &&
+      optionalDependencies === nextOptDeps &&
       !hasChanges
     ) {
       return;
@@ -306,7 +349,8 @@ function mergePacks(
     const nextPj = {
       ...pj,
       dependencies: nextDeps,
-      devDependencies: nextDevDeps
+      devDependencies: nextDevDeps,
+      optionalDependencies: nextOptDeps
     };
     task.writePackage({
       paths: paths,
@@ -462,6 +506,7 @@ export async function refresh(option?: {
   force?: boolean;
   install?: string;
   parameters?: string;
+  name?: string;
 }): Promise<ActionMessage> {
   mergeProject();
   const loops = analyzePackagePaths();
@@ -499,6 +544,7 @@ export async function refreshProject(option?: {
   force?: boolean;
   install?: string;
   parameters?: string;
+  name?: string;
 }): Promise<ActionMessage> {
   const pluginState = getPluginState();
   async function runCommand(
