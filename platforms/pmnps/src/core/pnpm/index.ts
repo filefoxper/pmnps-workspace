@@ -144,6 +144,9 @@ function refreshNpmrcByPackage(p: Package) {
     return;
   }
   const { npmrc } = data;
+  if (npmrc) {
+    return;
+  }
   const contents = (npmrc || '').split('\n');
   const contentSet = new Set(
     [...contents, `registry=${registry}`]
@@ -285,11 +288,12 @@ export async function refreshByPnpm(option?: {
     changeRoots,
     p => p.type === 'workspace'
   );
-  const [independentOwnRoots, flexibleOwnRoots] = partition(
+  const [independentOrIsolateOwnRoots, flexibleOwnRoots] = partition(
     ownRoots,
     p =>
       p.packageJson.pmnps?.ownRoot === true ||
-      p.packageJson.pmnps?.ownRoot === 'independent'
+      p.packageJson.pmnps?.ownRoot === 'independent' ||
+      p.packageJson.pmnps?.ownRoot === 'isolate'
   );
   const workRoots = (function recomputeWorkRoots() {
     if (workspaceRoots.length) {
@@ -311,7 +315,7 @@ export async function refreshByPnpm(option?: {
     });
   }
   const [ownRootPackages, ownRootPlatforms] = partition(
-    independentOwnRoots,
+    independentOrIsolateOwnRoots,
     p => p.type === 'package'
   );
   if (!installRange || installRange.includes('package')) {
