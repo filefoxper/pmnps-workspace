@@ -489,7 +489,8 @@ function refreshLock(lockResolvers: LockResolver[], parameters?: string) {
     if (
       type === 'workspace' ||
       packageJson.pmnps?.ownRoot === true ||
-      packageJson.pmnps?.ownRoot === 'independent'
+      packageJson.pmnps?.ownRoot === 'independent' ||
+      packageJson.pmnps?.ownRoot === 'isolate'
     ) {
       task.execute(
         SystemCommands.install({ ...ds, isPoint: false, parameters }),

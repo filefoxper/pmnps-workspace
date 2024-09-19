@@ -161,11 +161,12 @@ function refreshChangePackages(changes: Package[]) {
   ];
   const packs = changes.filter(p => p.type !== 'workspace');
   const workspaceChanges = changes.filter(p => p.type === 'workspace');
-  const [ownRoots, parts] = partition(
+  const [independentOwnRoots, parts] = partition(
     packs,
     p =>
       p.packageJson.pmnps?.ownRoot === true ||
-      p.packageJson.pmnps?.ownRoot === 'independent'
+      p.packageJson.pmnps?.ownRoot === 'independent' ||
+      p.packageJson.pmnps?.ownRoot === 'isolate'
   );
   parts.forEach(p => {
     task.writePackage({
@@ -174,9 +175,20 @@ function refreshChangePackages(changes: Package[]) {
     });
   });
 
-  ownRoots.forEach(p => {
+  independentOwnRoots.forEach(p => {
     const pj = p.packageJson;
-    task.writePackage({ ...p, packageJson: { ...pj, workspaces } });
+    if (pj.pmnps?.ownRoot === 'isolate') {
+      return;
+    }
+    const sourceWorkspaces = pj.workspaces ?? [];
+    const newWorkspaceSet = new Set([...sourceWorkspaces, ...workspaces]);
+    task.writePackage({
+      ...p,
+      packageJson: {
+        ...pj,
+        workspaces: orderBy([...newWorkspaceSet], [a => a], ['desc'])
+      }
+    });
   });
 
   workspaceChanges.forEach(p => {
@@ -246,6 +258,7 @@ function refreshNpmrcByPackage(p: Package) {
     p.type !== 'workspace' &&
     p.packageJson.pmnps?.ownRoot !== true &&
     p.packageJson.pmnps?.ownRoot !== 'independent' &&
+    p.packageJson.pmnps?.ownRoot !== 'isolate' &&
     p.packageJson.pmnps?.ownRoot !== 'flexible'
   ) {
     if (
@@ -264,6 +277,9 @@ function refreshNpmrcByPackage(p: Package) {
     return;
   }
   const { npmrc } = data;
+  if (npmrc) {
+    return;
+  }
   const contents = (npmrc || '').split('\n');
   const contentSet = new Set(
     [...contents, `registry=${registry}`]
@@ -312,11 +328,12 @@ export async function refreshByNpm(option?: {
     changeRoots,
     p => p.type === 'workspace'
   );
-  const [independentOwnRoots, flexibleOwnRoots] = partition(
+  const [independentOrIsolateOwnRoots, flexibleOwnRoots] = partition(
     ownRoots,
     p =>
       p.packageJson.pmnps?.ownRoot === true ||
-      p.packageJson.pmnps?.ownRoot === 'independent'
+      p.packageJson.pmnps?.ownRoot === 'independent' ||
+      p.packageJson.pmnps?.ownRoot === 'isolate'
   );
   const workRoots = (function recomputeWorkRoots() {
     if (workspaceRoots.length) {
@@ -338,7 +355,7 @@ export async function refreshByNpm(option?: {
     });
   }
   const [ownRootPackages, ownRootPlatforms] = partition(
-    independentOwnRoots,
+    independentOrIsolateOwnRoots,
     p => p.type === 'package'
   );
   if (!installRange || installRange.includes('package')) {

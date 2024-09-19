@@ -195,7 +195,8 @@ export async function setPackageOptions(
     [
       `use flexible node_modules in this ${type} (fused with workspaces node_modules)`,
       'flexible'
-    ]
+    ],
+    [`use isolate node_modules in this ${type}`, 'isolate']
   ]);
   const ops = [...optionMap.keys()];
   const { ownRootSetting } = await inquirer.prompt([
