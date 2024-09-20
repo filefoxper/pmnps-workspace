@@ -375,7 +375,8 @@ async function createPlatform(
     packageJsonTemplate
   );
   const pmnpsWrap = await setPackageOptions('platform');
-  const paths = ['platforms', platformName];
+  const names = platformName.split('/');
+  const paths = ['platforms', ...names];
   if (templates.length) {
     const { confirm } = await inquirer.prompt([
       {
