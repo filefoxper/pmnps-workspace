@@ -44,7 +44,7 @@ function refreshWorkspace() {
         const or = p.packageJson?.pmnps?.ownRoot;
         return !or || or === 'flexible';
       })
-      .map(p => `platforms/${p.name}`);
+      .map(p => `platforms/${p.paths ? p.paths.join('/') : p.name}`);
   }
   const scopeWorkspaces = scopes.map(s => `packages/${s.name}/*`);
   const customizedWorkspaces = (function computeCustomizedWorkspaces() {
