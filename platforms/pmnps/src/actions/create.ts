@@ -251,7 +251,8 @@ async function createPackage(
       const pj = payload.packageJson as PackageJson;
       task.writePackage({
         ...payload,
-        packageJson: p => (p == null ? pj : { ...p, ...pj, ...pmnpsWrap })
+        packageJson: p =>
+          p == null ? { ...pj, ...pmnpsWrap } : { ...p, ...pj, ...pmnpsWrap }
       });
       return {
         content: `Create package "${res.content}" success...`,
@@ -279,7 +280,8 @@ async function createPackage(
   const pj = payload.packageJson as PackageJson;
   task.writePackage({
     ...payload,
-    packageJson: p => (p == null ? pj : { ...p, ...pj, ...pmnpsWrap })
+    packageJson: p =>
+      p == null ? { ...pj, ...pmnpsWrap } : { ...p, ...pj, ...pmnpsWrap }
   });
   return {
     content: `Create package "${res.content}" success...`,
@@ -360,6 +362,7 @@ async function createPlatform(
   }
   const { content: name } = res;
   const platformName = name;
+  const names = name.split('/');
   const templates = hold
     .instance()
     .getTemplates()
@@ -370,12 +373,11 @@ async function createPlatform(
     v => v == null
   );
   const pj: PackageJson = packageJson(
-    platformName,
+    names[names.length - 1],
     'platform',
     packageJsonTemplate
   );
   const pmnpsWrap = await setPackageOptions('platform');
-  const names = platformName.split('/');
   const paths = ['platforms', ...names];
   if (templates.length) {
     const { confirm } = await inquirer.prompt([
@@ -388,7 +390,8 @@ async function createPlatform(
     if (!confirm) {
       task.writePackage({
         paths,
-        packageJson: p => (p == null ? pj : { ...p, ...pj, ...pmnpsWrap }),
+        packageJson: p =>
+          p == null ? { ...pj, ...pmnpsWrap } : { ...p, ...pj, ...pmnpsWrap },
         type: 'platform'
       });
       return {
@@ -416,7 +419,8 @@ async function createPlatform(
   }
   task.writePackage({
     paths,
-    packageJson: p => (p == null ? pj : { ...p, ...pj, ...pmnpsWrap }),
+    packageJson: p =>
+      p == null ? { ...pj, ...pmnpsWrap } : { ...p, ...pj, ...pmnpsWrap },
     type: 'platform'
   });
   return {
