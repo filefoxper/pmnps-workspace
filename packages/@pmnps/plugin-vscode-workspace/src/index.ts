@@ -45,10 +45,7 @@ const refreshVscodeWorkspace: Plugin<Query> = function refreshVscodeWorkspace(
       const data = [...resolvedPackageOrScopes, ...platforms].map(d => {
         const name = d.name;
         const pk = d as Package;
-        const p =
-          pk.type === 'package' || pk.type == null
-            ? ['packages', ...name.split('/')].join('/')
-            : ['platforms', ...name.split('/')].join('/');
+        const p = (pk.paths ?? []).join('/');
         return { name: shortcut ? name : p, path: p };
       });
       const defaults = [
