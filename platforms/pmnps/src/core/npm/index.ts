@@ -144,21 +144,28 @@ function refreshWorkspace() {
 function refreshChangePackages(changes: Package[]) {
   const { scopes = [], customized } =
     hold.instance().getState().project?.project ?? {};
-  const scopeWorkspaces = scopes.map(s => `../../packages/${s.name}/*`);
-  const customizedWorkspaces = (function computeCustomizedWorkspaces() {
-    if (!customized || !customized.length) {
-      return [];
-    }
-    const set = new Set(
-      customized.map(c => c.category).filter((c): c is string => !!c)
-    );
-    return [...set].map(s => `../../${s}/*`);
-  })();
-  const workspaces = [
-    '../../packages/*',
-    ...customizedWorkspaces,
-    ...scopeWorkspaces
-  ];
+
+  const createWorkspaceDescription = function createWorkspaceDescription(
+    packPaths: string[]
+  ) {
+    const prefix = packPaths.map(() => '..').join('/');
+    const scopeWorkspaces = scopes.map(s => `${prefix}/packages/${s.name}/*`);
+    const customizedWorkspaces = (function computeCustomizedWorkspaces() {
+      if (!customized || !customized.length) {
+        return [];
+      }
+      const set = new Set(
+        customized.map(c => c.category).filter((c): c is string => !!c)
+      );
+      return [...set].map(s => `${prefix}/${s}/*`);
+    })();
+    return [
+      `${prefix}/packages/*`,
+      ...customizedWorkspaces,
+      ...scopeWorkspaces
+    ];
+  };
+
   const packs = changes.filter(p => p.type !== 'workspace');
   const workspaceChanges = changes.filter(p => p.type === 'workspace');
   const [independentOwnRoots, parts] = partition(
@@ -181,6 +188,7 @@ function refreshChangePackages(changes: Package[]) {
       return;
     }
     const sourceWorkspaces = pj.workspaces ?? [];
+    const workspaces = createWorkspaceDescription(p.paths || []);
     const newWorkspaceSet = new Set([...sourceWorkspaces, ...workspaces]);
     task.writePackage({
       ...p,

@@ -22,6 +22,8 @@ function resolvePacks(lockJson: any, { project }: LockResolverState) {
       const prefixName = (function computeName() {
         const independentPackagePrefix = '../../packages/';
         const independentPlatformPrefix = '../../platforms/';
+        const deepIndependentPackagePrefix = '../../../packages/';
+        const deepIndependentPlatformPrefix = '../../../platforms/';
         const packagePrefix = 'packages/';
         const platformPrefix = 'platforms/';
         if (prefix.startsWith(independentPackagePrefix)) {
@@ -29,6 +31,12 @@ function resolvePacks(lockJson: any, { project }: LockResolverState) {
         }
         if (prefix.startsWith(independentPlatformPrefix)) {
           return prefix.slice(independentPlatformPrefix.length);
+        }
+        if (prefix.startsWith(deepIndependentPackagePrefix)) {
+          return prefix.slice(deepIndependentPackagePrefix.length);
+        }
+        if (prefix.startsWith(deepIndependentPlatformPrefix)) {
+          return prefix.slice(deepIndependentPlatformPrefix.length);
         }
         if (prefix.startsWith(packagePrefix)) {
           return prefix.slice(packagePrefix.length);
@@ -53,6 +61,9 @@ function resolvePacks(lockJson: any, { project }: LockResolverState) {
         '../../packages/',
         '../../platforms/',
         '../../node_modules/',
+        '../../../packages/',
+        '../../../platforms/',
+        '../../../node_modules/',
         'packages/',
         'platforms/',
         'node_modules/'
