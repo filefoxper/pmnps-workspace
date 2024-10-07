@@ -3,7 +3,7 @@ const esbuild = require('esbuild');
 esbuild.buildSync({
   entryPoints:['./src/index.ts'],
   bundle:true,
-  external:['@pmnps/*','prettier','prettier-package-json','esbuild'],
+  external:['@pmnps/*','esbuild'],
   outfile:'./bin/index.js',
   target:'node16',
   platform:'node',

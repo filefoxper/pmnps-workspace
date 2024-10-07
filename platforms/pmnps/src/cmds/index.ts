@@ -1,3 +1,4 @@
+import process from 'process';
 import { hold } from '@/state';
 import { path } from '@/libs';
 import { task } from '@/actions/task';
@@ -5,6 +6,36 @@ import type { Package } from '@pmnps/tools';
 
 function parseParameters(parameters = '') {
   return parameters.split(/\s/).filter(d => d.trim());
+}
+
+function buildExtendParameters(
+  installExtendParameters: any[],
+  core: 'npm' | 'pnpm' | 'yarn' | 'yarn2'
+) {
+  if (core === 'yarn' || core === 'yarn2') {
+    return [];
+  }
+  const extendParameters = installExtendParameters
+    .filter((e): e is string => typeof e === 'string')
+    .map(e => e.trim());
+  const extendParameterConfigEntries = extendParameters.map(
+    e =>
+      [
+        (core === 'npm' ? 'npm_config_' : 'pnpm_config') + e.replace(/-/g, '_'),
+        e
+      ] as const
+  );
+  const extendsConfigParameterMap = new Map(extendParameterConfigEntries);
+  return Object.keys(process.env)
+    .map(
+      k =>
+        [
+          extendsConfigParameterMap.get(k.toLocaleLowerCase()),
+          process.env[k]
+        ] as const
+    )
+    .filter((e): e is [string, string] => !!(e[0] && e[1]))
+    .map(([k, v]) => `--${k}=${v}`);
 }
 
 export const SystemCommands = {
@@ -38,7 +69,8 @@ export const SystemCommands = {
       npmCiFirst,
       core = 'npm',
       refreshAfterInstall,
-      installParameters = ''
+      installParameters = '',
+      installExtendParameters = []
     } = hold.instance().getState().config ?? {};
     const { hasLockFile, hasNodeModules, isPoint, parameters = '' } = opt ?? {};
     const ps = [
@@ -48,24 +80,20 @@ export const SystemCommands = {
       .join(' ')
       .split(' ')
       .filter(d => d.trim());
+    const npmExtendFields = buildExtendParameters(
+      installExtendParameters,
+      core
+    );
     if (core === 'yarn' || core === 'yarn2') {
-      return isPoint && refreshAfterInstall
-        ? ['yarn', 'install', '--ignore-scripts', ...ps]
-        : ['yarn', 'install', ...ps];
+      return ['yarn', 'install', ...ps, ...npmExtendFields];
     }
     if (core === 'pnpm') {
-      return isPoint && refreshAfterInstall
-        ? ['pnpm', 'install', '--ignore-scripts', ...ps]
-        : ['pnpm', 'install', ...ps];
+      return ['pnpm', 'install', ...ps, ...npmExtendFields];
     }
     if (npmCiFirst && !hasNodeModules && hasLockFile) {
-      return isPoint && refreshAfterInstall
-        ? ['npm', 'ci', '--ignore-scripts', ...ps]
-        : ['npm', 'ci', ...ps];
+      return ['npm', 'ci', ...ps, ...npmExtendFields];
     }
-    return isPoint && refreshAfterInstall
-      ? ['npm', 'install', '--ignore-scripts', ...ps]
-      : ['npm', 'install', ...ps];
+    return ['npm', 'install', ...ps, ...npmExtendFields];
   },
   link: (pack: Package, to: Package) => {
     if (!pack.paths) {
