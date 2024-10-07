@@ -477,8 +477,11 @@ async function executeTasks(
   requireRefresh: boolean | LockResolver,
   level?: number
 ) {
-  const { config } = hold.instance().getState();
+  const { config, cacheProject } = hold.instance().getState();
   const useGit = config?.useGit;
+  if (cacheProject == null) {
+    refreshCache();
+  }
   const tasks = hold.instance().consumeTasks();
   if (tasks.length) {
     if (!level) {

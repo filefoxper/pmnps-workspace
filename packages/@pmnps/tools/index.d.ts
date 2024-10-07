@@ -76,6 +76,7 @@ export interface ConfigSetting {
   core?: 'npm' | 'yarn' | 'yarn2' | 'pnpm';
   installParameters?: string;
   refreshAfterInstall?: boolean;
+  installExtendParameters?: string[];
   forbiddenWorkspacePackageInstall?: boolean;
   listPackageDependencies?: boolean;
   npmCiFirst?: boolean;
