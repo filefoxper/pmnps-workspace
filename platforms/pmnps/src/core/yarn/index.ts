@@ -46,7 +46,9 @@ function refreshWorkspace() {
       })
       .map(p => (p.paths ? p.paths.join('/') : `platforms/${p.name}`));
   }
-  const scopeWorkspaces = scopes.map(s => `packages/${s.name}/*`);
+  const scopeWorkspaces = scopes
+    .filter(s => s.packageType === 'package')
+    .map(s => `packages/${s.name}/*`);
   const customizedWorkspaces = (function computeCustomizedWorkspaces() {
     if (!customized || !customized.length) {
       return [];
@@ -84,7 +86,9 @@ function refreshChangePackages(changes: Package[]) {
     packPaths: string[]
   ) {
     const prefix = packPaths.map(() => '..').join('/');
-    const scopeWorkspaces = scopes.map(s => `${prefix}/packages/${s.name}/*`);
+    const scopeWorkspaces = scopes
+      .filter(s => s.packageType === 'package')
+      .map(s => `${prefix}/packages/${s.name}/*`);
     const customizedWorkspaces = (function computeCustomizedWorkspaces() {
       if (!customized || !customized.length) {
         return [];

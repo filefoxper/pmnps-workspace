@@ -88,7 +88,7 @@ async function readProject(
   const customized = orderBy(cks, ['name'], ['desc']);
   const platforms = orderBy(pls, ['name'], ['desc']);
   const childMap = Object.fromEntries(children.map(c => [c.path, c]));
-  const scopePackageGroup = groupBy(packages, p => {
+  const scopePackageGroup = groupBy([...packages, ...platforms], p => {
     const [n] = p.name.split('/');
     return n.startsWith('@') ? n : '';
   });

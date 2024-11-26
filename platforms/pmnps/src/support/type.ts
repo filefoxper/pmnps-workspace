@@ -1,4 +1,4 @@
-import { LockBak, Package } from '@pmnps/tools';
+import type { LockBak, Package } from '@pmnps/tools';
 
 export type PackageItem = {
   name: string;

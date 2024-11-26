@@ -3,6 +3,7 @@ import type {
   Config,
   Package,
   PackageLockInfo,
+  PackageType,
   Project,
   ProjectType
 } from '@pmnps/tools';
@@ -10,6 +11,7 @@ import type {
 export type ScopeSerial = {
   name: string;
   path: string;
+  packageType: PackageType;
   packages: string[];
 };
 

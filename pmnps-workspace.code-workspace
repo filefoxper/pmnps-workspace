@@ -5,36 +5,8 @@
       "path": "."
     },
     {
-      "name": "@pmnps/tools",
-      "path": "packages/@pmnps/tools"
-    },
-    {
-      "name": "@pmnps/template-webpack-ts-react",
-      "path": "packages/@pmnps/template-webpack-ts-react"
-    },
-    {
-      "name": "@pmnps/plugin-vscode-workspace",
-      "path": "packages/@pmnps/plugin-vscode-workspace"
-    },
-    {
-      "name": "@pmnps/plugin-refresh-package-lock",
-      "path": "packages/@pmnps/plugin-refresh-package-lock"
-    },
-    {
-      "name": "@pmnps/plugin-publish",
-      "path": "packages/@pmnps/plugin-publish"
-    },
-    {
-      "name": "@pmnps/plugin-fork",
-      "path": "packages/@pmnps/plugin-fork"
-    },
-    {
-      "name": "@pmnps/plugin-clean-node-modules",
-      "path": "packages/@pmnps/plugin-clean-node-modules"
-    },
-    {
-      "name": "@pmnps/lock-resolver",
-      "path": "packages/@pmnps/lock-resolver"
+      "name": "@pmnps",
+      "path": "packages/@pmnps"
     },
     {
       "name": "pmnpx",

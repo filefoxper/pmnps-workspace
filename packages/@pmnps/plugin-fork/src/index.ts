@@ -1,7 +1,7 @@
 import path from 'path';
 import { createPluginCommand, inquirer } from '@pmnps/tools';
 import type { CommandSerial } from 'pmnps/src/actions/task/type';
-import type { Plugin, Config, ActionState, PackageJson } from '@pmnps/tools';
+import type { Plugin, ActionState, PackageJson } from '@pmnps/tools';
 
 type Query = {
   to?: string;

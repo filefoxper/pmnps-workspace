@@ -1,6 +1,6 @@
 {
   "name": "@pmnps/plugin-fork",
-  "version": "4.4.6",
+  "version": "4.5.0",
   "description": "This is a pmnps plugin for forking a package out to replace the node_modules one.",
   "author": "Jimmy.Harding",
   "homepage": "https://github.com/filefoxper/pmnps-workspace/tree/master/packages/%40pmnps/plugin-fork",
@@ -18,7 +18,7 @@
   },
   "typings": "index.d.ts",
   "dependencies": {
-    "@pmnps/tools": "^4.3.1"
+    "@pmnps/tools": "^4.5.0"
   },
   "devDependencies": {
     "typescript": "4.9.5"

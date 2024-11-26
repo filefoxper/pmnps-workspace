@@ -10,12 +10,7 @@ import type { Package } from '@pmnps/tools';
 
 function refreshWorkspace() {
   const { project, config, dynamicState } = hold.instance().getState();
-  const {
-    workspace,
-    platforms = [],
-    scopes = [],
-    customized
-  } = project?.project ?? {};
+  const { workspace, scopes = [], customized } = project?.project ?? {};
   const { projectType } = config ?? {};
   if (workspace == null) {
     return;
@@ -29,7 +24,12 @@ function refreshWorkspace() {
     }
     return;
   }
-  const scopeWorkspaces = scopes.map(s => `packages/${s.name}/*`);
+  const scopePackageWorkspaces = scopes
+    .filter(s => s.packageType === 'package')
+    .map(s => `packages/${s.name}/*`);
+  const scopePlatformWorkspaces = scopes
+    .filter(s => s.packageType === 'platform')
+    .map(s => `platforms/${s.name}/*`);
   const customizedWorkspaces = (function computeCustomizedWorkspaces() {
     if (!customized || !customized.length) {
       return [];
@@ -42,8 +42,9 @@ function refreshWorkspace() {
   const workspaceSet = new Set([
     'packages/*',
     ...customizedWorkspaces,
-    ...scopeWorkspaces,
-    'platforms/*'
+    ...scopePackageWorkspaces,
+    'platforms/*',
+    ...scopePlatformWorkspaces
   ]);
   const workspaces = orderBy([...workspaceSet], [a => a], ['desc']);
   if (

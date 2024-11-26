@@ -6,7 +6,9 @@
   "usePerformanceFirst": false,
   "registry": "https://registry.npmmirror.com",
   "plugins": [
-    "@pmnps/plugin-vscode-workspace",
+    ["@pmnps/plugin-vscode-workspace",{
+      "shrinkScope": true
+    }],
     "@pmnps/plugin-fork",
     "@pmnps/plugin-clean-node-modules",
     [

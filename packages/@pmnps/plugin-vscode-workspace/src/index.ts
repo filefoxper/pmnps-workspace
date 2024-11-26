@@ -1,6 +1,6 @@
 import path from 'path';
 import { createPluginCommand } from '@pmnps/tools';
-import type { Plugin, Package } from '@pmnps/tools';
+import type { Plugin, Package, Scope } from '@pmnps/tools';
 
 interface Query {
   excludes?: Array<string>;
@@ -31,20 +31,32 @@ const refreshVscodeWorkspace: Plugin<Query> = function refreshVscodeWorkspace(
       const { excludes = [], shortcut = true, shrinkScope } = query || {};
       const { packages = [], platforms = [], scopes = [] } = project;
       const vscodeWorkspaceName = `${workspace}.code-workspace`;
-      const resolvedPackageOrScopes = (function resolvePackages() {
+      const projectInScopes = scopes.flatMap(s => s.packages);
+      const projectInScopeSet = new Set(projectInScopes.map(p => p.name));
+      const resolvedPackages = (function resolvePackages() {
         if (!shrinkScope) {
           return packages;
         }
-        const packageInScopes = scopes.flatMap(s => s.packages);
-        const packageInScopeSet = new Set(packageInScopes.map(p => p.name));
-        const outPackages = packages.filter(
-          p => !packageInScopeSet.has(p.name)
-        );
-        return [...scopes, ...outPackages];
+        return packages.filter(p => !projectInScopeSet.has(p.name));
       })();
-      const data = [...resolvedPackageOrScopes, ...platforms].map(d => {
+      const resolvedPlatforms = (function resolvePlatforms() {
+        if (!shrinkScope) {
+          return platforms;
+        }
+        return platforms.filter(p => !projectInScopeSet.has(p.name));
+      })();
+      const scopeArray = !shrinkScope ? [] : scopes;
+      const data = [
+        ...scopeArray,
+        ...resolvedPackages,
+        ...resolvedPlatforms
+      ].map(d => {
         const name = d.name;
         const pk = d as Package;
+        const sc = d as Scope;
+        if (sc.packageType) {
+          return { name: name, path: `${sc.packageType}s/${name}` };
+        }
         const p = (pk.paths ?? []).join('/');
         return { name: shortcut ? name : p, path: p };
       });
