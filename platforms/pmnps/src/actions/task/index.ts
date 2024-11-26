@@ -505,17 +505,15 @@ function addWriteTasksToGit(writes: Task[]) {
   if (!gitbles.length) {
     return null;
   }
+  const paths = gitbles.map((t: WriteTask) => {
+    const { path: p, file: f, fileType } = t;
+    if (fileType === 'file') {
+      return path.join(p, f);
+    }
+    return p;
+  });
   return {
-    command: [
-      ...SystemCommands.gitAdd(),
-      gitbles.map((t: WriteTask) => {
-        const { path: p, file: f, fileType } = t;
-        if (fileType === 'file') {
-          return path.join(p, f);
-        }
-        return p;
-      })
-    ]
+    command: [...SystemCommands.gitAdd(), ...paths]
   };
 }
 
