@@ -186,8 +186,8 @@ async function loadPackages(
   return { packs: ps, dynamicStates };
 }
 
-async function loadScopes(cwd: string) {
-  const packagesPath = path.join(cwd, 'packages');
+async function loadScopesByType(cwd: string, type: 'package' | 'platform') {
+  const packagesPath = path.join(cwd, `${type}s`);
   const isDir = await file.isDirectory(packagesPath);
   if (!isDir) {
     return [];
@@ -202,11 +202,19 @@ async function loadScopes(cwd: string) {
         file.isFile(path.join(p, 'package.json'))
       ]);
       return isDir && !hasPackageJsonFile
-        ? { name: d, path: p, packages: [] as Package[] }
+        ? { name: d, path: p, packageType: type, packages: [] as Package[] }
         : null;
     });
   const s = await Promise.all(promises);
   return s.filter((d): d is Scope => !!d);
+}
+
+async function loadScopes(cwd: string) {
+  const [packageScopes, platformScopes] = await Promise.all([
+    loadScopesByType(cwd, 'package'),
+    loadScopesByType(cwd, 'platform')
+  ]);
+  return [...packageScopes, ...platformScopes];
 }
 
 function diffDepsPackagesMap(

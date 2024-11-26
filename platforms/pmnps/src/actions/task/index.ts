@@ -25,7 +25,8 @@ import type {
   ExecuteTask,
   Execution,
   PackageTask,
-  Task
+  Task,
+  WriteTask
 } from '@/actions/task/type';
 import type { Command } from 'commander';
 
@@ -84,13 +85,18 @@ function writeFileTask(
   return t;
 }
 
-function writeScopeToState(cwd: string, scopeName: string) {
+function writeScopeToState(
+  cwd: string,
+  scopeName: string,
+  type: 'package' | 'platform'
+) {
   const { project = projectSupport.makeDefaultProject(cwd, 'monorepo') } = hold
     .instance()
     .getState();
   const scope: Scope = {
     name: scopeName,
-    path: path.join(cwd, 'packages', scopeName),
+    path: path.join(cwd, type + 's', scopeName),
+    packageType: type,
     packages: []
   };
   project.project = project.project || {};
@@ -115,15 +121,15 @@ function writePackageToState(cwd: string, packageData: Package) {
     const [scopeName] = names;
     const scopes = proj.scopes || [];
     const found = scopes.find(s => s.name === scopeName);
-    if (found) {
-      found.packages = orderBy(
-        found.packages.map(p => (p.name === data.name ? data : p)),
-        ['name'],
-        ['desc']
-      );
-      return { scopes };
+    if (!found) {
+      return {};
     }
-    return {};
+    found.packages = orderBy(
+      found.packages.map(p => (p.name === data.name ? data : p)),
+      ['name'],
+      ['desc']
+    );
+    return { scopes };
   }
   function writeNewScopePackageToScope(
     proj: Project['project'],
@@ -142,7 +148,12 @@ function writePackageToState(cwd: string, packageData: Package) {
     }
     const newScope: Scope = {
       name: scopeName,
-      path: path.join(cwd, 'packages', scopeName),
+      path: path.join(
+        cwd,
+        packageData.type === 'package' ? 'packages' : 'platforms',
+        scopeName
+      ),
+      packageType: packageData.type,
       packages: [data]
     };
     return { scopes: orderBy([...scopes, newScope], ['name'], ['desc']) };
@@ -199,10 +210,20 @@ function writePackageToState(cwd: string, packageData: Package) {
         ['name'],
         ['desc']
       );
+      const toProject = writeNewScopePackageToScope(
+        project.project,
+        packageData
+      );
       Object.assign(project.packageMap, { [packageData.path]: packageData });
+      Object.assign(project.project, toProject);
     } else {
       Object.assign(p, packageData);
       Object.assign(project.packageMap, { [p.path]: p });
+      const nextScopeContainer = writeScopePackageToScope(
+        project.project,
+        packageData
+      );
+      Object.assign(project.project, nextScopeContainer);
     }
   }
   hold.instance().setState({ project: project as Project });
@@ -330,11 +351,11 @@ export const task = {
     hold.instance().pushTask(t);
     return t;
   },
-  writeScope(scopeName: string) {
+  writeScope(scopeName: string, type: 'package' | 'platform') {
     const cwd = path.cwd();
-    const t = writeDirTask(path.join(cwd, 'packages', scopeName));
+    const t = writeDirTask(path.join(cwd, type + 's', scopeName));
     hold.instance().pushTask(t);
-    writeScopeToState(cwd, scopeName);
+    writeScopeToState(cwd, scopeName, type);
     return t;
   },
   writePackage(pack: {
@@ -371,7 +392,8 @@ export const task = {
                 const packageData: Package = {
                   path: pathname,
                   paths,
-                  category: 'packages',
+                  category:
+                    packageType === 'package' ? 'packages' : 'platforms',
                   packageJsonFileName: 'package.json',
                   packageJson: r,
                   name: r.name ?? '',
@@ -452,6 +474,11 @@ export const task = {
   }
 };
 
+function isWriteCacheTask(task: Task) {
+  const pathname = path.join(path.cwd(), 'node_modules', '.cache', 'pmnps');
+  return task.type === 'write' && task.path === pathname;
+}
+
 function ifThereAreOnlyWriteCacheTasks(tasks: Task[]) {
   const pathname = path.join(path.cwd(), 'node_modules', '.cache', 'pmnps');
   return tasks.every(t => t.type === 'write' && t.path === pathname);
@@ -471,6 +498,25 @@ export function refreshCache() {
     return true;
   }
   return false;
+}
+
+function addWriteTasksToGit(writes: Task[]) {
+  const gitbles = writes.filter(w => !isWriteCacheTask(w)) as WriteTask[];
+  if (!gitbles.length) {
+    return null;
+  }
+  return {
+    command: [
+      ...SystemCommands.gitAdd(),
+      gitbles.map((t: WriteTask) => {
+        const { path: p, file: f, fileType } = t;
+        if (fileType === 'file') {
+          return path.join(p, f);
+        }
+        return p;
+      })
+    ]
+  };
 }
 
 async function executeTasks(
@@ -497,9 +543,7 @@ async function executeTasks(
     await executeSystemOrders(
       [
         ...orders,
-        useGit && writes.length && !ifThereAreOnlyWriteCacheTasks(writes)
-          ? { command: [...SystemCommands.gitAdd(), path.cwd()] }
-          : null
+        useGit && writes.length ? addWriteTasksToGit(writes) : null
       ].filter((d): d is Execution => !!d)
     );
     if (requireRefresh) {

@@ -44,6 +44,7 @@ export interface Package {
 export type Scope = {
   name: string;
   path: string;
+  packageType: PackageType;
   packages: Package[];
 };
 
@@ -155,7 +156,7 @@ declare type Task = {
       onFinish?: () => Promise<any>;
     }
   ): any;
-  writeScope(scopeName: string): any;
+  writeScope(scopeName: string, type: 'package' | 'platform'): any;
   writePackage(pack: {
     paths: string[] | null;
     packageJson:

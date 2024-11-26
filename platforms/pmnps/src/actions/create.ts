@@ -44,6 +44,15 @@ async function processName(
 
 async function createScope(target: string | undefined): Promise<ActionMessage> {
   const res = await processName('scope', target);
+  const { type } = await inquirer.prompt([
+    {
+      name: 'type',
+      message: 'Please choose where to put this scope:',
+      type: 'list',
+      choices: ['packages', 'platforms']
+    }
+  ]);
+  const packageType = type === 'packages' ? 'package' : 'platform';
   if (res.type !== 'success') {
     return res;
   }
@@ -55,7 +64,7 @@ async function createScope(target: string | undefined): Promise<ActionMessage> {
     };
   }
   const scopeName = name.startsWith('@') ? name : `@${name}`;
-  task.writeScope(scopeName);
+  task.writeScope(scopeName, packageType);
   return { content: `Create scope "${scopeName}" success...`, type: 'success' };
 }
 
@@ -131,7 +140,9 @@ async function createPackageOrTemplate(
   })();
   const project = hold.instance().getState().project?.project ?? {};
   const rootPackageJson = getRootPackageJson();
-  const scopes = project.scopes ?? [];
+  const scopes = (project.scopes ?? []).filter(
+    s => s.packageType === 'package'
+  );
   const similarScopes =
     scopeName && scopes.every(s => s.name !== scopeName)
       ? scopes.filter(s => s.name.startsWith(scopeName))
@@ -373,7 +384,7 @@ async function createPlatform(
     v => v == null
   );
   const pj: PackageJson = packageJson(
-    names[names.length - 1],
+    name.startsWith('@') ? name : names[names.length - 1],
     'platform',
     packageJsonTemplate
   );

@@ -68,11 +68,10 @@ export const SystemCommands = {
     const {
       npmCiFirst,
       core = 'npm',
-      refreshAfterInstall,
       installParameters = '',
       installExtendParameters = []
     } = hold.instance().getState().config ?? {};
-    const { hasLockFile, hasNodeModules, isPoint, parameters = '' } = opt ?? {};
+    const { hasLockFile, hasNodeModules, parameters = '' } = opt ?? {};
     const ps = [
       ...parseParameters(installParameters),
       ...parseParameters(parameters)
@@ -99,7 +98,7 @@ export const SystemCommands = {
     if (!pack.paths) {
       throw new Error('Can not add a workspace link.');
     }
-    const [p, ...rest] = pack.paths;
+    const [, ...rest] = pack.paths;
     const parent =
       rest.length > 1
         ? path.join(to.path, 'node_modules', ...rest.slice(0, rest.length - 1))
