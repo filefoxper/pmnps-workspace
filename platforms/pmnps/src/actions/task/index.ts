@@ -541,7 +541,9 @@ async function executeTasks(
     await executeSystemOrders(
       [
         ...orders,
-        useGit && writes.length ? addWriteTasksToGit(writes) : null
+        useGit && writes.length && !ifThereAreOnlyWriteCacheTasks(writes)
+          ? { command: [...SystemCommands.gitAdd(), path.cwd()] }
+          : null
       ].filter((d): d is Execution => !!d)
     );
     if (requireRefresh) {
