@@ -55,6 +55,11 @@ const refreshCommand = createPluginCommand('refresh')
       'Enter the install command parameters. ex: npx pmnps refresh -p "--ignore-scripts"',
     inputType: '"char"'
   })
+  .option('name', 'n', {
+    description:
+      'Enter a specific platform or package for install. ex: npx pmnps refresh -n xxx',
+    inputType: '"char"'
+  })
   .describe('Integrate and install project dependencies.')
   .action((state, argument, option) => refreshAction(option));
 
