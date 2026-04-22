@@ -9,3 +9,5 @@ export { execution } from './exec';
 export { requireFactory } from './require';
 
 export { versions } from './version';
+
+export { file } from './file';

@@ -319,3 +319,34 @@ export declare function requireFactory(
 export declare const versions: {
   satisfies(version: string, range: string): boolean;
 };
+
+export declare const file: {
+  readdir(dirPath: string): Promise<string[]>;
+  mkdir(dirPath: string): Promise<boolean>;
+  symlink(source: string, target: string): Promise<boolean>;
+  mkdirIfNotExist(dirPath: string): Promise<boolean>;
+  readFile(locationPath: string): Promise<string | null>;
+  writeFile(locationPath: string, data: string): Promise<string>;
+  readJson<T extends Record<string, any>>(
+    locationPath: string
+  ): Promise<T | undefined>;
+  writeJson(locationPath: string, json: Record<string, any>): Promise<string>;
+  readYaml<T extends Record<string, any>>(
+    locationPath: string
+  ): Promise<T | undefined>;
+  writeYaml(locationPath: string, json: Record<string, any>): Promise<string>;
+  createFile(filePath: string, content = ''): Promise<string>;
+  createFileIfNotExist(filePath: string, content = ''): Promise<void>;
+  copyFolder(
+    sourceDirPath: string,
+    targetDirPath: string,
+    opt?: { filter?: (source: string) => boolean; force?: boolean }
+  ): Promise<boolean>;
+  unlink(filePath: string): Promise<boolean>;
+  isFile(pathname: string): Promise<boolean>;
+  isDirectory(pathname: string): Promise<boolean>;
+  isSymlink(filePath: string): Promise<boolean>;
+  isInvalidSymlink(filePath: string): Promise<boolean>;
+  rmdir(filePath: string): Promise<boolean>;
+  rename(sourcePath: string, targetPath: string): Promise<boolean>;
+};
